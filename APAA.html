@@ -4721,11 +4721,11 @@ document.addEventListener('keydown', function(e) {
   let W, H;
   let raindrops = [];
   let fogLayers = [];
-  const RAIN_COUNT = 450;      // 优化：600→450
+  const RAIN_COUNT = 150;      // 优化：600→150
   const FOG_COUNT = 10;        // 减半：20→10
   let animRAF = null;
   let lastFrameTime = 0;
-  const FRAME_INTERVAL = 60;   // ~16.6 FPS（每 60ms 一帧），手机不再发热
+  const FRAME_INTERVAL = 25;   // ~40 FPS（每 25ms 一帧）
 
   function resize() {
     W = canvas.width  = window.innerWidth;
@@ -4860,7 +4860,7 @@ document.addEventListener('keydown', function(e) {
   window.addEventListener('resize', resize);
   resize();
   startAnim();
-  console.log('◈ 天气引擎 — 节流 ~16fps + visibility暂停 — 已启动');
+  console.log('◈ 天气引擎 — 节流 ~40fps + visibility暂停 — 已启动');
 })();
 
 /* ---- 雨丝覆盖层 — 玻璃上方渲染，确保雨丝始终可见（已节流） ---- */
@@ -4874,7 +4874,7 @@ document.addEventListener('keydown', function(e) {
   const DROP_COUNT = 100;      // 减半：200→100
   let overlayRAF = null;
   let lastFrameTime = 0;
-  const FRAME_INTERVAL = 60;   // ~16.6 FPS
+  const FRAME_INTERVAL = 25;   // ~40 FPS
 
   function resizeOverlay() {
     OW = canvas.width  = window.innerWidth;
