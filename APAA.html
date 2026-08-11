@@ -3289,10 +3289,15 @@ function _createSupabaseClient(url, key) {
           if (_body) opts.body = _body;
 
           fetch(qurl, opts).then(function(r) {
+            // DELETE / 204 No Content → success with no data
             if (_method === 'DELETE' || r.status === 204) {
               return r.ok
                 ? resolve({ data: null, error: null })
                 : resolve({ data: null, error: { message: r.status + ' ' + r.statusText } });
+            }
+            // maybeSingle() 找不到行时 PostgREST 返回 406 → 视为空结果
+            if (r.status === 406) {
+              return resolve({ data: null, error: null });
             }
             if (!r.ok) {
               return r.text().then(function(t) {
@@ -3301,10 +3306,16 @@ function _createSupabaseClient(url, key) {
                 resolve({ data: null, error: { message: r.status + ' ' + r.statusText } });
               });
             }
-            return r.json().then(function(data) {
-              resolve({ data: data, error: null });
+            // 201/200 成功，解析 JSON body（可能为空）
+            return r.text().then(function(t) {
+              if (!t || t.length === 0) {
+                resolve({ data: null, error: null });
+              } else {
+                try { resolve({ data: JSON.parse(t), error: null }); }
+                catch(_) { resolve({ data: null, error: null }); }
+              }
             }).catch(function() {
-              resolve({ data: null, error: { message: 'JSON parse error' } });
+              resolve({ data: null, error: null });
             });
           }).catch(function(e) {
             resolve({ data: null, error: { message: e.message } });
