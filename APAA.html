@@ -2550,18 +2550,7 @@ body:not(.edit-mode) .settings-wrap .setting-select {
   .edit-popover { max-height: 85vh; overflow-y: auto; }
 }
 </style>
-<!-- Supabase CDN — file:// 协议下不加载（避免浏览器安全警告） -->
-<script>
-(function() {
-  if (location.protocol === 'file:') {
-    document._sbSkipCDN = true;
-    return;
-  }
-  var s = document.createElement('script');
-  s.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';
-  document.head.appendChild(s);
-})();
-</script>
+<!-- Supabase: 内联 fetch() REST 客户端 — 无需 CDN — 兼容 file:// / http:// / WebView -->
 </head>
 <body>
 
@@ -3219,37 +3208,125 @@ function isAppBusy() {
    分区 11z: Supabase 云端同步引擎
    ================================================================ */
 
+/**
+ * 轻量 Supabase REST 客户端 (fetch 实现, 无需 CDN, 兼容所有协议)
+ * 兼容原 supabase-js 链式 API: sb.from('table').select().eq().maybeSingle() 等
+ * 支持: select / insert / upsert / update / delete / eq / in / maybeSingle / order
+ */
+function _createSupabaseClient(url, key) {
+  const REST_URL = url.replace(/\/+$/, '') + '/rest/v1';
+  const BASE_HEADERS = {
+    'apikey': key,
+    'Authorization': 'Bearer ' + key,
+    'Content-Type': 'application/json',
+  };
+
+  function _chain(table) {
+    let _method = 'GET';
+    let _selectParam = '';
+    let _body = null;
+    let _reqHeaders = Object.assign({}, BASE_HEADERS);
+    let _filters = [];
+
+    const chain = {
+      select: function(cols) {
+        _method = 'GET';
+        _selectParam = 'select=' + encodeURIComponent(cols || '*');
+        return chain;
+      },
+      insert: function(rows) {
+        _method = 'POST';
+        _body = JSON.stringify(rows);
+        _reqHeaders['Prefer'] = 'return=representation';
+        return chain;
+      },
+      upsert: function(rows, opts) {
+        _method = 'POST';
+        _body = JSON.stringify(rows);
+        _reqHeaders['Prefer'] = 'resolution=merge-duplicates';
+        if (opts && opts.onConflict) {
+          _filters.push('on_conflict=' + encodeURIComponent(opts.onConflict));
+        }
+        return chain;
+      },
+      update: function(rows) {
+        _method = 'PATCH';
+        _body = JSON.stringify(rows);
+        _reqHeaders['Prefer'] = 'return=representation';
+        return chain;
+      },
+      'delete': function() {
+        _method = 'DELETE';
+        return chain;
+      },
+      eq: function(col, val) {
+        _filters.push(encodeURIComponent(col) + '=eq.' + encodeURIComponent(val));
+        return chain;
+      },
+      'in': function(col, vals) {
+        var encoded = vals.map(function(v) { return encodeURIComponent(v); }).join(',');
+        _filters.push(encodeURIComponent(col) + '=in.(' + encoded + ')');
+        return chain;
+      },
+      maybeSingle: function() {
+        _reqHeaders['Accept'] = 'application/vnd.pgrst.object+json';
+        return chain;
+      },
+      order: function(col, dir) {
+        _filters.push('order=' + encodeURIComponent(col) + '.' + (dir || 'asc'));
+        return chain;
+      },
+      // ---- thenable: 使链对象可被 await ----
+      then: function(resolve, reject) {
+        try {
+          var qurl = REST_URL + '/' + encodeURIComponent(table);
+          var parts = [];
+          if (_selectParam) parts.push(_selectParam);
+          for (var i = 0; i < _filters.length; i++) { parts.push(_filters[i]); }
+          if (parts.length > 0) qurl += '?' + parts.join('&');
+
+          var opts = { method: _method, headers: _reqHeaders };
+          if (_body) opts.body = _body;
+
+          fetch(qurl, opts).then(function(r) {
+            if (_method === 'DELETE' || r.status === 204) {
+              return r.ok
+                ? resolve({ data: null, error: null })
+                : resolve({ data: null, error: { message: r.status + ' ' + r.statusText } });
+            }
+            if (!r.ok) {
+              return r.text().then(function(t) {
+                resolve({ data: null, error: { message: t || (r.status + ' ' + r.statusText) } });
+              }).catch(function() {
+                resolve({ data: null, error: { message: r.status + ' ' + r.statusText } });
+              });
+            }
+            return r.json().then(function(data) {
+              resolve({ data: data, error: null });
+            }).catch(function() {
+              resolve({ data: null, error: { message: 'JSON parse error' } });
+            });
+          }).catch(function(e) {
+            resolve({ data: null, error: { message: e.message } });
+          });
+        } catch (e) {
+          resolve({ data: null, error: { message: e.message } });
+        }
+      }
+    };
+    return chain;
+  }
+
+  return { from: function(table) { return _chain(table); } };
+}
+
 // --- Supabase 客户端初始化 ---
 const SUPABASE_URL = 'https://iwrlibmpjaepesnrpmpc.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_hJ9v3IqtWZwl08Tx9wxjXQ_Yahid2A0';
-let sb = null;
-let cloudReady = false;
+let sb = _createSupabaseClient(SUPABASE_URL, SUPABASE_KEY);
+let cloudReady = true;
+console.log('[Cloud] REST 内联客户端已就绪 (fetch 模式)');
 
-// file:// 下跳过 CDN，使用纯 fetch 客户端
-if (document._sbSkipCDN) {
-  sb = null;
-  cloudReady = false;
-} else {
-  // http/https 下等待 CDN 脚本加载完成后初始化
-  document.addEventListener('DOMContentLoaded', function() {
-    var check = setInterval(function() {
-      if (typeof supabase !== 'undefined' && supabase.createClient) {
-        clearInterval(check);
-        try {
-          sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
-            auth: { persistSession: false, detectSessionInUrl: false, autoRefreshToken: false }
-          });
-          cloudReady = true;
-          console.log('[Cloud] SDK 初始化完成');
-        } catch(e) {
-          console.warn('[Cloud] SDK 初始化失败:', e.message);
-        }
-      }
-    }, 50);
-    // 5秒超时
-    setTimeout(function() { clearInterval(check); }, 5000);
-  });
-}
 
 // --- 用户身份（localStorage，简单名字区分） ---
 let __cloudUserId = null;
