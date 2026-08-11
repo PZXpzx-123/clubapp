@@ -3580,6 +3580,7 @@ const cloudPersonnel = {
       const uid = getUserId();
       await sb.from('orders').delete().eq('person_id', id).eq('user_id', uid);
       await sb.from('personnel').delete().eq('id', id).eq('user_id', uid);
+      notifyChange();
       console.log('[Cloud] 🗑 直接删除人员 id=' + id + ' 及其订单');
     } catch (e) { console.warn('[Cloud] 直接删除失败:', e); }
   },
@@ -3594,6 +3595,7 @@ const cloudPersonnel = {
         dept: p.dept, title: p.title, phone: p.phone || '',
         date: p.date || '', status: p.status || 'active'
       }, { onConflict: 'user_id,id' });
+      notifyChange();
       console.log('[Cloud] ⬆ 直接保存人员 id=' + p.id);
     } catch (e) { console.warn('[Cloud] 直接保存失败:', e); }
   },
@@ -3613,6 +3615,7 @@ const cloudPersonnel = {
         paused_remaining: o.pausedRemaining != null ? Math.round(o.pausedRemaining) : null,
         completed_at: o.completedAt != null ? Math.round(o.completedAt) : null,
       }, { onConflict: 'user_id,id' });
+      notifyChange();
       console.log('[Cloud] ⬆ 直接保存订单 id=' + o.id);
     } catch (e) { console.warn('[Cloud] 直接保存订单失败:', e); }
   }
@@ -3694,6 +3697,7 @@ const cloudExam = {
         id: c.id, user_id: uid, name: c.name,
         project: c.project || '护航', count: c.count || 0, status: c.status || 'pending',
       }, { onConflict: 'user_id,id' });
+      notifyChange();
       console.log('[Cloud] ⬆ 直接保存考生 id=' + c.id);
     } catch (e) { console.warn('[Cloud] 直接保存考生失败:', e); }
   },
@@ -3703,6 +3707,7 @@ const cloudExam = {
     if (!cloudReady) return;
     try {
       await sb.from('exam_candidates').delete().eq('id', id).eq('user_id', getUserId());
+      notifyChange();
       console.log('[Cloud] 🗑 直接删除考生 id=' + id);
     } catch (e) { console.warn('[Cloud] 直接删除考生失败:', e); }
   }
@@ -3750,8 +3755,22 @@ function cloudAutoSave() {
 }
 
 // ================================================================
-// 自动轮询：每 6 秒从云端拉取最新数据（其他设备的改动秒级同步）
+// 轻量变更通知：有人上传 → 其他设备2秒内自动拉取
 // ================================================================
+let __lastChangeTime = null;  // 上次已知的云端变更时间戳
+
+/** 上传者调用：告诉所有设备"我有新数据" */
+async function notifyChange() {
+  if (!cloudReady) return;
+  try {
+    const now = new Date().toISOString();
+    await sb.from('changes').upsert({ id: 1, updated_at: now }, { onConflict: 'id' });
+    __lastChangeTime = now;  // 更新本地时间戳，防止自己重复拉取
+    console.log('[Cloud] 🔔 已广播变更通知');
+  } catch (e) { /* 静默 */ }
+}
+
+/** 轻量轮询：只查一行时间戳，变了才拉全量数据 */
 let __cloudPollTimer = null;
 function _isEditing() {
   return (!document.getElementById('personModalOverlay').classList.contains('hidden')) ||
@@ -3763,13 +3782,28 @@ function startCloudPolling() {
   if (__cloudPollTimer) return;
   __cloudPollTimer = setInterval(async () => {
     if (!cloudReady || !__cloudLoadDone) return;
-    if (_isEditing()) return; // 不打扰编辑中的用户
+    if (_isEditing()) return;
     try {
-      await cloudLoadAll();
-      filteredPeople = [...people];
-      renderCards();
+      // 只查 changes 表一行（~200字节），不拉全量数据
+      const { data } = await sb.from('changes').select('updated_at').eq('id', 1).maybeSingle();
+      const remoteTime = data?.updated_at;
+      if (remoteTime) {
+        // 首次启动记下时间戳，不触发加载
+        if (!__lastChangeTime) {
+          __lastChangeTime = remoteTime;
+          return;
+        }
+        // 时间戳变了 = 有人上传过 → 拉取最新数据
+        if (remoteTime !== __lastChangeTime) {
+          console.log('[Cloud] 🔔 检测到远端变更，拉取最新数据...');
+          __lastChangeTime = remoteTime;
+          await cloudLoadAll();
+          filteredPeople = [...people];
+          renderCards();
+        }
+      }
     } catch (_) { /* 静默 */ }
-  }, 6000);
+  }, 2000);
 }
 function stopCloudPolling() {
   if (__cloudPollTimer) { clearInterval(__cloudPollTimer); __cloudPollTimer = null; }
@@ -3931,7 +3965,7 @@ async function initCloud() {
     renderCards();
     showCloudUserUI();
     __cloudLoadDone = true;
-    startCloudPolling(); // 启动 6 秒轮询
+    startCloudPolling(); // 启动轻量轮询（2秒检查 changes 时间戳）
     console.log('[Cloud] 🚀 云端已加载 (人员:' + people.length + ', 订单:' + Object.keys(personOrders).length + ', 考生:' + examCandidates.length + ')');
   } catch (e) {
     console.warn('[Cloud] ❌ 云端不可用:', e.message);
@@ -5368,7 +5402,7 @@ async function deleteOrderCard(orderId, personId) {
   personOrders[personId] = getOrders(personId).filter(o => o.id !== orderId);
   if (orderTimers[orderId]) { clearInterval(orderTimers[orderId]); delete orderTimers[orderId]; }
   // 直接删除云端订单
-  try { await sb.from('orders').delete().eq('id', orderId).eq('user_id', getUserId()); } catch(_){}
+  try { await sb.from('orders').delete().eq('id', orderId).eq('user_id', getUserId()); notifyChange(); } catch(_){}
   renderOrderCards(personId);
   showToast('订单「' + order.orderName + '」已删除', true);
 }
