@@ -3596,6 +3596,25 @@ const cloudPersonnel = {
       }, { onConflict: 'user_id,id' });
       console.log('[Cloud] ⬆ 直接保存人员 id=' + p.id);
     } catch (e) { console.warn('[Cloud] 直接保存失败:', e); }
+  },
+
+  /** 直接 upsert 单个订单——立即操作云端 */
+  async upsertOrderDirect(o, personId) {
+    if (!cloudReady) return;
+    try {
+      const uid = getUserId();
+      await sb.from('orders').upsert({
+        id: o.id, user_id: uid, person_id: personId,
+        order_name: o.orderName, scope: o.scope || '跑刀',
+        price_rmb: o.priceRMB || 0, price_coin: o.priceCoin || 0,
+        deadline_hours: o.deadlineHours || 0, status: o.status || 'active',
+        start_time: Math.round(o.startTime || 0),
+        paused_at: o.pausedAt != null ? Math.round(o.pausedAt) : null,
+        paused_remaining: o.pausedRemaining != null ? Math.round(o.pausedRemaining) : null,
+        completed_at: o.completedAt != null ? Math.round(o.completedAt) : null,
+      }, { onConflict: 'user_id,id' });
+      console.log('[Cloud] ⬆ 直接保存订单 id=' + o.id);
+    } catch (e) { console.warn('[Cloud] 直接保存订单失败:', e); }
   }
 };
 
@@ -3664,6 +3683,28 @@ const cloudExam = {
     }
 
     console.log(`[Cloud] ✓ 绩效考核已加载 (${examCandidates.length}考生)`);
+  },
+
+  /** 直接 upsert 单个考生——立即操作云端 */
+  async upsertCandidateDirect(c) {
+    if (!cloudReady) return;
+    try {
+      const uid = getUserId();
+      await sb.from('exam_candidates').upsert({
+        id: c.id, user_id: uid, name: c.name,
+        project: c.project || '护航', count: c.count || 0, status: c.status || 'pending',
+      }, { onConflict: 'user_id,id' });
+      console.log('[Cloud] ⬆ 直接保存考生 id=' + c.id);
+    } catch (e) { console.warn('[Cloud] 直接保存考生失败:', e); }
+  },
+
+  /** 直接删除单个考生——立即操作云端 */
+  async deleteCandidateDirect(id) {
+    if (!cloudReady) return;
+    try {
+      await sb.from('exam_candidates').delete().eq('id', id).eq('user_id', getUserId());
+      console.log('[Cloud] 🗑 直接删除考生 id=' + id);
+    } catch (e) { console.warn('[Cloud] 直接删除考生失败:', e); }
   }
 };
 
@@ -4646,7 +4687,7 @@ document.addEventListener('keydown', function(e) {
   let W, H;
   let raindrops = [];
   let fogLayers = [];
-  const RAIN_COUNT = 300;      // 减半：600→300
+  const RAIN_COUNT = 450;      // 优化：600→450
   const FOG_COUNT = 10;        // 减半：20→10
   let animRAF = null;
   let lastFrameTime = 0;
@@ -5232,11 +5273,14 @@ function submitAddCard(personId) {
     startTime: Date.now(), status: 'active', pausedAt: null, pausedRemaining: null, completedAt: null
   };
 
-  if (!personOrders[personId]) personOrders[personId] = [];
-  personOrders[personId].push(order);
-  hideAddCardForm();
-  renderOrderCards(personId);
-  showToast('订单「' + orderName + '」创建成功', true); cloudAutoSave();
+  // 先写云端，再同步本地
+  cloudPersonnel.upsertOrderDirect(order, personId).then(() => {
+    if (!personOrders[personId]) personOrders[personId] = [];
+    personOrders[personId].push(order);
+    hideAddCardForm();
+    renderOrderCards(personId);
+    showToast('订单「' + orderName + '」创建成功', true);
+  });
 }
 
 /* ---- 暂停/继续 ---- */
@@ -5259,7 +5303,10 @@ function togglePauseOrder(orderId, personId) {
     order.pausedRemaining = remaining;
     showToast('「' + order.orderName + '」倒计时已暂停', true);
   }
-  renderOrderCards(personId); cloudAutoSave();
+  // 先写云端，再刷新本地
+  cloudPersonnel.upsertOrderDirect(order, personId).then(() => {
+    renderOrderCards(personId);
+  });
 }
 
 /* ---- 结单确认 ---- */
@@ -5304,8 +5351,11 @@ function executeConfirmComplete() {
   order.pausedAt = null;
   order.pausedRemaining = null;
   closeConfirm();
-  renderOrderCards(personId);
-  showToast('「' + order.orderName + '」已结单 ✓', true); cloudAutoSave();
+  // 先写云端，再刷新本地
+  cloudPersonnel.upsertOrderDirect(order, personId).then(() => {
+    renderOrderCards(personId);
+  });
+  showToast('「' + order.orderName + '」已结单 ✓', true);
 }
 
 /* ---- 删除订单 ---- */
@@ -6102,14 +6152,20 @@ function incrementExam(eid) {
   if (c.count >= 3) {
     /* 满3次自动拒绝 */
     c.status = 'rejected';
+    // 先写云端，再刷新本地
+    cloudExam.upsertCandidateDirect(c).then(() => {
+      closeExamDetail();
+      renderExamCards();
+    });
     showToast('「' + c.name + '」已达3次，自动拒绝', false);
-    closeExamDetail();
-    renderExamCards(); cloudAutoSave();
   } else {
+    // 先写云端，再刷新本地
+    cloudExam.upsertCandidateDirect(c).then(() => {
+      renderExamCards();
+      /* 刷新详情 */
+      openExamDetail(eid);
+    });
     showToast('「' + c.name + '」考核次数 +1（' + c.count + '/3）', true);
-    renderExamCards(); cloudAutoSave();
-    /* 刷新详情 */
-    openExamDetail(eid);
   }
 }
 
@@ -6120,8 +6176,11 @@ function rejectExam(eid) {
   const c = examCandidates.find(x => x.id === eid);
   if (!c || c.status !== 'pending') return;
   c.status = 'rejected';
-  closeExamDetail();
-  renderExamCards(); cloudAutoSave();
+  // 先写云端，再刷新本地
+  cloudExam.upsertCandidateDirect(c).then(() => {
+    closeExamDetail();
+    renderExamCards();
+  });
   showToast('「' + c.name + '」已被拒绝', false);
 }
 
@@ -6133,8 +6192,11 @@ function passExamDirectly(eid) {
 
   c.status = 'passed';
 
-  closeExamDetail();
-  renderExamCards(); cloudAutoSave();
+  // 先写云端，再刷新本地
+  cloudExam.upsertCandidateDirect(c).then(() => {
+    closeExamDetail();
+    renderExamCards();
+  });
   showToast('「' + c.name + '」已经通过，请去人员名单添加你的名字', true);
 }
 
@@ -6167,17 +6229,21 @@ function submitExamCandidate() {
   }
 
   const project = document.getElementById('efProject').value;
-  examCandidates.push({
+  const candidate = {
     id: examIdCounter++,
     name: name,
     project: project,
     count: 0,
     status: 'pending'
-  });
+  };
 
-  hideExamAddForm();
-  renderExamCards();
-  showToast('考生「' + name + '」已添加', true); cloudAutoSave();
+  // 先写云端，再同步本地
+  cloudExam.upsertCandidateDirect(candidate).then(() => {
+    examCandidates.push(candidate);
+    hideExamAddForm();
+    renderExamCards();
+  });
+  showToast('考生「' + name + '」已添加', true);
 }
 
 /* ---- 事件绑定 ---- */
