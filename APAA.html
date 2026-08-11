@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; connect-src 'self' https://iwrlibmpjaepesnrpmpc.supabase.co; img-src 'self' data:;">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; connect-src 'self' https://qstrmmaihqyguttnkyvt.supabase.co; img-src 'self' data:;">
 <title>人员管理系统</title>
 <!--
   人员管理系统 — iOS 液态玻璃风格
@@ -3229,7 +3229,7 @@ let __updateChecking = false;        // 是否正在检查中
 // 方案2: Supabase Storage 公开桶
 //   https://xxx.supabase.co/storage/v1/object/public/app/APAA.html
 // 方案3: 任何静态托管 (Vercel / Netlify / Cloudflare Pages)
-const UPDATE_URL = 'https://iwrlibmpjaepesnrpmpc.supabase.co/storage/v1/object/public/app/APAA.html';
+const UPDATE_URL = 'https://qstrmmaihqyguttnkyvt.supabase.co/storage/v1/object/public/app/APAA.html';
 
 // 版本检查 URL — 取同一个远程目录下的 version.json，比拉整个 HTML 快 ~1000 倍
 // version.json 内容格式: {"v":"2.0.6"}
@@ -3366,8 +3366,8 @@ function _createSupabaseClient(url, key) {
 }
 
 // --- Supabase 客户端初始化 ---
-const SUPABASE_URL = 'https://iwrlibmpjaepesnrpmpc.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_hJ9v3IqtWZwl08Tx9wxjXQ_Yahid2A0';
+const SUPABASE_URL = 'https://qstrmmaihqyguttnkyvt.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_HK06nYmIkVAh07VGTYpQWw_ReBKOdqS';
 let sb = _createSupabaseClient(SUPABASE_URL, SUPABASE_KEY);
 let cloudReady = true;
 console.log('[Cloud] REST 内联客户端已就绪 (fetch 模式)');
