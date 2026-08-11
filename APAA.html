@@ -3892,22 +3892,20 @@ function hideTeamSetupModal() {
   if (overlay) overlay.classList.add('hidden');
 }
 
-/** 完成团队设置后：关闭弹窗、刷新 UI、重新同步 */
+/** 完成团队设置后：关闭弹窗、刷新 UI、从云端拉取数据 */
 function _onTeamReady() {
   hideTeamSetupModal();
-  // 重新渲染顶部栏团队码
   const oldBar = document.getElementById('cloudUserBar');
   if (oldBar) oldBar.remove();
   showCloudUserUI();
-  // 保存当前本地数据到团队云端
-  saveLocalData();
   if (cloudReady && hasTeam()) {
-    cloudSaveAll().then(() => cloudLoadAll()).then(() => {
+    cloudLoadAll().then(() => {
       filteredPeople = [...people];
       renderCards();
-      showToast('团队已就绪，数据已同步 ✓', true);
+      __cloudLoadDone = true;
+      showToast('团队已就绪 ✅', true);
     }).catch(() => {
-      showToast('团队已就绪，云端暂不可用', false);
+      showToast('云端连接失败，请刷新重试', false);
     });
   } else {
     showToast('团队已就绪 ✓', true);
@@ -4036,37 +4034,30 @@ function loadLocalData() {
   };
 })();
 
-// --- 应用启动时自动加载云端数据（在脚本末尾通过 initCloud() 调用） ---
+// --- 应用启动时自动加载云端数据（纯云端模式：不读本地，每次拉最新） ---
 let __cloudLoadDone = false;
 async function initCloud() {
-  // ① 先从 localStorage 恢复数据（即时显示卡片）
-  loadLocalData();
-  filteredPeople = [...people];
-  renderCards();
-  console.log('[Local] 📦 本地数据已恢复 (人员:' + people.length + ', 订单:' + Object.keys(personOrders).length + ', 考生:' + examCandidates.length + ')');
+  // ① 检查是否已加入团队
+  if (!hasTeam()) {
+    console.log('[Team] ⚠ 尚未加入团队');
+    showCloudUserUI();
+    return;
+  }
 
-  // ② 延迟尝试云端同步（后台静默）
-  setTimeout(async () => {
-    try {
-      // 检查是否已加入团队
-      if (!hasTeam()) {
-        console.log('[Team] ⚠ 尚未加入团队，仅使用本地存储');
-        showCloudUserUI();
-        return;
-      }
-      // 先上传本地数据（增量同步），再下载云端数据，避免覆盖未上传的本地修改
-      if (people.length > 0) await cloudPersonnel.save();
-      await cloudLoadAll();
-      filteredPeople = [...people];
-      renderCards();
-      showCloudUserUI();
-      __cloudLoadDone = true;
-      console.log('[Cloud] 🚀 云端引擎已就绪 (团队: ' + getTeamCode() + ')');
-    } catch (e) {
-      console.warn('[Cloud] 云端暂不可用，使用本地数据:', e.message);
-      showCloudUserUI();
-    }
-  }, 800);
+  // ② 显示加载状态，直接从云端拉数据
+  console.log('[Cloud] ⬇ 正在从云端加载数据...');
+  try {
+    await cloudLoadAll();
+    filteredPeople = [...people];
+    renderCards();
+    showCloudUserUI();
+    __cloudLoadDone = true;
+    console.log('[Cloud] 🚀 云端数据已加载 (团队: ' + getTeamCode() + ', 人员:' + people.length + ', 订单:' + Object.keys(personOrders).length + ', 考生:' + examCandidates.length + ')');
+  } catch (e) {
+    console.warn('[Cloud] ❌ 云端不可用:', e.message);
+    showCloudUserUI();
+    showToast('云端连接失败，请检查网络后刷新', false);
+  }
 }
 
 console.log('◈ 分区 11z — Supabase 云端同步引擎 — 已就绪');
