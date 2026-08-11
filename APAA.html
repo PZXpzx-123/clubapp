@@ -457,7 +457,7 @@ body {
   padding: 16px 18px;
   display: flex; align-items: center; gap: 13px;
   box-shadow: var(--glass-edge), var(--shadow-sm);
-  transition: all 0.35s var(--ease-out-expo);
+  transition: transform 0.35s var(--ease-out-expo), box-shadow 0.35s var(--ease-out-expo);
   cursor: default;
   position: relative; overflow: hidden;
 }
@@ -511,13 +511,14 @@ body {
   border-radius: var(--r-lg);
   padding: 16px;
   box-shadow: var(--glass-edge), var(--shadow-sm);
-  transition: all 0.35s var(--ease-out-expo);
+  transition: transform 0.35s var(--ease-out-expo), box-shadow 0.35s var(--ease-out-expo);
   cursor: pointer;
   position: relative;
   overflow: hidden;
   display: flex; flex-direction: column;
   gap: 10px;
   min-height: 170px;
+  will-change: transform;
 }
 
 /* 卡片顶部光泽 */
@@ -894,6 +895,19 @@ body {
 /* 档案响应式 */
 @media (max-width: 768px) {
   .profile-section .ps-fields { grid-template-columns: 1fr; }
+  /* 移动端禁用 backdrop-filter（GPU过热主因），改用不透明背景 */
+  .sidebar { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(22,24,32,0.96); }
+  .topbar { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(242,244,248,0.96); }
+  .person-card { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(255,255,255,0.92); }
+  .order-card { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(255,255,255,0.92); }
+  .exam-card { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(255,255,255,0.92); }
+  .stat-card { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(255,255,255,0.92); }
+  .detail-sheet { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(242,244,248,0.96); }
+  .modal, .modal-overlay { backdrop-filter: none; -webkit-backdrop-filter: none; }
+  /* 移动端降低大模糊阴影，减少 GPU 绘制压力 */
+  .person-card { box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+  .order-card { box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+  .modal { box-shadow: 0 8px 24px rgba(0,0,0,0.10); }
 }
 
 /* ================================================================
@@ -1022,7 +1036,7 @@ body {
 	  border-radius: var(--r-lg);
 	  padding: 16px 18px;
 	  box-shadow: var(--glass-edge), var(--shadow-sm);
-	  transition: all 0.35s var(--ease-out-expo);
+	  transition: transform 0.35s var(--ease-out-expo), box-shadow 0.35s var(--ease-out-expo);
 	  position: relative; overflow: hidden;
 	  display: flex; flex-direction: column; gap: 10px;
 	}
@@ -1584,7 +1598,7 @@ body {
   border-radius: var(--r-lg);
   padding: 16px 18px;
   box-shadow: var(--glass-edge), var(--shadow-sm);
-  transition: all 0.35s var(--ease-out-expo);
+  transition: transform 0.35s var(--ease-out-expo), box-shadow 0.35s var(--ease-out-expo);
   cursor: pointer; position: relative; overflow: hidden;
   display: flex; flex-direction: column; gap: 8px;
   min-height: 80px;
@@ -3379,9 +3393,9 @@ const cloudAppearance = {
       sidebar_style: document.getElementById('setSidebar')?.value ?? 'light',
       glass_intensity: document.getElementById('setGlass')?.value ?? 'balanced',
       tone: document.getElementById('setTone')?.value ?? 'cool',
-      zoom_level: parseInt(document.getElementById('setZoom')?.value) || 100,
+      zoom_level: parseInt(document.getElementById('setZoom')?.value, 10) || 100,
       toast_enabled: document.getElementById('setToast')?.checked ?? true,
-      page_size: parseInt(document.getElementById('setPageSize')?.value) || 10,
+      page_size: parseInt(document.getElementById('setPageSize')?.value, 10) || 10,
     };
     await ensureCloudUser();
     const { error } = await sb.from('app_settings').upsert(row, { onConflict: 'user_id' });
@@ -3474,7 +3488,7 @@ const cloudPersonnel = {
         orderRows.push({
           id: o.id,
           user_id: uid,
-          person_id: parseInt(pid),
+          person_id: parseInt(pid, 10),
           order_name: o.orderName,
           scope: o.scope || '跑刀',
           price_rmb: o.priceRMB || 0,
@@ -4185,7 +4199,7 @@ document.getElementById('modalSave').onclick = function() {
   const payload = { name, code, dept, title, phone: '', date, status };
 
   if (editId) {
-    const idx = people.findIndex(p => p.id === parseInt(editId));
+    const idx = people.findIndex(p => p.id === parseInt(editId, 10));
     if (idx !== -1) {
       people[idx] = { ...people[idx], ...payload };
       cloudPersonnel.upsertPersonDirect(people[idx]);  // 直接写云端，不依赖 autoSave
@@ -4279,7 +4293,7 @@ document.getElementById('personGrid').addEventListener('click', function(e) {
   if (e.target.closest('button')) return;
   const card = e.target.closest('.person-card');
   if (!card) return;
-  const id = parseInt(card.getAttribute('data-id'));
+  const id = parseInt(card.getAttribute('data-id'), 10);
   if (!id) return;
   openDetail(id, card);
 });
@@ -4714,28 +4728,89 @@ document.addEventListener('keydown', function(e) {
    分区 11k: Canvas 天气引擎 — 清晨毛毛雨 + 雾霭
    ================================================================ */
 (function initWeather() {
-  const canvas = document.getElementById('weatherCanvas');
+  var canvas = document.getElementById('weatherCanvas');
   if (!canvas) return;
-  const ctx = canvas.getContext('2d');
+  var ctx = canvas.getContext('2d');
 
-  let W, H;
-  let raindrops = [];
-  let fogLayers = [];
-  const RAIN_COUNT = 150;      // 优化：600→150
-  const FOG_COUNT = 10;        // 减半：20→10
-  let animRAF = null;
-  let lastFrameTime = 0;
-  const FRAME_INTERVAL = 25;   // ~40 FPS（每 25ms 一帧）
+  var W, H;
+  var raindrops = [];
+  var fogLayers = [];
+  var RAIN_COUNT = 150;
+  var FOG_COUNT = 6;           // 10→6
+  var animRAF = null;
+  var lastFrameTime = 0;
+  var FRAME_INTERVAL = 25;     // ~40 FPS
+
+  /* 离屏 canvas — 缓存静态底图（3 层渐变），仅 resize 时重建 */
+  var bgCache = null;
+  var bgCtx = null;
+
+  /* 预计算雨丝颜色数组，避免每帧字符串拼接 */
+  var rainColorsNear = [];
+  var rainColorsFar = [];
+
+  function buildRainColors() {
+    rainColorsNear = [];
+    rainColorsFar = [];
+    for (var o = 0; o <= 100; o++) {
+      var alpha = (o / 100).toFixed(2);
+      rainColorsNear.push('rgba(55,75,105,' + alpha + ')');
+      rainColorsFar.push('rgba(90,115,145,' + alpha + ')');
+    }
+  }
+
+  function getRainColor(isNear, opacity) {
+    var idx = Math.round(opacity * 100);
+    if (idx < 0) idx = 0;
+    if (idx > 100) idx = 100;
+    return isNear ? rainColorsNear[idx] : rainColorsFar[idx];
+  }
+
+  function buildBgCache() {
+    if (!bgCache) {
+      bgCache = document.createElement('canvas');
+      bgCtx = bgCache.getContext('2d');
+    }
+    bgCache.width = W;
+    bgCache.height = H;
+
+    /* 亮灰底 */
+    var baseGrad = bgCtx.createLinearGradient(0, 0, 0, H);
+    baseGrad.addColorStop(0, '#d5dbe6');
+    baseGrad.addColorStop(0.4, '#dde3ed');
+    baseGrad.addColorStop(0.7, '#d8dfe8');
+    baseGrad.addColorStop(1, '#d0d7e2');
+    bgCtx.fillStyle = baseGrad;
+    bgCtx.fillRect(0, 0, W, H);
+
+    /* 左上晨光 */
+    var glow1 = bgCtx.createRadialGradient(W * 0.08, H * 0.03, 0, W * 0.08, H * 0.03, W * 0.70);
+    glow1.addColorStop(0, 'rgba(245,235,210,0.28)');
+    glow1.addColorStop(0.2, 'rgba(228,222,200,0.16)');
+    glow1.addColorStop(0.5, 'rgba(210,215,220,0.05)');
+    glow1.addColorStop(1, 'rgba(195,205,218,0)');
+    bgCtx.fillStyle = glow1;
+    bgCtx.fillRect(0, 0, W, H);
+
+    /* 右下冷暗 */
+    var glow2 = bgCtx.createRadialGradient(W * 0.92, H * 0.90, 0, W * 0.92, H * 0.90, W * 0.72);
+    glow2.addColorStop(0, 'rgba(130,145,170,0.20)');
+    glow2.addColorStop(0.35, 'rgba(145,158,180,0.09)');
+    glow2.addColorStop(1, 'rgba(180,195,215,0)');
+    bgCtx.fillStyle = glow2;
+    bgCtx.fillRect(0, 0, W, H);
+  }
 
   function resize() {
     W = canvas.width  = window.innerWidth;
     H = canvas.height = window.innerHeight;
     initParticles();
+    buildBgCache();      // resize 时重建底图缓存
   }
 
   function initParticles() {
     raindrops = [];
-    for (let i = 0; i < RAIN_COUNT; i++) {
+    for (var i = 0; i < RAIN_COUNT; i++) {
       raindrops.push({
         x: Math.random() * W,
         y: Math.random() * H,
@@ -4747,7 +4822,7 @@ document.addEventListener('keydown', function(e) {
     }
 
     fogLayers = [];
-    for (let i = 0; i < FOG_COUNT; i++) {
+    for (var i = 0; i < FOG_COUNT; i++) {
       fogLayers.push({
         x: Math.random() * W,
         y: Math.random() * H,
@@ -4760,10 +4835,11 @@ document.addEventListener('keydown', function(e) {
   }
 
   function drawFog() {
-    fogLayers.forEach(f => {
-      const gradient = ctx.createRadialGradient(f.x, f.y, 0, f.x, f.y, f.r);
-      gradient.addColorStop(0, `rgba(155,170,195,${f.opacity})`);
-      gradient.addColorStop(0.3, `rgba(168,182,205,${f.opacity * 0.65})`);
+    for (var i = 0; i < fogLayers.length; i++) {
+      var f = fogLayers[i];
+      var gradient = ctx.createRadialGradient(f.x, f.y, 0, f.x, f.y, f.r);
+      gradient.addColorStop(0, 'rgba(155,170,195,' + f.opacity + ')');
+      gradient.addColorStop(0.3, 'rgba(168,182,205,' + (f.opacity * 0.65) + ')');
       gradient.addColorStop(1, 'rgba(185,198,215,0)');
       ctx.fillStyle = gradient;
       ctx.beginPath();
@@ -4775,18 +4851,17 @@ document.addEventListener('keydown', function(e) {
       if (f.x < -f.r) f.x = W + f.r;
       if (f.y < -f.r) f.y = H + f.r;
       if (f.y > H + f.r) f.y = -f.r;
-    });
+    }
   }
 
   function drawRain() {
-    raindrops.forEach((d) => {
+    for (var i = 0; i < raindrops.length; i++) {
+      var d = raindrops[i];
       ctx.beginPath();
       ctx.moveTo(d.x, d.y);
       ctx.lineTo(d.x + d.wind, d.y + d.len);
-      const isNear = d.opacity > 0.60;
-      ctx.strokeStyle = isNear
-        ? `rgba(55,75,105,${d.opacity})`
-        : `rgba(90,115,145,${d.opacity})`;
+      var isNear = d.opacity > 0.60;
+      ctx.strokeStyle = getRainColor(isNear, d.opacity);
       ctx.lineWidth = isNear ? 2.0 : 1.2;
       ctx.lineCap = 'round';
       ctx.stroke();
@@ -4796,44 +4871,19 @@ document.addEventListener('keydown', function(e) {
       if (d.y > H + 60) { d.y = -60; d.x = Math.random() * W; }
       if (d.x < -60) d.x = W + 60;
       if (d.x > W + 60) d.x = -60;
-    });
+    }
   }
 
   function animate(timestamp) {
-    // 节流：仅当距上一帧 ≥ FRAME_INTERVAL 时才渲染
     if (timestamp - lastFrameTime < FRAME_INTERVAL) {
       animRAF = requestAnimationFrame(animate);
       return;
     }
     lastFrameTime = timestamp;
 
+    /* 仅 clear + 贴底图（bgCache 含 3 层渐变），不逐帧创渐变 */
     ctx.clearRect(0, 0, W, H);
-
-    /* 亮灰底 */
-    const baseGrad = ctx.createLinearGradient(0, 0, 0, H);
-    baseGrad.addColorStop(0, '#d5dbe6');
-    baseGrad.addColorStop(0.4, '#dde3ed');
-    baseGrad.addColorStop(0.7, '#d8dfe8');
-    baseGrad.addColorStop(1, '#d0d7e2');
-    ctx.fillStyle = baseGrad;
-    ctx.fillRect(0, 0, W, H);
-
-    /* 左上晨光 */
-    const glow1 = ctx.createRadialGradient(W * 0.08, H * 0.03, 0, W * 0.08, H * 0.03, W * 0.70);
-    glow1.addColorStop(0, 'rgba(245,235,210,0.28)');
-    glow1.addColorStop(0.2, 'rgba(228,222,200,0.16)');
-    glow1.addColorStop(0.5, 'rgba(210,215,220,0.05)');
-    glow1.addColorStop(1, 'rgba(195,205,218,0)');
-    ctx.fillStyle = glow1;
-    ctx.fillRect(0, 0, W, H);
-
-    /* 右下冷暗 */
-    const glow2 = ctx.createRadialGradient(W * 0.92, H * 0.90, 0, W * 0.92, H * 0.90, W * 0.72);
-    glow2.addColorStop(0, 'rgba(130,145,170,0.20)');
-    glow2.addColorStop(0.35, 'rgba(145,158,180,0.09)');
-    glow2.addColorStop(1, 'rgba(180,195,215,0)');
-    ctx.fillStyle = glow2;
-    ctx.fillRect(0, 0, W, H);
+    ctx.drawImage(bgCache, 0, 0);
 
     drawFog();
     drawRain();
@@ -4852,35 +4902,55 @@ document.addEventListener('keydown', function(e) {
   }
 
   // 页面不可见时暂停动画（省电 + 降温）
-  document.addEventListener('visibilitychange', () => {
+  document.addEventListener('visibilitychange', function() {
     if (document.hidden) stopAnim();
     else startAnim();
   });
 
   window.addEventListener('resize', resize);
-  resize();
+
+  buildRainColors();   // 预计算颜色查表
+  resize();            // 初始化尺寸 → 调 buildBgCache
   startAnim();
-  console.log('◈ 天气引擎 — 节流 ~40fps + visibility暂停 — 已启动');
+  console.log('◈ 天气引擎 — 离屏缓存 + 预计算 + ~40fps — 已启动');
 })();
 
-/* ---- 雨丝覆盖层 — 玻璃上方渲染，确保雨丝始终可见（已节流） ---- */
+/* ---- 雨丝覆盖层 — 玻璃上方渲染，确保雨丝始终可见（已节流 + 预计算） ---- */
 (function initRainOverlay() {
-  const canvas = document.getElementById('rainOverlay');
+  var canvas = document.getElementById('rainOverlay');
   if (!canvas) return;
-  const ctx = canvas.getContext('2d');
+  var ctx = canvas.getContext('2d');
 
-  let OW, OH;
-  const drops = [];
-  const DROP_COUNT = 100;      // 减半：200→100
-  let overlayRAF = null;
-  let lastFrameTime = 0;
-  const FRAME_INTERVAL = 25;   // ~40 FPS
+  var OW, OH;
+  var drops = [];
+  var DROP_COUNT = 80;        // 100→80
+  var overlayRAF = null;
+  var lastFrameTime = 0;
+  var FRAME_INTERVAL = 25;    // ~40 FPS
+
+  /* 预计算雨滴颜色数组，避免每帧字符串拼接 */
+  var dropColors = [];
+
+  function buildDropColors() {
+    dropColors = [];
+    for (var o = 0; o <= 100; o++) {
+      var alpha = (o / 100).toFixed(2);
+      dropColors.push('rgba(70,95,130,' + alpha + ')');
+    }
+  }
+
+  function getDropColor(opacity) {
+    var idx = Math.round(opacity * 100);
+    if (idx < 0) idx = 0;
+    if (idx > 100) idx = 100;
+    return dropColors[idx];
+  }
 
   function resizeOverlay() {
     OW = canvas.width  = window.innerWidth;
     OH = canvas.height = window.innerHeight;
     drops.length = 0;
-    for (let i = 0; i < DROP_COUNT; i++) {
+    for (var i = 0; i < DROP_COUNT; i++) {
       drops.push({
         x: Math.random() * OW,
         y: Math.random() * OH,
@@ -4901,11 +4971,12 @@ document.addEventListener('keydown', function(e) {
     lastFrameTime = timestamp;
 
     ctx.clearRect(0, 0, OW, OH);
-    drops.forEach(d => {
+    for (var i = 0; i < drops.length; i++) {
+      var d = drops[i];
       ctx.beginPath();
       ctx.moveTo(d.x, d.y);
       ctx.lineTo(d.x + d.wind, d.y + d.len);
-      ctx.strokeStyle = `rgba(70,95,130,${d.opacity})`;
+      ctx.strokeStyle = getDropColor(d.opacity);
       ctx.lineWidth = d.width;
       ctx.lineCap = 'round';
       ctx.stroke();
@@ -4915,7 +4986,7 @@ document.addEventListener('keydown', function(e) {
       if (d.y > OH + 80) { d.y = -80; d.x = Math.random() * OW; }
       if (d.x < -80) d.x = OW + 80;
       if (d.x > OW + 80) d.x = -80;
-    });
+    }
     overlayRAF = requestAnimationFrame(drawOverlay);
   }
 
@@ -4930,12 +5001,14 @@ document.addEventListener('keydown', function(e) {
   }
 
   // 页面不可见时暂停
-  document.addEventListener('visibilitychange', () => {
+  document.addEventListener('visibilitychange', function() {
     if (document.hidden) stopOverlay();
     else startOverlay();
   });
 
   window.addEventListener('resize', resizeOverlay);
+
+  buildDropColors();  // 预计算颜色查表
   resizeOverlay();
   startOverlay();
 })();
@@ -4994,7 +5067,7 @@ function generateProfileData(person) {
   const contractStart = person.date;
   let contractEnd = '--';
   if (person.date !== '--' && person.date.includes('-')) {
-    const startY = parseInt(person.date.split('-')[0]);
+    const startY = parseInt(person.date.split('-')[0], 10);
     const contractYears = 1 + Math.floor(rng() * 5);
     const endY = startY + contractYears;
     const endM = person.date.split('-')[1];
@@ -5054,7 +5127,7 @@ function renderPersonnelList() {
   listEl.onclick = function(e) {
     const item = e.target.closest('.personnel-item');
     if (!item) return;
-    const pid = parseInt(item.dataset.pid);
+    const pid = parseInt(item.dataset.pid, 10);
     if (!isNaN(pid)) openProfile(pid);
   };
 }
@@ -5261,7 +5334,7 @@ function renderOrderCards(personId) {
     if (!btn) return;
     e.stopPropagation();
     const action = btn.dataset.action;
-    const oid = parseInt(btn.dataset.oid);
+    const oid = parseInt(btn.dataset.oid, 10);
     if (isNaN(oid)) return;
     if (action === 'pause') togglePauseOrder(oid, personId);
     else if (action === 'complete') openConfirmComplete(oid, personId);
@@ -5298,9 +5371,9 @@ function submitAddCard(personId) {
   if (!orderName) { showToast('请输入单名字', false); return; }
   if (orderName.length > 200) { showToast('⚠️ 单名字不能超过200个字符', false); return; }
   const scope = document.getElementById('acScope').value;
-  const priceRMB = Math.max(0, Math.min(1000, parseInt(document.getElementById('acPriceRMB').value) || 0));
-  const priceCoin = Math.max(0, Math.min(100000000, parseInt(document.getElementById('acPriceCoin').value) || 0));
-  const deadlineHours = Math.max(0, Math.min(1000, parseInt(document.getElementById('acDeadline').value) || 0));
+  const priceRMB = Math.max(0, Math.min(1000, parseInt(document.getElementById('acPriceRMB').value, 10) || 0));
+  const priceCoin = Math.max(0, Math.min(100000000, parseInt(document.getElementById('acPriceCoin').value, 10) || 0));
+  const deadlineHours = Math.max(0, Math.min(1000, parseInt(document.getElementById('acDeadline').value, 10) || 0));
 
   const order = {
     id: orderIdCounter++, orderName, scope, priceRMB, priceCoin, deadlineHours,
@@ -5482,14 +5555,14 @@ function refreshSingleCard(orderId, personId) {
     const addBtn = e.target.closest('#btnAddOrderCard');
     if (addBtn) {
       const pv = document.getElementById('profileView');
-      const pid = parseInt(pv && pv.dataset.personId);
+      const pid = parseInt(pv && pv.dataset.personId, 10);
       if (!isNaN(pid)) showAddCardForm();
       return;
     }
     if (e.target.closest('#btnCancelAddCard')) { hideAddCardForm(); return; }
     if (e.target.closest('#btnSubmitAddCard')) {
       const pv = document.getElementById('profileView');
-      const pid = parseInt(pv && pv.dataset.personId);
+      const pid = parseInt(pv && pv.dataset.personId, 10);
       if (!isNaN(pid)) submitAddCard(pid);
       return;
     }
@@ -5507,7 +5580,7 @@ function closeProfile() {
   const listView = document.getElementById('personnelListView');
   const profileView = document.getElementById('profileView');
   if (profileView) {
-    const pid = parseInt(profileView.dataset.personId);
+    const pid = parseInt(profileView.dataset.personId, 10);
     if (!isNaN(pid)) clearPersonTimers(pid);
     /* 退出动画：快速淡出 */
     profileView.classList.add('anim-exit');
@@ -5547,7 +5620,7 @@ function closeProfile() {
 function navigateProfile(direction) {
   const pv = document.getElementById('profileView');
   if (!pv) return;
-  const curIdx = parseInt(pv.dataset.profileIndex);
+  const curIdx = parseInt(pv.dataset.profileIndex, 10);
   if (isNaN(curIdx) || curIdx < 0) return;
   const total = personnelFiltered.length;
   if (total === 0) return;
@@ -5583,7 +5656,7 @@ function navigateProfile(direction) {
     ].map(f => '<div class="profile-field"><span class="pf-label">' + f.l + '</span><span class="pf-value">' + f.v + '</span></div>').join('');
 
     /* 清理旧定时器 */
-    const oldPid = parseInt(pv.dataset.personId);
+    const oldPid = parseInt(pv.dataset.personId, 10);
     if (!isNaN(oldPid)) clearPersonTimers(oldPid);
 
     pv.dataset.personId = nextPerson.id;
@@ -5623,7 +5696,7 @@ onPageSwitch('personnel', () => {
     pv.style.cssText = '';
     pv.classList.remove('anim-ready', 'anim-exit', 'hero-start', 'hero-expanding', 'hero-done');
     pv.style.display = 'none';
-    const pid = parseInt(pv.dataset.personId);
+    const pid = parseInt(pv.dataset.personId, 10);
     if (!isNaN(pid)) clearPersonTimers(pid);
   }
   if (lv) { lv.style.opacity = ''; lv.style.transition = ''; }
@@ -5635,7 +5708,7 @@ onAnyPageSwitch(function(targetPage) {
     if (pv) {
       pv.style.cssText = '';
       pv.classList.remove('anim-ready', 'anim-exit', 'hero-start', 'hero-expanding', 'hero-done');
-      const pid = parseInt(pv.dataset.personId);
+      const pid = parseInt(pv.dataset.personId, 10);
       if (!isNaN(pid)) clearPersonTimers(pid);
     }
     if (lv) { lv.style.opacity = ''; lv.style.transition = ''; }
@@ -5793,7 +5866,7 @@ function renderOverviewTable(year, month) {
   tableBody.onclick = function(e) {
     const row = e.target.closest('tr[data-pid]');
     if (!row) return;
-    const pid = parseInt(row.dataset.pid);
+    const pid = parseInt(row.dataset.pid, 10);
     if (!isNaN(pid)) openAttDetail(pid, year, month);
   };
 
@@ -6292,14 +6365,14 @@ function submitExamCandidate() {
     if (e.target.id === 'examAddOverlay') { hideExamAddForm(); return; }
     /* 详情弹窗按钮 — 从 overlay dataset 取当前考生ID */
     const overlay = document.getElementById('examDetailOverlay');
-    const oeid = overlay ? parseInt(overlay.dataset.eid) : NaN;
+    const oeid = overlay ? parseInt(overlay.dataset.eid, 10) : NaN;
     if (e.target.closest('#edPlusOne')) { if (!isNaN(oeid)) incrementExam(oeid); return; }
     if (e.target.closest('#edPass')) { if (!isNaN(oeid)) passExamDirectly(oeid); return; }
     if (e.target.closest('#edReject')) { if (!isNaN(oeid)) rejectExam(oeid); return; }
     /* 考生卡片点击 → 展开详情 */
     const card = e.target.closest('.exam-card');
     if (card) {
-      const eid = parseInt(card.dataset.eid);
+      const eid = parseInt(card.dataset.eid, 10);
       if (!isNaN(eid)) openExamDetail(eid);
       return;
     }
@@ -6744,7 +6817,7 @@ function resetTrainView() {
     });
 
     if (pageSizeEl) pageSizeEl.addEventListener('change', function() {
-      pageSize = parseInt(this.value);
+      pageSize = parseInt(this.value, 10);
       currentPage = 1;
       renderCards();
       cloudAutoSave();
@@ -6984,7 +7057,7 @@ document.addEventListener('click', function(e) {
           this.classList.add(clsPrefix + newStatus);
 
           /* 更新数据 */
-          const dayNum = parseInt(this.querySelector('.cal-num')?.textContent);
+          const dayNum = parseInt(this.querySelector('.cal-num')?.textContent, 10);
           if (dayNum && attDetailPersonId) {
             const allData = generateAttendanceData(attCurrentYear, attCurrentMonth);
             const entry = allData.find(e => e.personId === attDetailPersonId);
@@ -7042,7 +7115,7 @@ document.addEventListener('click', function(e) {
             openEditPopover(`编辑 ${person.name} — ${monthText}`, [
               { label: fieldLabel, key: 'value', value: rawVal, type: 'number' }
             ], cell, function(result) {
-              const newVal = parseInt(result.value) || 0;
+              const newVal = parseInt(result.value, 10) || 0;
               d[fieldKey] = newVal;
               d.total = d.baseSalary + d.bonus + d.overtime - d.deduction;
               const fmt = n => '¥' + n.toLocaleString('zh-CN');
@@ -7112,7 +7185,7 @@ document.addEventListener('click', function(e) {
           openEditPopover(`编辑 ${personName}`, [
             { label: label, key: 'value', value: String(curVal), type: 'number' }
           ], e.target, function(result) {
-            const v = Math.min(100, Math.max(0, parseInt(result.value) || 0));
+            const v = Math.min(100, Math.max(0, parseInt(result.value, 10) || 0));
             if (field === 'progress') {
               entry.progress = v;
               entry.done = v >= 100;
@@ -7139,6 +7212,8 @@ setTimeout(initCloud, 10);
 
 // 关闭页面/标签前强制保存本地数据（防止3秒防抖窗口内数据丢失）
 window.addEventListener('beforeunload', () => {
+  if (__cloudPollTimer) { clearInterval(__cloudPollTimer); __cloudPollTimer = null; }
+  for (var tid in orderTimers) { clearInterval(orderTimers[tid]); }
   try {
     localStorage.setItem(LS_KEYS.people, JSON.stringify(people));
     localStorage.setItem(LS_KEYS.orders, JSON.stringify(personOrders));
