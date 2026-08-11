@@ -2999,6 +2999,51 @@ body:not(.edit-mode) .settings-wrap .setting-select {
   </div>
 </div>
 
+<!-- ==================== 团队设置模态框 ==================== -->
+<div class="modal-overlay hidden" id="teamSetupOverlay">
+  <div class="modal modal-sm" style="max-width:420px;">
+    <div class="modal-header">
+      👥 团队设置
+      <button class="modal-close" id="teamSetupClose">✕</button>
+    </div>
+    <div class="modal-body" style="text-align:center;">
+      <p style="font-size:13px;color:var(--text-2);margin-bottom:16px;">
+        同一团队码的所有成员共享全部数据
+      </p>
+
+      <!-- 创建新团队 -->
+      <div style="background:var(--glass-card);border-radius:14px;padding:14px;margin-bottom:12px;">
+        <p style="font-weight:700;font-size:14px;margin:0 0 8px;">✨ 创建新团队</p>
+        <input id="teamCreateName" placeholder="团队名称（如：俱乐部2024）"
+          style="width:100%;padding:8px 12px;border-radius:8px;border:0.5px solid rgba(255,255,255,0.2);
+            background:rgba(255,255,255,0.06);color:var(--text-1);font-size:13px;margin-bottom:8px;">
+        <button id="teamCreateBtn" class="btn btn-glass"
+          style="width:100%;background:var(--accent, #4da3d4);color:#fff;font-weight:600;">
+          创建团队 →
+        </button>
+        <p style="font-size:10px;color:var(--text-3);margin:6px 0 0;">系统自动生成6位团队码</p>
+      </div>
+
+      <!-- 分隔线 -->
+      <div style="text-align:center;color:var(--text-3);margin:10px 0;font-size:12px;">—— 或 ——</div>
+
+      <!-- 加入已有团队 -->
+      <div style="background:var(--glass-card);border-radius:14px;padding:14px;">
+        <p style="font-weight:700;font-size:14px;margin:0 0 8px;">🔗 加入已有团队</p>
+        <input id="teamJoinCode" placeholder="输入6位团队码"
+          maxlength="6" autocomplete="off"
+          style="width:100%;padding:8px 12px;border-radius:8px;border:0.5px solid rgba(255,255,255,0.2);
+            background:rgba(255,255,255,0.06);color:var(--text-1);font-size:15px;text-transform:uppercase;
+            text-align:center;letter-spacing:4px;margin-bottom:8px;">
+        <button id="teamJoinBtn" class="btn btn-glass"
+          style="width:100%;font-weight:600;">
+          加入团队 →
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ==================== 人员档案详情视图（根层级，不受 page-panel transform 影响） ==================== -->
 <div class="profile-view" id="profileView" style="display:none;">
   <div class="profile-back-row">
@@ -3328,20 +3373,28 @@ let cloudReady = true;
 console.log('[Cloud] REST 内联客户端已就绪 (fetch 模式)');
 
 
-// --- 用户身份（localStorage，简单名字区分） ---
+// --- 团队身份（localStorage，同一团队码 = 共享全部数据） ---
 let __cloudUserId = null;
 
-function getUserId() {
-  if (__cloudUserId) return __cloudUserId;
-  let uid = localStorage.getItem('clubapp_user_id');
-  if (!uid) {
-    uid = 'user_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
-    localStorage.setItem('clubapp_user_id', uid);
-  }
-  __cloudUserId = uid;
-  return uid;
+/** 检查是否已加入团队 */
+function hasTeam() {
+  return !!localStorage.getItem('clubapp_team_id');
 }
 
+/** 获取当前团队 ID（即团队码，用于 Supabase 数据过滤） */
+function getUserId() {
+  if (__cloudUserId) return __cloudUserId;
+  const uid = localStorage.getItem('clubapp_team_id');
+  if (uid) __cloudUserId = uid;
+  return uid || null;
+}
+
+/** 获取团队码（用于展示/复制） */
+function getTeamCode() {
+  return localStorage.getItem('clubapp_team_id') || '';
+}
+
+// --- 个人昵称（每台设备独立） ---
 function getUserName() {
   return localStorage.getItem('clubapp_user_name') || '未命名用户';
 }
@@ -3350,16 +3403,56 @@ function setUserName(name) {
   localStorage.setItem('clubapp_user_name', name);
 }
 
-// --- 确保用户记录存在 ---
+// --- 团队操作 ---
+
+/** 生成6位易读团队码（排除易混淆字符 0/O/1/I/l） */
+function generateTeamCode() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let code = '';
+  for (let i = 0; i < 6; i++) {
+    code += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return code;
+}
+
+/** 创建新团队：生成团队码，存 localStorage，上传到 Supabase users 表 */
+function createTeam(name) {
+  const code = generateTeamCode();
+  localStorage.setItem('clubapp_team_id', code);
+  localStorage.setItem('clubapp_team_name', name || '我的团队');
+  __cloudUserId = code;
+  console.log('[Team] 创建团队:', name, '→', code);
+  return code;
+}
+
+/** 加入已有团队：保存团队码到 localStorage */
+function joinTeam(code) {
+  code = code.toUpperCase().trim();
+  localStorage.setItem('clubapp_team_id', code);
+  localStorage.setItem('clubapp_team_name', code);
+  __cloudUserId = code;
+  console.log('[Team] 加入团队:', code);
+  return code;
+}
+
+/** 离开团队：清除团队码，清除云端缓存引用 */
+function leaveTeam() {
+  localStorage.removeItem('clubapp_team_id');
+  localStorage.removeItem('clubapp_team_name');
+  __cloudUserId = null;
+  console.log('[Team] 已离开团队');
+}
+
+// --- 确保团队记录存在于 Supabase users 表 ---
 async function ensureCloudUser() {
   if (!cloudReady) return;
   const uid = getUserId();
-  const name = getUserName();
-  // 如果用户记录不存在则创建
+  if (!uid) return;
+  const name = localStorage.getItem('clubapp_team_name') || uid;
   const { data: existing } = await sb.from('users').select('id').eq('id', uid).maybeSingle();
   if (!existing) {
     const { error: insErr } = await sb.from('users').insert({ id: uid, name });
-    if (insErr) console.warn('[Cloud] 用户注册失败:', insErr.message);
+    if (insErr) console.warn('[Cloud] 团队注册失败:', insErr.message);
   }
 }
 
@@ -3683,20 +3776,46 @@ function cloudAutoSave() {
 }
 
 // ================================================================
-// 登录/用户切换 UI：页面右上角用户名区域
+// 团队/用户 UI：页面右上角（团队码 + 昵称 + 云端按钮）
 // ================================================================
 function showCloudUserUI() {
-  // 在 topbar 右侧注入用户名显示 + 云端按钮
   const headerRight = document.querySelector('.topbar-actions');
   if (!headerRight) return;
-
-  // 避免重复注入
   if (document.getElementById('cloudUserBtn')) return;
 
   const container = document.createElement('div');
   container.id = 'cloudUserBar';
   container.style.cssText = 'display:flex;align-items:center;gap:8px;margin-left:12px;';
 
+  // ---- 团队码显示 ----
+  if (hasTeam()) {
+    const teamBadge = document.createElement('span');
+    teamBadge.id = 'teamBadge';
+    teamBadge.textContent = '🔑 ' + getTeamCode();
+    teamBadge.title = '点击复制团队码';
+    teamBadge.style.cssText = 'font-size:12px;font-weight:700;color:var(--accent, #4da3d4);'
+      + 'background:var(--glass-card);padding:4px 10px;border-radius:20px;'
+      + 'border:0.5px solid rgba(255,255,255,0.15);cursor:pointer;user-select:all;';
+    teamBadge.onclick = () => {
+      navigator.clipboard.writeText(getTeamCode()).then(() => {
+        showToast('团队码已复制: ' + getTeamCode(), true);
+      }).catch(() => {
+        prompt('复制此团队码分享给成员：', getTeamCode());
+      });
+    };
+    container.appendChild(teamBadge);
+  } else {
+    const setupBtn = document.createElement('button');
+    setupBtn.textContent = '👥 加入团队';
+    setupBtn.title = '创建或加入团队，开始共享数据';
+    setupBtn.style.cssText = 'font-size:12px;font-weight:600;padding:4px 12px;border-radius:20px;'
+      + 'border:0.5px solid rgba(255,255,255,0.25);'
+      + 'background:var(--accent, #4da3d4);color:#fff;cursor:pointer;';
+    setupBtn.onclick = showTeamSetupModal;
+    container.appendChild(setupBtn);
+  }
+
+  // ---- 个人昵称 ----
   const nameSpan = document.createElement('span');
   nameSpan.id = 'cloudUserName';
   nameSpan.textContent = getUserName();
@@ -3712,6 +3831,7 @@ function showCloudUserUI() {
     }
   };
 
+  // ---- 同步/加载按钮 ----
   const syncBtn = document.createElement('button');
   syncBtn.textContent = '☁';
   syncBtn.title = '同步到云端';
@@ -3754,6 +3874,93 @@ function showCloudUserUI() {
   container.appendChild(syncBtn);
   container.appendChild(loadBtn);
   headerRight.appendChild(container);
+}
+
+// ================================================================
+// 团队设置模态框逻辑
+// ================================================================
+
+/** 显示团队设置模态框 */
+function showTeamSetupModal() {
+  const overlay = document.getElementById('teamSetupOverlay');
+  if (overlay) overlay.classList.remove('hidden');
+}
+
+/** 隐藏团队设置模态框 */
+function hideTeamSetupModal() {
+  const overlay = document.getElementById('teamSetupOverlay');
+  if (overlay) overlay.classList.add('hidden');
+}
+
+/** 完成团队设置后：关闭弹窗、刷新 UI、重新同步 */
+function _onTeamReady() {
+  hideTeamSetupModal();
+  // 重新渲染顶部栏团队码
+  const oldBar = document.getElementById('cloudUserBar');
+  if (oldBar) oldBar.remove();
+  showCloudUserUI();
+  // 保存当前本地数据到团队云端
+  saveLocalData();
+  if (cloudReady && hasTeam()) {
+    cloudSaveAll().then(() => cloudLoadAll()).then(() => {
+      filteredPeople = [...people];
+      renderCards();
+      showToast('团队已就绪，数据已同步 ✓', true);
+    }).catch(() => {
+      showToast('团队已就绪，云端暂不可用', false);
+    });
+  } else {
+    showToast('团队已就绪 ✓', true);
+  }
+}
+
+// 绑定团队设置弹窗事件（DOM 加载后执行）
+function _bindTeamSetupEvents() {
+  const overlay = document.getElementById('teamSetupOverlay');
+  if (!overlay) return;
+
+  // 关闭按钮
+  document.getElementById('teamSetupClose').onclick = hideTeamSetupModal;
+  // 点击遮罩关闭
+  overlay.addEventListener('click', function(e) {
+    if (e.target === overlay) hideTeamSetupModal();
+  });
+
+  // 创建团队
+  document.getElementById('teamCreateBtn').onclick = function() {
+    const nameInput = document.getElementById('teamCreateName');
+    const name = nameInput.value.trim() || '我的团队';
+    const code = createTeam(name);
+    showToast('团队已创建: ' + code, true);
+    _onTeamReady();
+  };
+
+  // 加入团队
+  document.getElementById('teamJoinBtn').onclick = function() {
+    const codeInput = document.getElementById('teamJoinCode');
+    const code = codeInput.value.trim();
+    if (code.length < 3) {
+      showToast('请输入有效的团队码', false);
+      return;
+    }
+    joinTeam(code);
+    _onTeamReady();
+  };
+
+  // 回车键加入团队
+  document.getElementById('teamJoinCode').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') document.getElementById('teamJoinBtn').click();
+  });
+  document.getElementById('teamCreateName').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') document.getElementById('teamCreateBtn').click();
+  });
+}
+
+// --- 页面加载时绑定团队设置事件 ---
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', _bindTeamSetupEvents);
+} else {
+  _bindTeamSetupEvents();
 }
 
 // ================================================================
@@ -3841,6 +4048,12 @@ async function initCloud() {
   // ② 延迟尝试云端同步（后台静默）
   setTimeout(async () => {
     try {
+      // 检查是否已加入团队
+      if (!hasTeam()) {
+        console.log('[Team] ⚠ 尚未加入团队，仅使用本地存储');
+        showCloudUserUI();
+        return;
+      }
       // 先上传本地数据（增量同步），再下载云端数据，避免覆盖未上传的本地修改
       if (people.length > 0) await cloudPersonnel.save();
       await cloudLoadAll();
@@ -3848,7 +4061,7 @@ async function initCloud() {
       renderCards();
       showCloudUserUI();
       __cloudLoadDone = true;
-      console.log('[Cloud] 🚀 云端引擎已就绪');
+      console.log('[Cloud] 🚀 云端引擎已就绪 (团队: ' + getTeamCode() + ')');
     } catch (e) {
       console.warn('[Cloud] 云端暂不可用，使用本地数据:', e.message);
       showCloudUserUI();
