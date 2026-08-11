@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; connect-src 'self' https://qstrmmaihqyguttnkyvt.supabase.co; img-src 'self' data:;">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://qstrmmaihqyguttnkyvt.supabase.co; img-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none';">
 <title>人员管理系统</title>
 <!--
   人员管理系统 — iOS 液态玻璃风格
@@ -96,6 +96,7 @@ body {
   min-height: 100vh;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
+  scrollbar-gutter: stable;
 
   /* 透明 — 让 Canvas 天气层完全穿透 */
   background: transparent;
@@ -963,7 +964,7 @@ body {
   from { opacity: 0; transform: scale(0.82) translateY(16px); }
   to   { opacity: 1; transform: scale(1)    translateY(0); }
 }
-.order-card            { animation: cardPopIn 0.38s var(--ease-out-back) both; }
+.order-card            { animation: cardPopIn 0.38s var(--ease-out-back) forwards; }
 .order-card:nth-child(1)  { animation-delay: 0.00s; }
 .order-card:nth-child(2)  { animation-delay: 0.06s; }
 .order-card:nth-child(3)  { animation-delay: 0.10s; }
@@ -2253,7 +2254,6 @@ input[type="range"]#setZoom::-moz-range-thumb {
 /* 页面容器默认状态 */
 .page-panel {
   opacity: 1;
-  transform: translateX(0);
   transition:
     opacity var(--page-transition) var(--ease-out-expo),
     transform var(--page-transition) var(--ease-out-expo);
@@ -2909,7 +2909,7 @@ body:not(.edit-mode) .settings-wrap .setting-select {
           <div class="setting-row">
             <div><div class="sr-label">每页显示</div><div class="sr-desc">人员卡片每页数量</div></div>
             <select class="setting-select" id="setPageSize">
-              <option value="8">8 张</option><option value="12" selected>12 张</option><option value="16">16 张</option><option value="24">24 张</option>
+              <option value="8">8 张</option><option value="12" selected>12 张</option><option value="16">16 张</option><option value="24">24 张</option><option value="0">全部</option>
             </select>
           </div>
         </div>
@@ -3571,6 +3571,31 @@ const cloudPersonnel = {
     orderIdCounter = maxOrderId + 1;
 
     console.log(`[Cloud] ✓ 人员档案已加载 (${people.length}人, ${ordData ? ordData.length : 0}单)`);
+  },
+
+  /** 直接删除单个人——立即操作云端，不依赖 autoSave（解决本地删了云端还在的问题） */
+  async deletePersonDirect(id) {
+    if (!cloudReady) return;
+    try {
+      const uid = getUserId();
+      await sb.from('orders').delete().eq('person_id', id).eq('user_id', uid);
+      await sb.from('personnel').delete().eq('id', id).eq('user_id', uid);
+      console.log('[Cloud] 🗑 直接删除人员 id=' + id + ' 及其订单');
+    } catch (e) { console.warn('[Cloud] 直接删除失败:', e); }
+  },
+
+  /** 直接 upsert 单个人——立即操作云端 */
+  async upsertPersonDirect(p) {
+    if (!cloudReady) return;
+    try {
+      const uid = getUserId();
+      await sb.from('personnel').upsert({
+        id: p.id, user_id: uid, name: p.name, code: p.code,
+        dept: p.dept, title: p.title, phone: p.phone || '',
+        date: p.date || '', status: p.status || 'active'
+      }, { onConflict: 'user_id,id' });
+      console.log('[Cloud] ⬆ 直接保存人员 id=' + p.id);
+    } catch (e) { console.warn('[Cloud] 直接保存失败:', e); }
   }
 };
 
@@ -3926,8 +3951,8 @@ let filteredPeople = [...people];
    ================================================================ */
 
 function renderCards() {
-  const start = (currentPage - 1) * pageSize;
-  const pageData = filteredPeople.slice(start, start + pageSize);
+  // pageSize=0 表示"全部显示"
+  const pageData = pageSize === 0 ? filteredPeople : filteredPeople.slice((currentPage - 1) * pageSize, currentPage * pageSize);
   const grid = document.getElementById('personGrid');
   if (!grid) return;
 
@@ -3972,6 +3997,15 @@ function renderCards() {
    ================================================================ */
 
 function renderPagination() {
+  // pageSize=0 表示"全部显示"，隐藏分页
+  if (pageSize === 0) {
+    const pageInfo = document.getElementById('pageInfo');
+    if (pageInfo) pageInfo.textContent = `共 ${filteredPeople.length} 条（全部显示）`;
+    const btns = document.getElementById('pageBtns');
+    if (btns) btns.innerHTML = '';
+    return;
+  }
+
   const totalPages = Math.ceil(filteredPeople.length / pageSize) || 1;
   const pageInfo = document.getElementById('pageInfo');
   if (pageInfo) pageInfo.textContent =
@@ -3994,7 +4028,7 @@ function renderPagination() {
 }
 
 function goPage(p) {
-  const total = Math.ceil(filteredPeople.length / pageSize) || 1;
+  const total = pageSize === 0 ? 1 : Math.ceil(filteredPeople.length / pageSize) || 1;
   if (p < 1 || p > total) return;
   currentPage = p;
   renderCards();
@@ -4057,8 +4091,8 @@ document.getElementById('btnAddPerson').onclick = () => {
 document.getElementById('modalSave').onclick = function() {
   if (!guardEdit('保存人员')) return;
   const editId = document.getElementById('formEditId').value;
-  const name   = document.getElementById('formName').value.trim();
-  const code   = document.getElementById('formCode').value.trim();
+  const name   = document.getElementById('formName').value.trim().replace(/[<>&]/g, '');
+  const code   = document.getElementById('formCode').value.trim().replace(/[<>&]/g, '');
   const dept   = document.getElementById('formDept').value;
   const title  = document.getElementById('formTitle').value;
   const date   = document.getElementById('formDate').value || new Date().toISOString().slice(0,16);
@@ -4077,10 +4111,16 @@ document.getElementById('modalSave').onclick = function() {
 
   if (editId) {
     const idx = people.findIndex(p => p.id === parseInt(editId));
-    if (idx !== -1) { people[idx] = { ...people[idx], ...payload }; showToast('人员信息已更新', true); cloudAutoSave(); }
+    if (idx !== -1) {
+      people[idx] = { ...people[idx], ...payload };
+      cloudPersonnel.upsertPersonDirect(people[idx]);  // 直接写云端，不依赖 autoSave
+      showToast('人员信息已更新', true);
+    }
   } else {
-    people.unshift({ id: nextId++, ...payload });
-    showToast('人员添加成功', true); cloudAutoSave();
+    const newPerson = { id: nextId++, ...payload };
+    people.unshift(newPerson);
+    cloudPersonnel.upsertPersonDirect(newPerson);  // 直接写云端
+    showToast('人员添加成功', true);
   }
 
   filteredPeople = [...people];
@@ -4126,22 +4166,25 @@ document.getElementById('deleteModalOverlay').addEventListener('click', function
   if (e.target === this) closeDeleteModal();
 });
 
-document.getElementById('deleteModalConfirm').onclick = function() {
+document.getElementById('deleteModalConfirm').onclick = async function() {
   if (!guardEdit('删除人员')) return;
   if (pendingDeleteId) {
-    // 清理该人员的订单和定时器（防止内存泄露 + 孤儿数据同步到云端）
-    if (personOrders[pendingDeleteId]) {
-      for (const o of personOrders[pendingDeleteId]) {
+    const delId = pendingDeleteId;
+    // 清理该人员的订单和定时器（防止内存泄露）
+    if (personOrders[delId]) {
+      for (const o of personOrders[delId]) {
         if (orderTimers[o.id]) { clearInterval(orderTimers[o.id]); delete orderTimers[o.id]; }
       }
-      delete personOrders[pendingDeleteId];
+      delete personOrders[delId];
     }
-    people = people.filter(p => p.id !== pendingDeleteId);
-    filteredPeople = filteredPeople.filter(p => p.id !== pendingDeleteId);
-    showToast('已删除', true); cloudAutoSave();
+    // 先直接删云端，再删本地（确保云端必删）
+    await cloudPersonnel.deletePersonDirect(delId);
+    people = people.filter(p => p.id !== delId);
+    filteredPeople = filteredPeople.filter(p => p.id !== delId);
+    showToast('已删除', true);
     closeDeleteModal();
     renderCards();
-    renderPersonnelList();  // 同步更新列表视图
+    renderPersonnelList();
   }
 };
 
@@ -4178,15 +4221,19 @@ function openDetail(id, cardEl) {
   const p = people.find(x => x.id === id);
   if (!p) return;
   detailPersonId = id;
-  detailCardRect = cardEl.getBoundingClientRect();
   detailIsOpen = true;
 
   const overlay = document.getElementById('detailOverlay');
   const sheet   = document.getElementById('detailSheet');
   const inner   = document.getElementById('detailInner');
 
-  // 锁定背后页面滚动
+  // 先清空上次残留的内联样式（避免从旧位置开始过渡）
+  sheet.style.cssText = '';
+
+  // 锁定背后页面滚动（必须在 getBoundingClientRect 之前，避免滚动条消失导致布局偏移）
   document.body.style.overflow = 'hidden';
+
+  detailCardRect = cardEl.getBoundingClientRect();
 
   // 1) 填充内容
   buildDetailContent(p);
@@ -4240,6 +4287,7 @@ function closeDetail() {
   setTimeout(() => {
     overlay.classList.add('hidden');
     overlay.classList.remove('closing');
+    sheet.style.cssText = '';  // 清理内联样式，避免下次打开闪现
     detailPersonId = null;
     detailCardRect = null;
     detailIsClosing = false;
@@ -4324,13 +4372,13 @@ function inlineEditField(person, field, el) {
   const newVal = prompt(`编辑 ${fieldLabel}`, currentVal);
   if (newVal === null || newVal === currentVal) return;
 
-  // 更新数据
-  person[field] = newVal;
+  // 更新数据（净化输入）
+  person[field] = newVal.trim().replace(/[<>&]/g, '');
   // 刷新卡片列表 + 详情内容（buildDetailContent 内部会重新绑定事件）
   renderCards();
   renderPersonnelList();
   buildDetailContent(person);
-  cloudAutoSave();
+  cloudPersonnel.upsertPersonDirect(person);  // 直接写云端
   showToast('已更新 ' + fieldLabel, true);
 }
 
@@ -4598,8 +4646,11 @@ document.addEventListener('keydown', function(e) {
   let W, H;
   let raindrops = [];
   let fogLayers = [];
-  const RAIN_COUNT = 600;
-  const FOG_COUNT = 20;
+  const RAIN_COUNT = 300;      // 减半：600→300
+  const FOG_COUNT = 10;        // 减半：20→10
+  let animRAF = null;
+  let lastFrameTime = 0;
+  const FRAME_INTERVAL = 60;   // ~16.6 FPS（每 60ms 一帧），手机不再发热
 
   function resize() {
     W = canvas.width  = window.innerWidth;
@@ -4615,7 +4666,7 @@ document.addEventListener('keydown', function(e) {
         y: Math.random() * H,
         len: 12 + Math.random() * 40,
         speed: 4 + Math.random() * 14,
-        opacity: 0.35 + Math.random() * 0.55,  // 0.35~0.90 极高对比
+        opacity: 0.35 + Math.random() * 0.55,
         wind: 0.5 + Math.random() * 1.5
       });
     }
@@ -4628,7 +4679,7 @@ document.addEventListener('keydown', function(e) {
         r: 250 + Math.random() * 500,
         dx: (Math.random() - 0.5) * 0.55,
         dy: -0.10 - Math.random() * 0.45,
-        opacity: 0.10 + Math.random() * 0.25  // 浓雾
+        opacity: 0.10 + Math.random() * 0.25
       });
     }
   }
@@ -4653,15 +4704,14 @@ document.addEventListener('keydown', function(e) {
   }
 
   function drawRain() {
-    raindrops.forEach((d, i) => {
+    raindrops.forEach((d) => {
       ctx.beginPath();
       ctx.moveTo(d.x, d.y);
       ctx.lineTo(d.x + d.wind, d.y + d.len);
-      // 近雨浓黑，远雨浅灰
       const isNear = d.opacity > 0.60;
       ctx.strokeStyle = isNear
-        ? `rgba(55,75,105,${d.opacity})`     // 近雨：深蓝黑
-        : `rgba(90,115,145,${d.opacity})`;   // 远雨：灰蓝
+        ? `rgba(55,75,105,${d.opacity})`
+        : `rgba(90,115,145,${d.opacity})`;
       ctx.lineWidth = isNear ? 2.0 : 1.2;
       ctx.lineCap = 'round';
       ctx.stroke();
@@ -4674,10 +4724,17 @@ document.addEventListener('keydown', function(e) {
     });
   }
 
-  function animate() {
+  function animate(timestamp) {
+    // 节流：仅当距上一帧 ≥ FRAME_INTERVAL 时才渲染
+    if (timestamp - lastFrameTime < FRAME_INTERVAL) {
+      animRAF = requestAnimationFrame(animate);
+      return;
+    }
+    lastFrameTime = timestamp;
+
     ctx.clearRect(0, 0, W, H);
 
-    /* 亮灰底 — 让深色雨丝形成强烈对比 */
+    /* 亮灰底 */
     const baseGrad = ctx.createLinearGradient(0, 0, 0, H);
     baseGrad.addColorStop(0, '#d5dbe6');
     baseGrad.addColorStop(0.4, '#dde3ed');
@@ -4706,16 +4763,32 @@ document.addEventListener('keydown', function(e) {
     drawFog();
     drawRain();
 
-    requestAnimationFrame(animate);
+    animRAF = requestAnimationFrame(animate);
   }
+
+  function startAnim() {
+    if (animRAF) return;
+    lastFrameTime = 0;
+    animRAF = requestAnimationFrame(animate);
+  }
+
+  function stopAnim() {
+    if (animRAF) { cancelAnimationFrame(animRAF); animRAF = null; }
+  }
+
+  // 页面不可见时暂停动画（省电 + 降温）
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) stopAnim();
+    else startAnim();
+  });
 
   window.addEventListener('resize', resize);
   resize();
-  animate();
-  console.log('◈ 天气引擎 — 清晨毛毛雨 + 雾霭 — 已启动');
+  startAnim();
+  console.log('◈ 天气引擎 — 节流 ~16fps + visibility暂停 — 已启动');
 })();
 
-/* ---- 雨丝覆盖层 — 玻璃上方渲染，确保雨丝始终可见 ---- */
+/* ---- 雨丝覆盖层 — 玻璃上方渲染，确保雨丝始终可见（已节流） ---- */
 (function initRainOverlay() {
   const canvas = document.getElementById('rainOverlay');
   if (!canvas) return;
@@ -4723,7 +4796,10 @@ document.addEventListener('keydown', function(e) {
 
   let OW, OH;
   const drops = [];
-  const DROP_COUNT = 200;
+  const DROP_COUNT = 100;      // 减半：200→100
+  let overlayRAF = null;
+  let lastFrameTime = 0;
+  const FRAME_INTERVAL = 60;   // ~16.6 FPS
 
   function resizeOverlay() {
     OW = canvas.width  = window.innerWidth;
@@ -4742,7 +4818,13 @@ document.addEventListener('keydown', function(e) {
     }
   }
 
-  function drawOverlay() {
+  function drawOverlay(timestamp) {
+    if (timestamp - lastFrameTime < FRAME_INTERVAL) {
+      overlayRAF = requestAnimationFrame(drawOverlay);
+      return;
+    }
+    lastFrameTime = timestamp;
+
     ctx.clearRect(0, 0, OW, OH);
     drops.forEach(d => {
       ctx.beginPath();
@@ -4759,12 +4841,28 @@ document.addEventListener('keydown', function(e) {
       if (d.x < -80) d.x = OW + 80;
       if (d.x > OW + 80) d.x = -80;
     });
-    requestAnimationFrame(drawOverlay);
+    overlayRAF = requestAnimationFrame(drawOverlay);
   }
+
+  function startOverlay() {
+    if (overlayRAF) return;
+    lastFrameTime = 0;
+    overlayRAF = requestAnimationFrame(drawOverlay);
+  }
+
+  function stopOverlay() {
+    if (overlayRAF) { cancelAnimationFrame(overlayRAF); overlayRAF = null; }
+  }
+
+  // 页面不可见时暂停
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) stopOverlay();
+    else startOverlay();
+  });
 
   window.addEventListener('resize', resizeOverlay);
   resizeOverlay();
-  drawOverlay();
+  startOverlay();
 })();
 
 console.log('◈ 人员管理系统 — 阶段1 · 子阶段A — 加载完成');
@@ -5121,8 +5219,9 @@ function hideAddCardForm() {
 
 function submitAddCard(personId) {
   if (!guardEdit('添加订单')) return;
-  const orderName = document.getElementById('acOrderName').value.trim();
+  const orderName = document.getElementById('acOrderName').value.trim().replace(/[<>&]/g, '');
   if (!orderName) { showToast('请输入单名字', false); return; }
+  if (orderName.length > 200) { showToast('⚠️ 单名字不能超过200个字符', false); return; }
   const scope = document.getElementById('acScope').value;
   const priceRMB = Math.max(0, Math.min(1000, parseInt(document.getElementById('acPriceRMB').value) || 0));
   const priceCoin = Math.max(0, Math.min(100000000, parseInt(document.getElementById('acPriceCoin').value) || 0));
@@ -5211,15 +5310,17 @@ function executeConfirmComplete() {
 
 /* ---- 删除订单 ---- */
 
-function deleteOrderCard(orderId, personId) {
+async function deleteOrderCard(orderId, personId) {
   if (!guardEdit('删除订单')) return;
   const order = getOrders(personId).find(o => o.id === orderId);
   if (!order) return;
   if (!confirm('确定要删除订单「' + order.orderName + '」吗？此操作不可撤销。')) return;
   personOrders[personId] = getOrders(personId).filter(o => o.id !== orderId);
   if (orderTimers[orderId]) { clearInterval(orderTimers[orderId]); delete orderTimers[orderId]; }
+  // 直接删除云端订单
+  try { await sb.from('orders').delete().eq('id', orderId).eq('user_id', getUserId()); } catch(_){}
   renderOrderCards(personId);
-  showToast('订单「' + order.orderName + '」已删除', true); cloudAutoSave();
+  showToast('订单「' + order.orderName + '」已删除', true);
 }
 
 /* ---- 倒计时定时器 ---- */
@@ -6055,8 +6156,9 @@ function hideExamAddForm() {
 }
 
 function submitExamCandidate() {
-  const name = document.getElementById('efName').value.trim();
+  const name = document.getElementById('efName').value.trim().replace(/[<>&]/g, '');
   if (!name) { showToast('请输入考生名字', false); return; }
+  if (name.length > 100) { showToast('⚠️ 考生名字不能超过100个字符', false); return; }
 
   /* 检查同名 */
   if (examCandidates.some(c => c.name === name && c.status === 'pending')) {
@@ -6738,7 +6840,8 @@ function openEditPopover(title, fields, target, onSave) {
   document.getElementById('epSave').onclick = () => {
     const result = {};
     fieldsEl.querySelectorAll('[data-key]').forEach(el => {
-      result[el.dataset.key] = el.tagName === 'SELECT' ? el.value : el.value.trim();
+      const raw = el.tagName === 'SELECT' ? el.value : el.value.trim();
+      result[el.dataset.key] = typeof raw === 'string' ? raw.replace(/[<>&]/g, '') : raw;
     });
     pop.classList.remove('show');
     if (onSave) onSave(result);
