@@ -3664,7 +3664,7 @@ async function cloudSaveAll() {
 }
 
 // ================================================================
-// 自动保存（防抖：每次数据变更后 3s 自动同步，合并频繁写入）
+// 自动保存（500ms 防抖 + 2s 最大等待，接近实时）
 // ================================================================
 let cloudSaveTimer = null;
 let cloudDirty = false;
@@ -3673,14 +3673,40 @@ function cloudAutoSave() {
   if (!cloudReady) return;
   if (!cloudDirty) { cloudDirty = true; cloudFirstDirty = Date.now(); }
   if (cloudSaveTimer) clearTimeout(cloudSaveTimer);
-  // 最多等待 10s，最少等 3s
-  const maxWait = Math.max(0, 10000 - (Date.now() - cloudFirstDirty));
-  const delay = Math.min(3000, maxWait);
+  // 最多等待 2s，最少等 500ms
+  const maxWait = Math.max(0, 2000 - (Date.now() - cloudFirstDirty));
+  const delay = Math.min(500, maxWait);
   cloudSaveTimer = setTimeout(() => {
     cloudDirty = false;
     cloudSaveTimer = null;
     cloudSaveAll().catch(e => console.warn('[Cloud] 自动保存失败:', e));
   }, delay);
+}
+
+// ================================================================
+// 自动轮询：每 6 秒从云端拉取最新数据（其他设备的改动秒级同步）
+// ================================================================
+let __cloudPollTimer = null;
+function _isEditing() {
+  return (!document.getElementById('personModalOverlay').classList.contains('hidden')) ||
+         (!document.getElementById('deleteModalOverlay').classList.contains('hidden')) ||
+         (document.getElementById('addCardOverlay') && document.getElementById('addCardOverlay').classList.contains('show')) ||
+         (document.getElementById('examAddOverlay') && document.getElementById('examAddOverlay').classList.contains('show'));
+}
+function startCloudPolling() {
+  if (__cloudPollTimer) return;
+  __cloudPollTimer = setInterval(async () => {
+    if (!cloudReady || !__cloudLoadDone) return;
+    if (_isEditing()) return; // 不打扰编辑中的用户
+    try {
+      await cloudLoadAll();
+      filteredPeople = [...people];
+      renderCards();
+    } catch (_) { /* 静默 */ }
+  }, 6000);
+}
+function stopCloudPolling() {
+  if (__cloudPollTimer) { clearInterval(__cloudPollTimer); __cloudPollTimer = null; }
 }
 
 // ================================================================
@@ -3839,6 +3865,7 @@ async function initCloud() {
     renderCards();
     showCloudUserUI();
     __cloudLoadDone = true;
+    startCloudPolling(); // 启动 6 秒轮询
     console.log('[Cloud] 🚀 云端已加载 (人员:' + people.length + ', 订单:' + Object.keys(personOrders).length + ', 考生:' + examCandidates.length + ')');
   } catch (e) {
     console.warn('[Cloud] ❌ 云端不可用:', e.message);
