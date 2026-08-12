@@ -3340,12 +3340,8 @@ let __updateVersion = null;          // 新版本号
 let __updateChecking = false;        // 是否正在检查中
 
 // 远程部署地址 — 修改为你的实际线上地址后即可启用热更新
-// 方案1 (推荐): GitHub Pages — 免费、HTTPS、自动部署
-//   https://你的用户名.github.io/仓库名/APAA.html
-// 方案2: Supabase Storage 公开桶
-//   https://xxx.supabase.co/storage/v1/object/public/app/APAA.html
-// 方案3: 任何静态托管 (Vercel / Netlify / Cloudflare Pages)
-const UPDATE_URL = 'https://qstrmmaihqyguttnkyvt.supabase.co/storage/v1/object/public/app/APAA.html';
+// GitHub Pages — 免费、HTTPS、自动部署
+const UPDATE_URL = 'https://pzxpzx-123.github.io/clubapp/APAA.html';
 
 // 版本检查 URL — 取同一个远程目录下的 version.json，比拉整个 HTML 快 ~1000 倍
 // version.json 内容格式: {"v":"2.0.6"}
