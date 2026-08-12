@@ -753,23 +753,22 @@ body {
   max-width: 720px; width: 100%;
   margin-left: auto; margin-right: auto;
 }
-/* Hero 展开：初始毛玻璃态（JS 注入 top/left/width/height/border-radius） */
+/* Hero 展开：初始毛玻璃态（transform 替代 top/left/width/height — GPU 合成，不触发 layout） */
 .profile-view.hero-start {
   background: rgba(255,255,255,0.15);
   backdrop-filter: blur(30px);
   -webkit-backdrop-filter: blur(30px);
   overflow: hidden;
+  border-radius: 16px;
 }
-/* Hero 展开过渡 */
+/* Hero 展开过渡 — 仅 transform + border-radius + background（三属性均为 GPU 合成属性） */
 .profile-view.hero-expanding {
-  transition: top 0.50s cubic-bezier(0.22, 0.61, 0.36, 1),
-              left 0.50s cubic-bezier(0.22, 0.61, 0.36, 1),
-              width 0.50s cubic-bezier(0.22, 0.61, 0.36, 1),
-              height 0.50s cubic-bezier(0.22, 0.61, 0.36, 1),
+  transition: transform 0.50s cubic-bezier(0.22, 0.61, 0.36, 1),
               border-radius 0.50s cubic-bezier(0.22, 0.61, 0.36, 1),
               background 0.45s ease,
               backdrop-filter 0.45s ease;
   overflow: hidden;
+  will-change: transform, border-radius;
 }
 /* 展开期间内容不可见 */
 .profile-view.hero-expanding > * { opacity: 0; }
@@ -780,6 +779,8 @@ body {
   -webkit-backdrop-filter: none;
   border-radius: 0 !important;
   overflow-y: auto;
+  transform: none !important;
+  will-change: auto;
 }
 
 .profile-view .profile-back-row {
@@ -5186,7 +5187,7 @@ function openProfile(personId) {
   const total = personnelFiltered.length;
   document.getElementById('profileNavInfo').textContent = (idx >= 0 ? (idx + 1) : '—') + ' / ' + total;
 
-  /* ---- Hero 展开：档案视图自身从卡片位置放大到全屏 ---- */
+  /* ---- Hero 展开：transform 动画（GPU 合成，不触发 layout） ---- */
   const card = document.querySelector('.personnel-item[data-pid="' + personId + '"]');
 
   /* 清理旧状态和未完成的关闭计时器 */
@@ -5195,18 +5196,22 @@ function openProfile(personId) {
   profileView.style.cssText = '';
 
   if (card) {
-    const rect = card.getBoundingClientRect();
+    // ① 批量读取 — 一次性取完所有布局值，避免读写交替触发 layout thrashing
+    var rect = card.getBoundingClientRect();
+    var vw = window.innerWidth;
+    var vh = window.innerHeight;
+    var scaleX = rect.width / vw;
+    var scaleY = rect.height / vh;
+    var tx = rect.left;
+    var ty = rect.top;
 
-    /* ① 设置初始：固定定位在卡片位置，毛玻璃 */
-    profileView.style.position = 'fixed';
-    profileView.style.zIndex = '100';
-    profileView.style.top = rect.top + 'px';
-    profileView.style.left = rect.left + 'px';
-    profileView.style.width = rect.width + 'px';
-    profileView.style.height = rect.height + 'px';
-    profileView.style.borderRadius = '16px';
-    profileView.style.display = 'flex';
-    profileView.style.overflow = 'hidden';
+    /* ② 设置初始状态：固定全屏定位 + transform 缩放到卡片位置 */
+    profileView.style.cssText = ''
+      + 'position:fixed;z-index:100;'
+      + 'top:0;left:0;width:100%;height:100%;'
+      + 'display:flex;overflow:hidden;border-radius:16px;'
+      + 'transform:translate(' + tx + 'px,' + ty + 'px) scale(' + scaleX + ',' + scaleY + ');'
+      + 'transform-origin:0 0;';
     profileView.classList.add('hero-start');
 
     /* 隐藏列表 */
@@ -5214,29 +5219,21 @@ function openProfile(personId) {
     listView.style.pointerEvents = 'none';
     listView.style.transition = 'opacity 0.3s ease';
 
-    /* ② 下一帧：添加过渡并展开到全屏 */
-    requestAnimationFrame(() => {
+    /* ③ 下一帧：添加过渡并展开到全屏 */
+    requestAnimationFrame(function() {
       profileView.classList.add('hero-expanding');
-      profileView.style.top = '0';
-      profileView.style.left = '0';
-      profileView.style.width = '100%';
-      profileView.style.height = '100%';
+      profileView.style.transform = 'translate(0,0) scale(1,1)';
       profileView.style.borderRadius = '0';
       profileView.classList.remove('hero-start');
     });
 
-    /* ③ 展开完成后：去除毛玻璃，显示内容（保持内联样式防止跳变） */
-    setTimeout(() => {
+    /* ④ 展开完成后：去除毛玻璃 + will-change，显示内容 */
+    setTimeout(function() {
       profileView.classList.remove('hero-expanding');
       profileView.classList.add('hero-done', 'anim-ready');
+      profileView.style.transform = '';
+      profileView.style.transformOrigin = '';
       profileView.style.overflow = 'auto';
-      profileView.style.position = 'fixed';
-      profileView.style.zIndex = '100';
-      profileView.style.top = '0';
-      profileView.style.left = '0';
-      profileView.style.width = '100%';
-      profileView.style.height = '100%';
-      profileView.style.borderRadius = '0';
     }, 520);
   } else {
     /* 降级：无动画直接显示 */
@@ -7037,41 +7034,50 @@ document.addEventListener('click', function(e) {
    ================================================================ */
 
 (function patchAttendanceEdit() {
-  const origRenderAttDetail = renderAttDetail;
-  renderAttDetail = function(year, month) {
-    origRenderAttDetail(year, month);
-    if (appMode !== 'edit') return;
-    /* 日历格子点击切换状态 */
-    setTimeout(() => {
-      document.querySelectorAll('#attCalendar .cal-day:not(.empty)').forEach(day => {
-        day.addEventListener('click', function(e) {
-          e.stopPropagation();
-          const statusCycle = ['normal','late','early','absent','leave'];
-          const clsPrefix = 'cal-status-';
-          const curCls = Array.from(this.classList).find(c => c.startsWith(clsPrefix));
-          let curStatus = curCls ? curCls.replace(clsPrefix,'') : 'normal';
-          let idx = statusCycle.indexOf(curStatus);
-          idx = (idx + 1) % statusCycle.length;
-          const newStatus = statusCycle[idx];
-          this.className = this.className.replace(new RegExp(clsPrefix + '\\S+','g'), '');
-          this.classList.add(clsPrefix + newStatus);
+  // 事件委托：在 #attCalendar 上挂一个监听器，不随 render 重复绑定
+  var attCalendar = document.getElementById('attCalendar');
+  if (attCalendar && !attCalendar._editPatched) {
+    attCalendar._editPatched = true;
+    attCalendar.addEventListener('click', function(e) {
+      if (appMode !== 'edit') return;
+      var day = e.target.closest('.cal-day:not(.empty)');
+      if (!day) return;
+      e.stopPropagation();
 
-          /* 更新数据 */
-          const dayNum = parseInt(this.querySelector('.cal-num')?.textContent, 10);
-          if (dayNum && attDetailPersonId) {
-            const allData = generateAttendanceData(attCurrentYear, attCurrentMonth);
-            const entry = allData.find(e => e.personId === attDetailPersonId);
-            if (entry) {
-              const dayData = entry.days.find(d => d.day === dayNum);
-              if (dayData) {
-                dayData.status = newStatus;
-                if (newStatus === 'absent') { dayData.checkIn = ''; dayData.checkOut = ''; dayData.hours = 0; }
+      var statusCycle = ['normal','late','early','absent','leave'];
+      var clsPrefix = 'cal-status-';
+      var curCls = Array.from(day.classList).find(function(c) { return c.indexOf(clsPrefix) === 0; });
+      var curStatus = curCls ? curCls.replace(clsPrefix,'') : 'normal';
+      var idx = statusCycle.indexOf(curStatus);
+      idx = (idx + 1) % statusCycle.length;
+      var newStatus = statusCycle[idx];
+      day.className = day.className.replace(new RegExp(clsPrefix + '\\S+','g'), '');
+      day.classList.add(clsPrefix + newStatus);
+
+      var dayNum = parseInt(day.querySelector('.cal-num')?.textContent, 10);
+      if (dayNum && attDetailPersonId) {
+        var allData = generateAttendanceData(attCurrentYear, attCurrentMonth);
+        for (var i = 0; i < allData.length; i++) {
+          if (allData[i].personId === attDetailPersonId) {
+            var days = allData[i].days;
+            for (var j = 0; j < days.length; j++) {
+              if (days[j].day === dayNum) {
+                days[j].status = newStatus;
+                if (newStatus === 'absent') { days[j].checkIn = ''; days[j].checkOut = ''; days[j].hours = 0; }
+                break;
               }
             }
+            break;
           }
-        });
-      });
-    }, 50);
+        }
+      }
+    });
+  }
+
+  var origRenderAttDetail = renderAttDetail;
+  renderAttDetail = function(year, month) {
+    origRenderAttDetail(year, month);
+    // 事件委托不需要重新绑定，clean pass
   };
 })();
 
@@ -7080,55 +7086,73 @@ document.addEventListener('click', function(e) {
    ================================================================ */
 
 (function patchSalaryEdit() {
-  /* 在详情历史表中添加编辑按钮 */
-  const origShowSalaryDetail = showSalaryDetail;
+  // 事件委托：在 #salHistoryBox tbody 上挂一个监听器
+  var salBody = document.querySelector('#salHistoryBox tbody');
+  if (salBody && !salBody._editPatched) {
+    salBody._editPatched = true;
+    salBody.addEventListener('click', function(e) {
+      if (appMode !== 'edit') return;
+      var cell = e.target.closest('td.editable-val');
+      if (!cell) return;
+      e.stopPropagation();
+
+      var row = cell.parentElement;
+      var cells = row.querySelectorAll('td');
+      var monthCell = cells[0];
+      var baseCell  = cells[1];
+      var bonusCell = cells[2];
+      var otCell    = cells[3];
+      var dedCell   = cells[4];
+
+      // 从 data 属性中获取 personId
+      var pv = document.getElementById('profileView');
+      var personId = pv ? parseInt(pv.dataset.personId, 10) : NaN;
+      if (isNaN(personId)) return;
+
+      var person = people.find(function(x) { return x.id === personId; });
+      if (!person) return;
+      var monthText = monthCell.textContent.trim();
+      var parts = monthText.split('-').map(Number);
+      var data = generateSalaryData(parts[0], parts[1]);
+      var d = data.find(function(x) { return x.personId === personId; });
+      if (!d) return;
+
+      var fieldLabel, fieldKey;
+      if (cell === baseCell) { fieldLabel = '基本工资'; fieldKey = 'baseSalary'; }
+      else if (cell === bonusCell) { fieldLabel = '绩效奖金'; fieldKey = 'bonus'; }
+      else if (cell === otCell) { fieldLabel = '加班费'; fieldKey = 'overtime'; }
+      else { fieldLabel = '扣款'; fieldKey = 'deduction'; }
+      var rawVal = cell.textContent.replace(/[¥,]/g,'').replace(/^-/,'');
+
+      openEditPopover('编辑 ' + person.name + ' — ' + monthText, [
+        { label: fieldLabel, key: 'value', value: rawVal, type: 'number' }
+      ], cell, function(result) {
+        var newVal = parseInt(result.value, 10) || 0;
+        d[fieldKey] = newVal;
+        d.total = d.baseSalary + d.bonus + d.overtime - d.deduction;
+        var fmt = function(n) { return '¥' + n.toLocaleString('zh-CN'); };
+        if (cell === dedCell) cell.textContent = '-¥' + newVal.toLocaleString('zh-CN');
+        else cell.textContent = fmt(newVal);
+        var totalCell = row.querySelector('td:last-child');
+        if (totalCell) totalCell.textContent = fmt(d.total);
+        showToast('已保存', true);
+      });
+    });
+  }
+
+  var origShowSalaryDetail = showSalaryDetail;
   showSalaryDetail = function(personId, year, month) {
     origShowSalaryDetail(personId, year, month);
+    // 事件委托不需要重新绑定，只需标记可编辑
     if (appMode !== 'edit') return;
-    setTimeout(() => {
-      const rows = document.querySelectorAll('#salHistoryBox tbody tr');
-      rows.forEach(row => {
-        const cells = row.querySelectorAll('td');
-        const monthCell = cells[0];
-        const baseCell  = cells[1];
-        const bonusCell = cells[2];
-        const otCell    = cells[3];
-        const dedCell   = cells[4];
-
-        /* 使单元格可编辑 */
-        [baseCell, bonusCell, otCell, dedCell].forEach(cell => {
-          cell.classList.add('editable-val');
-          cell.addEventListener('click', function(e) {
-            e.stopPropagation();
-            const person = people.find(x => x.id === personId);
-            if (!person) return;
-            const monthText = monthCell.textContent.trim(); // "2026-01"
-            const [y, m] = monthText.split('-').map(Number);
-            const data = generateSalaryData(y, m);
-            const d = data.find(x => x.personId === personId);
-            if (!d) return;
-
-            const fieldLabel = cell === baseCell ? '基本工资' : cell === bonusCell ? '绩效奖金' : cell === otCell ? '加班费' : '扣款';
-            const fieldKey   = cell === baseCell ? 'baseSalary' : cell === bonusCell ? 'bonus' : cell === otCell ? 'overtime' : 'deduction';
-            const rawVal = cell.textContent.replace(/[¥,]/g,'').replace(/^-/,'');
-
-            openEditPopover(`编辑 ${person.name} — ${monthText}`, [
-              { label: fieldLabel, key: 'value', value: rawVal, type: 'number' }
-            ], cell, function(result) {
-              const newVal = parseInt(result.value, 10) || 0;
-              d[fieldKey] = newVal;
-              d.total = d.baseSalary + d.bonus + d.overtime - d.deduction;
-              const fmt = n => '¥' + n.toLocaleString('zh-CN');
-              if (cell === dedCell) cell.textContent = '-¥' + newVal.toLocaleString('zh-CN');
-              else cell.textContent = fmt(newVal);
-              /* 更新合计列 */
-              const totalCell = row.querySelector('td:last-child');
-              if (totalCell) totalCell.textContent = fmt(d.total);
-              showToast('已保存', true);
-            });
-          });
-        });
-      });
+    setTimeout(function() {
+      var rows = document.querySelectorAll('#salHistoryBox tbody tr');
+      for (var i = 0; i < rows.length; i++) {
+        var cells = rows[i].querySelectorAll('td');
+        for (var j = 1; j <= 4 && j < cells.length; j++) {
+          cells[j].classList.add('editable-val');
+        }
+      }
     }, 50);
   };
 })();
@@ -7139,10 +7163,61 @@ document.addEventListener('click', function(e) {
 
 (function patchTrainEdit() {
   const origShowTrainDetail = showTrainDetail;
+
+  // 事件委托：一次绑定在 #trainPartBody 上，避免每次渲染重复绑定导致泄漏
+  const trainPartBody = document.getElementById('trainPartBody');
+  if (trainPartBody) {
+    trainPartBody.addEventListener('click', function(e) {
+      if (appMode !== 'edit') return;
+      var cell = e.target.closest('td.editable-val');
+      if (!cell) return;
+      e.stopPropagation();
+
+      var row = cell.parentElement;
+      var cells = row.querySelectorAll('td');
+      var nameCell = cells[0];
+      var personName = nameCell.textContent.trim();
+
+      var courseId = parseInt(trainPartBody.dataset.courseId, 10);
+      if (isNaN(courseId)) return;
+
+      var enrolled = trainEnrollCache.get(courseId) || [];
+      var entry = enrolled.find(function(en) { return en.name === personName; });
+      if (!entry) return;
+
+      var cellIndex = Array.prototype.indexOf.call(cells, cell);
+      var field, label, curVal;
+      if (cellIndex === 2) {
+        field = 'progress'; label = '进度 (%)'; curVal = entry.progress;
+      } else {
+        field = 'score'; label = '成绩 (分)'; curVal = (entry.score || 0);
+      }
+
+      openEditPopover('编辑 ' + personName, [
+        { label: label, key: 'value', value: String(curVal), type: 'number' }
+      ], cell, function(result) {
+        var v = Math.min(100, Math.max(0, parseInt(result.value, 10) || 0));
+        if (field === 'progress') {
+          entry.progress = v;
+          entry.done = v >= 100;
+          cell.innerHTML = '<div class="train-progress-bar"><div class="tpb-fill" style="width:' + v + '%;"></div></div>' + v + '%';
+        } else {
+          entry.score = v;
+          cell.textContent = v + '分';
+        }
+        showToast('已保存', true);
+      });
+    });
+  }
+
   showTrainDetail = function(courseId) {
     origShowTrainDetail(courseId);
     if (appMode !== 'edit') return;
-    setTimeout(() => {
+    setTimeout(function() {
+      // 存储 courseId 供事件委托使用
+      var tpb = document.getElementById('trainPartBody');
+      if (tpb) tpb.dataset.courseId = courseId;
+
       const course = trainCourses.find(c => c.id === courseId);
       /* 编辑课程名/讲师 */
       const header = document.getElementById('trainCourseHeader');
@@ -7162,45 +7237,13 @@ document.addEventListener('click', function(e) {
         };
       }
 
-      /* 编辑学员进度/成绩 */
-      const rows = document.querySelectorAll('#trainPartBody tr');
-      rows.forEach(row => {
-        const cells = row.querySelectorAll('td');
-        const nameCell = cells[0];
-        const progCell  = cells[2];
-        const scoreCell = cells[4];
-
-        progCell.classList.add('editable-val');
-        
-        scoreCell.classList.add('editable-val');
-
-        const editCellFn = function(e, field, label) {
-          e.stopPropagation();
-          const personName = nameCell.textContent.trim();
-          const enrolled = trainEnrollCache.get(courseId) || [];
-          const entry = enrolled.find(en => en.name === personName);
-          if (!entry) return;
-
-          const curVal = field === 'progress' ? entry.progress : (entry.score || 0);
-          openEditPopover(`编辑 ${personName}`, [
-            { label: label, key: 'value', value: String(curVal), type: 'number' }
-          ], e.target, function(result) {
-            const v = Math.min(100, Math.max(0, parseInt(result.value, 10) || 0));
-            if (field === 'progress') {
-              entry.progress = v;
-              entry.done = v >= 100;
-              progCell.innerHTML = `<div class="train-progress-bar"><div class="tpb-fill" style="width:${v}%;"></div></div>${v}%`;
-            } else {
-              entry.score = v;
-              scoreCell.textContent = v + '分';
-            }
-            showToast('已保存', true);
-          });
-        };
-
-        progCell.addEventListener('click', function(e) { editCellFn(e, 'progress', '进度 (%)'); });
-        scoreCell.addEventListener('click', function(e) { editCellFn(e, 'score', '成绩 (分)'); });
-      });
+      /* 标记可编辑单元格（不绑定事件——由上方委托统一处理） */
+      var rows = document.querySelectorAll('#trainPartBody tr');
+      for (var i = 0; i < rows.length; i++) {
+        var cells = rows[i].querySelectorAll('td');
+        if (cells[2]) cells[2].classList.add('editable-val');
+        if (cells[4]) cells[4].classList.add('editable-val');
+      }
     }, 50);
   };
 })();
