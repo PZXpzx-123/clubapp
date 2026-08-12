@@ -1,20 +1,11 @@
-// Service Worker — ClubApp v2.1.3
-const CACHE = 'clubapp-v2.1.3';
-
-self.addEventListener('install', (e) => {
-  console.log('[SW] install v2.1.3');
-  self.skipWaiting();
-});
-
+// Service Worker — ClubApp v2.1.4
+const CACHE = 'clubapp-v2.1.4';
+self.addEventListener('install', (e) => { console.log('[SW] install v2.1.4'); self.skipWaiting(); });
 self.addEventListener('activate', (e) => {
-  console.log('[SW] activate v2.1.3');
+  console.log('[SW] activate v2.1.4');
   e.waitUntil(clients.claim());
-  e.waitUntil(caches.keys().then(keys =>
-    Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
-  ));
+  e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))));
 });
-
-// 网络优先，失败时回退缓存
 self.addEventListener('fetch', (e) => {
   if (e.request.method !== 'GET') return;
   const url = new URL(e.request.url);

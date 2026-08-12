@@ -3015,7 +3015,7 @@ body:not(.edit-mode) .settings-wrap .setting-select {
         <!-- 系统信息 -->
         <div class="settings-section">
           <div class="ss-title">系统信息</div>
-          <div class="info-row"><span class="ir-label">系统版本</span><span class="ir-value">v2.1.3</span></div>
+          <div class="info-row"><span class="ir-label">系统版本</span><span class="ir-value">v2.1.4</span></div>
           <div class="info-row"><span class="ir-label">数据总量</span><span class="ir-value">156 名员工</span></div>
           <div class="info-row"><span class="ir-label">最后更新</span><span class="ir-value">2026-08-12</span></div>
           <div class="info-row"><span class="ir-label">浏览器</span><span class="ir-value" id="sysBrowser">—</span></div>
@@ -3058,7 +3058,7 @@ body:not(.edit-mode) .settings-wrap .setting-select {
         <!-- 系统更新 -->
         <div class="settings-section">
           <div class="ss-title">系统更新</div>
-          <div class="info-row"><span class="ir-label">当前版本</span><span class="ir-value" id="sysVersion">v2.1.3</span></div>
+          <div class="info-row"><span class="ir-label">当前版本</span><span class="ir-value" id="sysVersion">v2.1.4</span></div>
           <div style="margin-top:8px;">
             <button class="btn btn-glass primary" id="btnCheckUpdate" style="width:100%;">🔍 检查更新</button>
           </div>
@@ -3346,7 +3346,7 @@ if ("serviceWorker" in navigator) {
     .catch(function(err) { console.log("[SW] 注册失败", err); });
 }
 // --- 应用版本（热更新检测用） ---
-const APP_VERSION = '2.1.3';
+const APP_VERSION = '2.1.4';
 let __updateAvailable = false;       // 是否有可用更新
 let __updateVersion = null;          // 新版本号
 let __updateChecking = false;        // 是否正在检查中
@@ -6939,11 +6939,7 @@ function resetTrainView() {
         if (updateStatusEl) {
           updateStatusEl.innerHTML = '<span style="color:#e8870a;">⚠ 发现新版本 v' + escHtml(latestVersion) + '（当前 v' + APP_VERSION + '）</span>';
         }
-        if (isAppBusy()) {
-          showUpdateConfirm(latestVersion);
-        } else {
-          doUpdate();
-        }
+        showUpdateConfirm(latestVersion);
       } else {
         __updateAvailable = false;
         if (updateStatusEl) {
@@ -6969,33 +6965,95 @@ function resetTrainView() {
   function showUpdateConfirm(newVersion) {
     const overlay = document.getElementById('updateConfirmOverlay');
     const body = document.getElementById('updateConfirmBody');
+    const footer = document.querySelector('#updateConfirmOverlay .cd-footer');
     if (!overlay || !body) return;
     body.innerHTML = '<p>检测到新版本 <b>v' + escHtml(newVersion) + '</b>（当前 v' + APP_VERSION + '）。</p>'
-      + '<p style="color:var(--text-2);font-size:12px;margin-top:8px;">⚠ 更新将跳转到线上最新版本。</p>';
+      + '<p style="color:var(--text-2);font-size:12px;margin-top:8px;">更新内容：修复与优化</p>';
+    if (footer) footer.style.display = '';
     overlay.classList.remove('hidden');
-    document.getElementById('updateConfirmOk').onclick = () => { overlay.classList.add('hidden'); doUpdate(); };
+    document.getElementById('updateConfirmOk').onclick = () => { doUpdate(); };
     document.getElementById('updateConfirmCancel').onclick = () => overlay.classList.add('hidden');
     document.getElementById('updateConfirmClose').onclick = () => overlay.classList.add('hidden');
   }
 
+  /* IndexedDB 辅助 - 存储/读取更新缓存 */
+  function openUpdateDB() {
+    return new Promise(function(resolve, reject) {
+      var req = indexedDB.open('ClubAppUpdate', 1);
+      req.onupgradeneeded = function(e) {
+        var db = e.target.result;
+        if (!db.objectStoreNames.contains('updates')) {
+          db.createObjectStore('updates', { keyPath: 'id' });
+        }
+      };
+      req.onsuccess = function(e) { resolve(e.target.result); };
+      req.onerror = function(e) { reject(e.target.error); };
+    });
+  }
+
+  function saveUpdateToDB(version, html) {
+    return openUpdateDB().then(function(db) {
+      return new Promise(function(resolve, reject) {
+        var tx = db.transaction('updates', 'readwrite');
+        var store = tx.objectStore('updates');
+        store.put({ id: 'latest', version: version, html: html, time: Date.now() });
+        tx.oncomplete = function() { resolve(); };
+        tx.onerror = function(e) { reject(e.target.error); };
+      });
+    });
+  }
+
+  function getUpdateFromDB() {
+    return openUpdateDB().then(function(db) {
+      return new Promise(function(resolve, reject) {
+        var tx = db.transaction('updates', 'readonly');
+        var store = tx.objectStore('updates');
+        var req = store.get('latest');
+        req.onsuccess = function() { resolve(req.result || null); };
+        req.onerror = function(e) { reject(e.target.error); };
+      });
+    });
+  }
+
+  function clearUpdateDB() {
+    return openUpdateDB().then(function(db) {
+      return new Promise(function(resolve, reject) {
+        var tx = db.transaction('updates', 'readwrite');
+        var store = tx.objectStore('updates');
+        store.delete('latest');
+        tx.oncomplete = function() { resolve(); };
+        tx.onerror = function(e) { reject(e.target.error); };
+      });
+    });
+  }
+
   async function doUpdate() {
-    // 保存数据
+    // Save data before update
     saveLocalData();
     if (cloudSaveTimer) { clearTimeout(cloudSaveTimer); cloudSaveTimer = null; cloudDirty = false; }
-    try { await cloudSaveAll(); } catch(e) { console.warn('[Update] 云端保存失败:', e.message); }
+    try { await cloudSaveAll(); } catch(e) { console.warn('[Update] cloud save failed:', e.message); }
 
+    var overlay = document.getElementById('updateConfirmOverlay');
     var body = document.getElementById('updateConfirmBody');
     var footer = document.querySelector('#updateConfirmOverlay .cd-footer');
     var updateUrl = 'https://pzxpzx-123.github.io/clubapp/APAA.html';
 
-    // 显示进度条
+    // Show progress bar
     if (body) {
-      body.innerHTML = '<p style="margin-bottom:12px;">正在下载 v' + __updateVersion + '...</p>'
+      body.innerHTML = '<p style="margin-bottom:12px;">🔄 Downloading v' + __updateVersion + '...</p>'
         + '<div style="background:var(--sidebar-slider);border-radius:8px;height:10px;overflow:hidden;">'
         + '<div id="updateProgressBar" style="background:var(--accent-blue);height:100%;width:0%;border-radius:8px;transition:width 0.3s ease;"></div></div>'
         + '<p style="font-size:11px;color:var(--text-3);margin-top:8px;" id="updateProgressText">连接中...</p>';
     }
     if (footer) footer.style.display = 'none';
+
+    // Hide cancel/close during download
+    var cancelBtn = document.getElementById('updateConfirmCancel');
+    var closeBtn = document.getElementById('updateConfirmClose');
+    var okBtn = document.getElementById('updateConfirmOk');
+    if (cancelBtn) cancelBtn.style.display = 'none';
+    if (closeBtn) closeBtn.style.display = 'none';
+    if (okBtn) okBtn.style.display = 'none';
 
     try {
       var resp = await fetchWithTimeout(updateUrl + '?t=' + Date.now(), 30000);
@@ -7016,11 +7074,11 @@ function resetTrainView() {
           var bar = document.getElementById('updateProgressBar');
           var txt = document.getElementById('updateProgressText');
           if (bar) bar.style.width = pct + '%';
-          if (txt) txt.textContent = '已下载 ' + Math.round(loaded/1024) + ' / ' + Math.round(total/1024) + ' KB (' + pct + '%)';
+          if (txt) txt.textContent = 'Downloaded ' + Math.round(loaded/1024) + ' / ' + Math.round(total/1024) + ' KB (' + pct + '%)';
         }
       }
 
-      // 合并 chunks
+      // Merge chunks
       var totalLen = 0;
       for (var i = 0; i < chunks.length; i++) totalLen += chunks[i].length;
       var merged = new Uint8Array(totalLen);
@@ -7030,29 +7088,64 @@ function resetTrainView() {
         pos += chunks[i].length;
       }
 
-      if (body) body.innerHTML = '<p>✅ 下载完成，正在安装...</p>';
+      // Decode to string
+      var decoder = new TextDecoder('utf-8');
+      var htmlText = decoder.decode(merged);
 
-      // 写入 Service Worker 缓存
+      // Verify downloaded content has correct version
+      var versionMatch = htmlText.match(/const\s+APP_VERSION\s*=\s*['"]([\d.]+)['"]/);
+      if (!versionMatch) throw new Error('Invalid download: cannot parse version');
+      var downloadedVersion = versionMatch[1];
+      if (compareVersions(downloadedVersion, APP_VERSION) <= 0) {
+        throw new Error('Downloaded v' + downloadedVersion + ' not newer than current v' + APP_VERSION);
+      }
+
+      // Show install progress
+      if (body) {
+        body.innerHTML = '<p style="margin-bottom:12px;">📦 Installing v' + downloadedVersion + '...</p>'
+          + '<div style="background:var(--sidebar-slider);border-radius:8px;height:10px;overflow:hidden;">'
+          + '<div style="background:#34c759;height:100%;width:100%;border-radius:8px;transition:width 0.3s ease;"></div></div>'
+          + '<p style="font-size:11px;color:var(--text-3);margin-top:8px;">准备新版本...</p>';
+      }
+
+      // Save to IndexedDB
+      await saveUpdateToDB(downloadedVersion, htmlText);
+
+      // Also save to Cache API (backup)
       if ('caches' in window) {
         try {
-          var cache = await caches.open('clubapp-v' + __updateVersion);
+          var cache = await caches.open('clubapp-v' + downloadedVersion);
           await cache.put(updateUrl, new Response(merged, {
             headers: { 'Content-Type': 'text/html; charset=utf-8' }
           }));
-        } catch(ce) { console.warn('[Update] 缓存写入失败:', ce); }
+        } catch(ce) { console.warn('[Update] Cache write failed:', ce); }
       }
 
-      showToast('更新完成，即将刷新', true);
-      setTimeout(function() { location.reload(); }, 600);
+      // Show completion
+      if (body) {
+        body.innerHTML = '<p style="margin-bottom:8px;font-size:18px;">✅ Update Complete</p>'
+          + '<p style="color:var(--text-2);font-size:13px;">v' + downloadedVersion + ' - Restarting...</p>';
+      }
+
+      // Create Blob URL and navigate to new version
+      var blob = new Blob([htmlText], { type: 'text/html; charset=utf-8' });
+      var blobUrl = URL.createObjectURL(blob);
+
+      setTimeout(function() {
+        location.replace(blobUrl);
+      }, 1200);
 
     } catch (e) {
-      console.warn('[Update] 下载失败:', e.message);
-      if (body) body.innerHTML = '<p style="color:#a82020;">✕ 更新失败: ' + e.message + '</p>'
-        + '<p style="font-size:12px;color:var(--text-2);margin-top:8px;">请手动打开<br><b>' + updateUrl + '</b></p>';
+      console.warn('[Update] Update failed:', e.message);
+      if (cancelBtn) cancelBtn.style.display = '';
+      if (closeBtn) closeBtn.style.display = '';
+      if (okBtn) okBtn.style.display = '';
+      if (body) body.innerHTML = '<p style="color:#a82020;margin-bottom:8px;">✕ Update Failed</p>'
+        + '<p style="font-size:12px;color:var(--text-2);">' + escHtml(e.message) + '</p>'
+        + '<p style="font-size:12px;color:var(--text-2);margin-top:8px;">请稍后重试或手动访问<br><b>' + updateUrl + '</b></p>';
       if (footer) footer.style.display = '';
     }
   }
-
   /* 同步暗色模式 CSS 变量到 documentElement（与玻璃/模糊同级，确保暗色始终覆盖） */
   function syncDarkModeVars(enable) {
     var r = document.documentElement;
@@ -7108,6 +7201,31 @@ function resetTrainView() {
   function reApplyDarkMode() {
     if (document.getElementById('setDarkBg')?.checked) syncDarkModeVars(true);
   }
+
+
+  /* ===== Startup: check IndexedDB for cached new version ===== */
+  (async function checkCachedUpdate() {
+    try {
+      var cached = await getUpdateFromDB();
+      if (cached && cached.version && cached.html) {
+        if (compareVersions(cached.version, APP_VERSION) > 0) {
+          console.log('[Update] Found cached v' + cached.version + ' > current v' + APP_VERSION);
+          // Re-save before navigate (belt and suspenders)
+          await clearUpdateDB();
+          await saveUpdateToDB(cached.version, cached.html);
+          var blob = new Blob([cached.html], { type: 'text/html; charset=utf-8' });
+          var blobUrl = URL.createObjectURL(blob);
+          location.replace(blobUrl);
+          return;
+        } else {
+          console.log('[Update] Cached v' + cached.version + ' <= current v' + APP_VERSION + ', clearing');
+          await clearUpdateDB();
+        }
+      }
+    } catch(e) {
+      console.warn('[Update] Startup check failed:', e.message);
+    }
+  })();
 
   // 页面加载时设置初始值
   setTimeout(() => {
