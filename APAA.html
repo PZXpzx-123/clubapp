@@ -17,70 +17,72 @@
    ================================================================ */
 
 :root {
-  /* ===== iOS 液态玻璃 · 超通透 ===== */
+  /* ===== iOS 液态玻璃 v2.1 · 超通透水光 ===== */
 
-  /* 背景色 — 半透明玻璃感，透视天气 Canvas */
-  --bg: rgba(240, 242, 248, 0.88);
+  /* 背景 — 半透明，Canvas 天气穿透 */
+  --bg: rgba(238, 241, 248, 0.84);
 
-  /* 玻璃 — 近乎消失，仅保留微弱雾面 */
-  --glass-heavy:  rgba(255,255,255,0.12);
-  --glass-medium: rgba(255,255,255,0.08);
-  --glass-light:  rgba(255,255,255,0.05);
-  --glass-subtle: rgba(255,255,255,0.03);
+  /* 玻璃层级 */
+  --glass-heavy:  rgba(255,255,255,0.18);
+  --glass-medium: rgba(255,255,255,0.11);
+  --glass-light:  rgba(255,255,255,0.065);
+  --glass-subtle: rgba(255,255,255,0.038);
 
-  /* 卡片专用 — 微白保证文字勉强可读 */
-  --glass-card:   rgba(255,255,255,0.14);
+  /* 卡片 */
+  --glass-card:   rgba(255,255,255,0.20);
 
-  /* 模糊 — 大幅降低保留细节 */
-  --blur-xl:  blur(14px) saturate(170%);
-  --blur-lg:  blur(10px) saturate(160%);
-  --blur-md:  blur(7px) saturate(150%);
-  --blur-sm:  blur(5px) saturate(140%);
+  /* 模糊 — iOS 高饱和 */
+  --blur-xl:  blur(20px) saturate(190%);
+  --blur-lg:  blur(14px) saturate(180%);
+  --blur-md:  blur(10px) saturate(170%);
+  --blur-sm:  blur(6px) saturate(160%);
 
   /* 侧边栏 */
-  --sidebar-bg:    rgba(255,255,255,0.10);
-  --sidebar-blur:  blur(16px) saturate(170%);
-  --sidebar-text:    #1a1c1e;
-  --sidebar-text-2:  #5a5c64;
-  --sidebar-text-3:  rgba(0,0,0,0.20);
-  --sidebar-hover:   rgba(0,0,0,0.03);
-  --sidebar-active:  rgba(0,0,0,0.04);
-  --sidebar-slider:  rgba(0,0,0,0.04);
-  --sidebar-border:  rgba(255,255,255,0.20);
-  --sidebar-divider: rgba(0,0,0,0.03);
+  --sidebar-bg:    rgba(255,255,255,0.13);
+  --sidebar-blur:  blur(22px) saturate(190%);
+  --sidebar-text:    #17191c;
+  --sidebar-text-2:  #575962;
+  --sidebar-text-3:  rgba(0,0,0,0.23);
+  --sidebar-hover:   rgba(0,0,0,0.038);
+  --sidebar-active:  rgba(0,0,0,0.055);
+  --sidebar-slider:  rgba(0,0,0,0.048);
+  --sidebar-border:  rgba(255,255,255,0.24);
+  --sidebar-divider: rgba(0,0,0,0.038);
 
-  /* 颜色 */
-  --text-1:   #181a1c;
-  --text-2:   #555860;
-  --text-3:   #8e9098;
+  /* 文字 */
+  --text-1:   #16181a;
+  --text-2:   #53565f;
+  --text-3:   #8b8d95;
 
-  --border-glass:  rgba(255,255,255,0.32);
-  --border-subtle: rgba(255,255,255,0.12);
-  --border-dark:   rgba(0,0,0,0.03);
+  /* 边框 */
+  --border-glass:  rgba(255,255,255,0.38);
+  --border-subtle: rgba(255,255,255,0.15);
+  --border-dark:   rgba(0,0,0,0.038);
 
-  /* 玻璃边缘折射 — 四边水光折射 */
+  /* 玻璃边缘折射 — 四向水光 */
   --glass-edge:
-    inset 0 1px 0 rgba(255,255,255,0.70),
-    inset 0 -1px 0 rgba(0,0,0,0.12),
-    inset 1px 0 0 rgba(255,255,255,0.30),
-    inset -1px 0 0 rgba(255,255,255,0.22);
+    inset 0 1px 0 rgba(255,255,255,0.75),
+    inset 0 -1px 0 rgba(0,0,0,0.09),
+    inset 1px 0 0 rgba(255,255,255,0.34),
+    inset -1px 0 0 rgba(255,255,255,0.26);
 
   /* 强调色 */
-  --accent-blue:   #6889b4;
-  --accent-purple: #887eb4;
-  --accent-teal:   #76a8a8;
-  --accent-coral:  #bc8c84;
+  --accent-blue:   #5779a6;
+  --accent-purple: #7a71a4;
+  --accent-teal:   #6a9a9a;
+  --accent-coral:  #ae7e76;
 
   /* 阴影 */
-  --shadow-sm: 0 2px 12px rgba(0,0,0,0.018);
-  --shadow-md: 0 8px 32px rgba(0,0,0,0.028);
-  --shadow-lg: 0 20px 60px rgba(0,0,0,0.06);
+  --shadow-sm: 0 1px 6px rgba(0,0,0,0.018), 0 3px 14px rgba(0,0,0,0.022);
+  --shadow-md: 0 2px 10px rgba(0,0,0,0.026), 0 7px 28px rgba(0,0,0,0.032);
+  --shadow-lg: 0 3px 16px rgba(0,0,0,0.035), 0 14px 44px rgba(0,0,0,0.045);
 
-  --r-xl: 22px; --r-lg: 16px; --r-md: 12px; --r-sm: 8px;
+  --r-xl: 24px; --r-lg: 18px; --r-md: 13px; --r-sm: 9px;
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-out-back: cubic-bezier(0.34, 1.56, 0.64, 1);
   --ease-in-out:    cubic-bezier(0.65, 0, 0.35, 1);
-  --page-transition: 0.7s;
+  --ease-spring:    cubic-bezier(0.22, 0.85, 0.35, 1.03);
+  --page-transition: 0.35s;
   --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "PingFang SC", "Microsoft YaHei", sans-serif;
   --font-mono: "SF Mono", "Menlo", "Consolas", monospace;
 }
@@ -90,78 +92,76 @@
    统一深色模式 — body.dark-mode 覆盖所有变量
    ================================================================ */
 body.dark-mode {
-  --bg: rgba(18, 20, 26, 0.92);
+  --bg: rgba(12, 14, 18, 0.88);
 
-  --glass-heavy:  rgba(255,255,255,0.06);
-  --glass-medium: rgba(255,255,255,0.04);
-  --glass-light:  rgba(255,255,255,0.025);
-  --glass-subtle: rgba(255,255,255,0.015);
-  --glass-card:   rgba(255,255,255,0.07);
+  --glass-heavy:  rgba(255,255,255,0.08);
+  --glass-medium: rgba(255,255,255,0.05);
+  --glass-light:  rgba(255,255,255,0.03);
+  --glass-subtle: rgba(255,255,255,0.018);
+  --glass-card:   rgba(255,255,255,0.09);
 
-  --blur-xl: blur(14px) saturate(130%);
-  --blur-lg: blur(10px) saturate(125%);
-  --blur-md: blur(7px) saturate(120%);
-  --blur-sm: blur(5px) saturate(115%);
+  --blur-xl: blur(20px) saturate(138%);
+  --blur-lg: blur(14px) saturate(130%);
+  --blur-md: blur(10px) saturate(124%);
+  --blur-sm: blur(6px) saturate(120%);
 
-  --sidebar-bg:    rgba(255,255,255,0.07);
-  --sidebar-blur:  blur(16px) saturate(130%);
-  --sidebar-text:    #e4e6ec;
-  --sidebar-text-2:  #9a9da8;
-  --sidebar-text-3:  rgba(255,255,255,0.16);
-  --sidebar-hover:   rgba(255,255,255,0.05);
-  --sidebar-active:  rgba(255,255,255,0.08);
-  --sidebar-slider:  rgba(255,255,255,0.06);
-  --sidebar-border:  rgba(255,255,255,0.10);
-  --sidebar-divider: rgba(255,255,255,0.04);
+  --sidebar-bg:    rgba(255,255,255,0.085);
+  --sidebar-blur:  blur(22px) saturate(138%);
+  --sidebar-text:    #e8eaf0;
+  --sidebar-text-2:  #9ea2ac;
+  --sidebar-text-3:  rgba(255,255,255,0.19);
+  --sidebar-hover:   rgba(255,255,255,0.058);
+  --sidebar-active:  rgba(255,255,255,0.095);
+  --sidebar-slider:  rgba(255,255,255,0.068);
+  --sidebar-border:  rgba(255,255,255,0.12);
+  --sidebar-divider: rgba(255,255,255,0.048);
 
-  --text-1:   #e4e6ec;
-  --text-2:   #9a9da8;
-  --text-3:   #6a6d78;
+  --text-1:   #e8eaf0;
+  --text-2:   #9ea2ac;
+  --text-3:   #6f717c;
 
-  --border-glass:  rgba(255,255,255,0.10);
-  --border-subtle: rgba(255,255,255,0.06);
-  --border-dark:   rgba(255,255,255,0.04);
+  --border-glass:  rgba(255,255,255,0.12);
+  --border-subtle: rgba(255,255,255,0.07);
+  --border-dark:   rgba(255,255,255,0.048);
 
   --glass-edge:
-    inset 0 1px 0 rgba(255,255,255,0.18),
-    inset 0 -1px 0 rgba(0,0,0,0.30),
-    inset 1px 0 0 rgba(255,255,255,0.08),
-    inset -1px 0 0 rgba(255,255,255,0.06);
+    inset 0 1px 0 rgba(255,255,255,0.22),
+    inset 0 -1px 0 rgba(0,0,0,0.34),
+    inset 1px 0 0 rgba(255,255,255,0.10),
+    inset -1px 0 0 rgba(255,255,255,0.08);
 
-  --accent-blue:   #8aaddb;
-  --accent-purple: #a89ad4;
-  --accent-teal:   #8ec8c8;
-  --accent-coral:  #d4a89c;
+  --accent-blue:   #80a4ca;
+  --accent-purple: #9d94ca;
+  --accent-teal:   #8abcbc;
+  --accent-coral:  #ca9a90;
 
-  --shadow-sm: 0 2px 12px rgba(0,0,0,0.18);
-  --shadow-md: 0 8px 32px rgba(0,0,0,0.24);
-  --shadow-lg: 0 20px 60px rgba(0,0,0,0.36);
+  --shadow-sm: 0 1px 6px rgba(0,0,0,0.14), 0 3px 14px rgba(0,0,0,0.12);
+  --shadow-md: 0 2px 10px rgba(0,0,0,0.18), 0 7px 28px rgba(0,0,0,0.16);
+  --shadow-lg: 0 3px 16px rgba(0,0,0,0.24), 0 14px 44px rgba(0,0,0,0.20);
 
-  background: #14161c;
+  background: #0e1016;
 }
-body.dark-mode #weatherCanvas { opacity: 0.25; }
-body.dark-mode #rainOverlay  { opacity: 0.55; }
+body.dark-mode #weatherCanvas { opacity: 0.30; }
+body.dark-mode #rainOverlay  { opacity: 0.52; }
 
-/* 暗色模式下硬编码元素的覆盖 */
-body.dark-mode .sidebar { box-shadow: 2px 0 40px rgba(0,0,0,0.28); }
-body.dark-mode .sidebar::before { background: linear-gradient(90deg, transparent 8%, rgba(255,255,255,0.18) 50%, transparent 92%); }
-body.dark-mode .sidebar-logo .logo-mark { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.08); }
-body.dark-mode .topbar-stage { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.08); }
-body.dark-mode .toggle-sw .ts-slider { background: rgba(255,255,255,0.14); border-color: rgba(255,255,255,0.10); }
-body.dark-mode .toggle-sw input:checked + .ts-slider { background: #8aaddb; }
-body.dark-mode .nav-badge.now { background: rgba(255,255,255,0.08); color: var(--text-2); }
-body.dark-mode .nav-badge.later { color: var(--text-3); border-color: rgba(255,255,255,0.10); }
-body.dark-mode .setting-row { border-bottom-color: rgba(255,255,255,0.04); }
-body.dark-mode .profile-field { border-bottom-color: rgba(255,255,255,0.04); }
+body.dark-mode .sidebar { box-shadow: 2px 0 55px rgba(0,0,0,0.32); }
+body.dark-mode .sidebar::before { background: linear-gradient(90deg, transparent 10%, rgba(255,255,255,0.22) 50%, transparent 90%); }
+body.dark-mode .sidebar-logo .logo-mark { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.10); }
+body.dark-mode .topbar-stage { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.10); }
+body.dark-mode .toggle-sw .ts-slider { background: rgba(255,255,255,0.16); border-color: rgba(255,255,255,0.12); }
+body.dark-mode .toggle-sw input:checked + .ts-slider { background: #80a4ca; }
+body.dark-mode .nav-badge.now { background: rgba(255,255,255,0.10); color: var(--text-2); }
+body.dark-mode .nav-badge.later { color: var(--text-3); border-color: rgba(255,255,255,0.12); }
+body.dark-mode .setting-row { border-bottom-color: rgba(255,255,255,0.048); }
+body.dark-mode .profile-field { border-bottom-color: rgba(255,255,255,0.048); }
 body.dark-mode .hamburger-btn span { background: var(--text-1); }
 
-/* 移动端暗色：禁用毛玻璃时的纯色回退 */
 @media (max-width: 860px) {
-  body.dark-mode .sidebar { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(30,32,38,0.96); }
-  body.dark-mode .topbar { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(30,32,38,0.96); }
+  body.dark-mode .sidebar { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(26,28,34,0.97); }
+  body.dark-mode .topbar { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(26,28,34,0.97); }
   body.dark-mode .person-card, body.dark-mode .order-card, body.dark-mode .exam-card, body.dark-mode .stat-card,
-  body.dark-mode .settings-section { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(30,32,38,0.92); }
-  body.dark-mode .detail-sheet { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(24,26,32,0.96); }
+  body.dark-mode .settings-section { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(26,28,34,0.95); }
+  body.dark-mode .detail-sheet { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(20,22,28,0.97); }
 }
 
 /* 全局重置 */
@@ -174,12 +174,13 @@ body {
   color: var(--text-1);
   display: flex;
   min-height: 100vh;
+  min-height: 100dvh;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   scrollbar-gutter: stable;
 
-  /* 透明 — 让 Canvas 天气层完全穿透 */
-  background: transparent;
+  /* 透明 — Canvas 天气穿透，bg 色由 main-content 的 ::before 伪元素承载 */
+  background: var(--bg);
 }
 
 /* Canvas 天气背景层 */
@@ -207,16 +208,17 @@ body {
   backdrop-filter: var(--sidebar-blur);
   -webkit-backdrop-filter: var(--sidebar-blur);
   border-right: 0.5px solid var(--sidebar-border);
-  box-shadow: 2px 0 40px rgba(0,0,0,0.04);
+  box-shadow: 2px 0 45px rgba(0,0,0,0.05);
   display: flex; flex-direction: column;
-  transition: transform var(--ease-out-expo) 0.5s;
+  transition: transform 0.40s var(--ease-spring);
+  overflow: hidden;
 }
 
 /* 侧边栏顶部光泽线 */
 .sidebar::before {
   content: '';
   position: absolute; top: 0; left: 0; right: 0; height: 0.5px;
-  background: linear-gradient(90deg, transparent 8%, rgba(255,255,255,0.55) 50%, transparent 92%);
+  background: linear-gradient(90deg, transparent 10%, rgba(255,255,255,0.60) 50%, transparent 90%);
   z-index: 1; pointer-events: none;
 }
 
@@ -246,12 +248,12 @@ body {
 
 /* 导航 */
 .sidebar-nav {
-  flex: 1; overflow-y: auto; padding: 6px 0;
-  scrollbar-width: thin; scrollbar-color: rgba(0,0,0,0.06) transparent;
-  position: relative; /* 锚定滑块的定位参考 */
+  flex: 1; overflow-y: auto; overflow-x: hidden; padding: 6px 0;
+  scrollbar-width: none;
+  position: relative;
 }
-.sidebar-nav::-webkit-scrollbar { width: 2px; }
-.sidebar-nav::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.06); border-radius: 8px; }
+.sidebar-nav::-webkit-scrollbar { width: 0; display: none; }
+.sidebar-nav::-webkit-scrollbar-thumb { display: none; }
 
 .nav-section-label {
   padding: 16px 20px 5px;
@@ -292,7 +294,7 @@ body {
   background: var(--sidebar-slider);
   z-index: 0;
   pointer-events: none;
-  transition: transform 0.55s var(--ease-out-expo); will-change: transform;
+  transition: transform 0.50s var(--ease-spring); will-change: transform;
   /* 顶部光泽 */
   box-shadow: var(--glass-edge);
 }
@@ -410,14 +412,14 @@ body {
    ================================================================ */
 
 .topbar {
-  position: sticky; top: 10px; z-index: 110;
-  margin: 10px 18px 0;
+  position: fixed; top: 12px; left: 260px; right: 12px; z-index: 110;
+  height: 58px;
   background: var(--glass-card);
   backdrop-filter: var(--blur-lg);
   -webkit-backdrop-filter: var(--blur-lg);
   border: 0.5px solid var(--border-glass);
   border-radius: var(--r-xl);
-  padding: 13px 20px;
+  padding: 0 20px;
   display: flex; align-items: center; gap: 14px;
   box-shadow: var(--glass-edge), var(--shadow-sm);
 }
@@ -520,7 +522,7 @@ body {
    ================================================================ */
 
 .content-area {
-  padding: 16px 18px; flex: 1;
+  padding: 82px 18px 16px; flex: 1;
   position: relative;
   display: flex; flex-direction: column;
 }
@@ -562,7 +564,7 @@ body {
 .stat-card:hover {
   transform: translateY(-2px);
   box-shadow: var(--glass-edge), var(--shadow-md);
-  background: rgba(255,255,255,0.30);
+  background: rgba(255,255,255,0.35);
 }
 
 .stat-icon-box {
@@ -620,7 +622,7 @@ body {
 .person-card:hover {
   transform: translateY(-4px);
   box-shadow: var(--glass-edge), 0 16px 40px rgba(0,0,0,0.06);
-  background: rgba(255,255,255,0.28);
+  background: rgba(255,255,255,0.33);
 }
 
 /* 卡片头部：头像 + 基本信息 */
@@ -911,7 +913,7 @@ body {
   line-height: 1;
 }
 .profile-nav-btn:hover {
-  background: rgba(255,255,255,0.28);
+  background: rgba(255,255,255,0.33);
   transform: scale(1.08);
 }
 .profile-nav-btn:active {
@@ -1002,19 +1004,19 @@ body {
 /* 档案响应式 */
 @media (max-width: 768px) {
   .profile-section .ps-fields { grid-template-columns: 1fr; }
-  /* 移动端禁用 backdrop-filter（GPU过热主因），改用不透明背景 */
-  .sidebar { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(22,24,32,0.96); }
-  .topbar { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(242,244,248,0.96); }
-  .person-card { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(255,255,255,0.92); }
-  .order-card { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(255,255,255,0.92); }
-  .exam-card { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(255,255,255,0.92); }
-  .stat-card { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(255,255,255,0.92); }
-  .detail-sheet { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(242,244,248,0.96); }
+  .sidebar { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(240,243,249,0.98); }
+  .topbar { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(240,243,249,0.97); }
+  .person-card { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(255,255,255,0.94); }
+  .order-card { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(255,255,255,0.94); }
+  .exam-card { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(255,255,255,0.94); }
+  .stat-card { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(255,255,255,0.94); }
+  .detail-sheet { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(240,243,249,0.97); }
   .modal, .modal-overlay { backdrop-filter: none; -webkit-backdrop-filter: none; }
-  /* 移动端降低大模糊阴影，减少 GPU 绘制压力 */
-  .person-card { box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
-  .order-card { box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
-  .modal { box-shadow: 0 8px 24px rgba(0,0,0,0.10); }
+  .person-card { box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+  .order-card { box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+  .modal { box-shadow: 0 8px 24px rgba(0,0,0,0.12); }
+  .topbar { position: fixed; top: 8px; left: 8px; right: 8px; height: 50px; }
+  .content-area { padding-top: 70px; }
 }
 
 /* ================================================================
@@ -3012,7 +3014,7 @@ body:not(.edit-mode) .settings-wrap .setting-select {
         <!-- 系统信息 -->
         <div class="settings-section">
           <div class="ss-title">系统信息</div>
-          <div class="info-row"><span class="ir-label">系统版本</span><span class="ir-value">v2.0.7</span></div>
+          <div class="info-row"><span class="ir-label">系统版本</span><span class="ir-value">v2.1.0</span></div>
           <div class="info-row"><span class="ir-label">数据总量</span><span class="ir-value">156 名员工</span></div>
           <div class="info-row"><span class="ir-label">最后更新</span><span class="ir-value">2026-08-12</span></div>
           <div class="info-row"><span class="ir-label">浏览器</span><span class="ir-value" id="sysBrowser">—</span></div>
@@ -3055,7 +3057,7 @@ body:not(.edit-mode) .settings-wrap .setting-select {
         <!-- 系统更新 -->
         <div class="settings-section">
           <div class="ss-title">系统更新</div>
-          <div class="info-row"><span class="ir-label">当前版本</span><span class="ir-value" id="sysVersion">v2.0.7</span></div>
+          <div class="info-row"><span class="ir-label">当前版本</span><span class="ir-value" id="sysVersion">v2.1.0</span></div>
           <div style="margin-top:8px;">
             <button class="btn btn-glass primary" id="btnCheckUpdate" style="width:100%;">🔍 检查更新</button>
           </div>
@@ -3343,7 +3345,7 @@ if ("serviceWorker" in navigator) {
     .catch(function(err) { console.log("[SW] 注册失败", err); });
 }
 // --- 应用版本（热更新检测用） ---
-const APP_VERSION = '2.0.7';
+const APP_VERSION = '2.1.0';
 let __updateAvailable = false;       // 是否有可用更新
 let __updateVersion = null;          // 新版本号
 let __updateChecking = false;        // 是否正在检查中
@@ -4999,7 +5001,7 @@ document.addEventListener('keydown', function(e) {
 })();
 
 /* ================================================================
-   分区 11k: Canvas 天气引擎 — 清晨毛毛雨 + 雾霭
+   分区 11k: Canvas 天气引擎 v2.1 — 真实细雨 + 柔雾
    ================================================================ */
 (function initWeather() {
   var canvas = document.getElementById('weatherCanvas');
@@ -5009,17 +5011,15 @@ document.addEventListener('keydown', function(e) {
   var W, H;
   var raindrops = [];
   var fogLayers = [];
-  var RAIN_COUNT = 150;
-  var FOG_COUNT = 6;           // 10→6
+  var RAIN_COUNT = 200;
+  var FOG_COUNT = 5;
   var animRAF = null;
   var lastFrameTime = 0;
-  var FRAME_INTERVAL = 25;     // ~40 FPS
+  var FRAME_INTERVAL = 22;
 
-  /* 离屏 canvas — 缓存静态底图（3 层渐变），仅 resize 时重建 */
   var bgCache = null;
   var bgCtx = null;
 
-  /* 预计算雨丝颜色数组，避免每帧字符串拼接 */
   var rainColorsNear = [];
   var rainColorsFar = [];
 
@@ -5028,8 +5028,8 @@ document.addEventListener('keydown', function(e) {
     rainColorsFar = [];
     for (var o = 0; o <= 100; o++) {
       var alpha = (o / 100).toFixed(2);
-      rainColorsNear.push('rgba(55,75,105,' + alpha + ')');
-      rainColorsFar.push('rgba(90,115,145,' + alpha + ')');
+      rainColorsNear.push('rgba(50,68,98,' + alpha + ')');
+      rainColorsFar.push('rgba(82,108,140,' + alpha + ')');
     }
   }
 
@@ -5048,29 +5048,26 @@ document.addEventListener('keydown', function(e) {
     bgCache.width = W;
     bgCache.height = H;
 
-    /* 亮灰底 */
     var baseGrad = bgCtx.createLinearGradient(0, 0, 0, H);
-    baseGrad.addColorStop(0, '#d5dbe6');
-    baseGrad.addColorStop(0.4, '#dde3ed');
-    baseGrad.addColorStop(0.7, '#d8dfe8');
-    baseGrad.addColorStop(1, '#d0d7e2');
+    baseGrad.addColorStop(0, '#d2d9e3');
+    baseGrad.addColorStop(0.35, '#dae1eb');
+    baseGrad.addColorStop(0.65, '#d6dde6');
+    baseGrad.addColorStop(1, '#cdd4df');
     bgCtx.fillStyle = baseGrad;
     bgCtx.fillRect(0, 0, W, H);
 
-    /* 左上晨光 */
-    var glow1 = bgCtx.createRadialGradient(W * 0.08, H * 0.03, 0, W * 0.08, H * 0.03, W * 0.70);
-    glow1.addColorStop(0, 'rgba(245,235,210,0.28)');
-    glow1.addColorStop(0.2, 'rgba(228,222,200,0.16)');
-    glow1.addColorStop(0.5, 'rgba(210,215,220,0.05)');
-    glow1.addColorStop(1, 'rgba(195,205,218,0)');
+    var glow1 = bgCtx.createRadialGradient(W * 0.06, H * 0.02, 0, W * 0.06, H * 0.02, W * 0.65);
+    glow1.addColorStop(0, 'rgba(248,238,215,0.30)');
+    glow1.addColorStop(0.18, 'rgba(230,224,202,0.18)');
+    glow1.addColorStop(0.45, 'rgba(212,217,222,0.06)');
+    glow1.addColorStop(1, 'rgba(198,208,220,0)');
     bgCtx.fillStyle = glow1;
     bgCtx.fillRect(0, 0, W, H);
 
-    /* 右下冷暗 */
-    var glow2 = bgCtx.createRadialGradient(W * 0.92, H * 0.90, 0, W * 0.92, H * 0.90, W * 0.72);
-    glow2.addColorStop(0, 'rgba(130,145,170,0.20)');
-    glow2.addColorStop(0.35, 'rgba(145,158,180,0.09)');
-    glow2.addColorStop(1, 'rgba(180,195,215,0)');
+    var glow2 = bgCtx.createRadialGradient(W * 0.90, H * 0.88, 0, W * 0.90, H * 0.88, W * 0.70);
+    glow2.addColorStop(0, 'rgba(125,140,165,0.22)');
+    glow2.addColorStop(0.32, 'rgba(140,152,175,0.10)');
+    glow2.addColorStop(1, 'rgba(175,190,210,0)');
     bgCtx.fillStyle = glow2;
     bgCtx.fillRect(0, 0, W, H);
   }
@@ -5079,19 +5076,22 @@ document.addEventListener('keydown', function(e) {
     W = canvas.width  = window.innerWidth;
     H = canvas.height = window.innerHeight;
     initParticles();
-    buildBgCache();      // resize 时重建底图缓存
+    buildBgCache();
   }
 
   function initParticles() {
     raindrops = [];
     for (var i = 0; i < RAIN_COUNT; i++) {
+      var depth = Math.random();
       raindrops.push({
-        x: Math.random() * W,
-        y: Math.random() * H,
-        len: 12 + Math.random() * 40,
-        speed: 4 + Math.random() * 14,
-        opacity: 0.35 + Math.random() * 0.55,
-        wind: 0.5 + Math.random() * 1.5
+        x: Math.random() * W * 1.2 - W * 0.1,
+        y: Math.random() * H * 1.2 - H * 0.1,
+        len: 8 + depth * 45,
+        speed: 3 + depth * 15,
+        opacity: 0.22 + depth * 0.58,
+        wind: 0.3 + depth * 1.6,
+        width: 0.6 + depth * 1.6,
+        depth: depth
       });
     }
 
@@ -5099,11 +5099,11 @@ document.addEventListener('keydown', function(e) {
     for (var i = 0; i < FOG_COUNT; i++) {
       fogLayers.push({
         x: Math.random() * W,
-        y: Math.random() * H,
-        r: 250 + Math.random() * 500,
-        dx: (Math.random() - 0.5) * 0.55,
-        dy: -0.10 - Math.random() * 0.45,
-        opacity: 0.10 + Math.random() * 0.25
+        y: Math.random() * H * 0.7,
+        r: 220 + Math.random() * 480,
+        dx: (Math.random() - 0.5) * 0.45,
+        dy: -0.08 - Math.random() * 0.38,
+        opacity: 0.08 + Math.random() * 0.22
       });
     }
   }
@@ -5112,9 +5112,9 @@ document.addEventListener('keydown', function(e) {
     for (var i = 0; i < fogLayers.length; i++) {
       var f = fogLayers[i];
       var gradient = ctx.createRadialGradient(f.x, f.y, 0, f.x, f.y, f.r);
-      gradient.addColorStop(0, 'rgba(155,170,195,' + f.opacity + ')');
-      gradient.addColorStop(0.3, 'rgba(168,182,205,' + (f.opacity * 0.65) + ')');
-      gradient.addColorStop(1, 'rgba(185,198,215,0)');
+      gradient.addColorStop(0, 'rgba(150,166,190,' + f.opacity + ')');
+      gradient.addColorStop(0.28, 'rgba(164,178,200,' + (f.opacity * 0.60) + ')');
+      gradient.addColorStop(1, 'rgba(182,195,212,0)');
       ctx.fillStyle = gradient;
       ctx.beginPath();
       ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2);
@@ -5131,20 +5131,20 @@ document.addEventListener('keydown', function(e) {
   function drawRain() {
     for (var i = 0; i < raindrops.length; i++) {
       var d = raindrops[i];
+      var isNear = d.depth > 0.55;
       ctx.beginPath();
       ctx.moveTo(d.x, d.y);
-      ctx.lineTo(d.x + d.wind, d.y + d.len);
-      var isNear = d.opacity > 0.60;
+      ctx.lineTo(d.x + d.wind * 1.1, d.y + d.len);
       ctx.strokeStyle = getRainColor(isNear, d.opacity);
-      ctx.lineWidth = isNear ? 2.0 : 1.2;
+      ctx.lineWidth = d.width;
       ctx.lineCap = 'round';
       ctx.stroke();
 
       d.y += d.speed;
-      d.x -= d.wind * 0.6;
-      if (d.y > H + 60) { d.y = -60; d.x = Math.random() * W; }
-      if (d.x < -60) d.x = W + 60;
-      if (d.x > W + 60) d.x = -60;
+      d.x -= d.wind * 0.55;
+      if (d.y > H + 80) { d.y = -80; d.x = Math.random() * W * 1.2 - W * 0.1; }
+      if (d.x < -80) d.x = W + 80;
+      if (d.x > W + 80) d.x = -80;
     }
   }
 
@@ -5154,14 +5154,10 @@ document.addEventListener('keydown', function(e) {
       return;
     }
     lastFrameTime = timestamp;
-
-    /* 仅 clear + 贴底图（bgCache 含 3 层渐变），不逐帧创渐变 */
     ctx.clearRect(0, 0, W, H);
     ctx.drawImage(bgCache, 0, 0);
-
     drawFog();
     drawRain();
-
     animRAF = requestAnimationFrame(animate);
   }
 
@@ -5175,7 +5171,6 @@ document.addEventListener('keydown', function(e) {
     if (animRAF) { cancelAnimationFrame(animRAF); animRAF = null; }
   }
 
-  // 页面不可见时暂停动画（省电 + 降温）
   document.addEventListener('visibilitychange', function() {
     if (document.hidden) stopAnim();
     else startAnim();
@@ -5183,98 +5178,147 @@ document.addEventListener('keydown', function(e) {
 
   window.addEventListener('resize', resize);
 
-  buildRainColors();   // 预计算颜色查表
-  resize();            // 初始化尺寸 → 调 buildBgCache
+  buildRainColors();
+  resize();
   startAnim();
-  console.log('◈ 天气引擎 — 离屏缓存 + 预计算 + ~40fps — 已启动');
+  console.log('◈ 天气引擎 v2.1 — 真实细雨 + 柔雾 — 已启动');
 })();
 
-/* ---- 雨丝覆盖层 — 玻璃上方渲染，确保雨丝始终可见（已节流 + 预计算） ---- */
+/* ---- 玻璃水珠覆盖层 v2.1 — 水滴折射 + 滑落效果 ---- */
 (function initRainOverlay() {
   var canvas = document.getElementById('rainOverlay');
   if (!canvas) return;
   var ctx = canvas.getContext('2d');
 
   var OW, OH;
-  var drops = [];
-  var DROP_COUNT = 80;        // 100→80
+  var droplets = [];
+  var DROPLET_COUNT = 45;
   var overlayRAF = null;
   var lastFrameTime = 0;
-  var FRAME_INTERVAL = 25;    // ~40 FPS
-
-  /* 预计算雨滴颜色数组，避免每帧字符串拼接 */
-  var dropColors = [];
-
-  function buildDropColors() {
-    dropColors = [];
-    for (var o = 0; o <= 100; o++) {
-      var alpha = (o / 100).toFixed(2);
-      dropColors.push('rgba(70,95,130,' + alpha + ')');
-    }
-  }
-
-  function getDropColor(opacity) {
-    var idx = Math.round(opacity * 100);
-    if (idx < 0) idx = 0;
-    if (idx > 100) idx = 100;
-    return dropColors[idx];
-  }
+  var FRAME_INTERVAL = 30;
+  var slideCooldown = 0;
 
   function resizeOverlay() {
     OW = canvas.width  = window.innerWidth;
     OH = canvas.height = window.innerHeight;
-    drops.length = 0;
-    for (var i = 0; i < DROP_COUNT; i++) {
-      drops.push({
-        x: Math.random() * OW,
-        y: Math.random() * OH,
-        len: 15 + Math.random() * 50,
-        speed: 5 + Math.random() * 16,
-        opacity: 0.18 + Math.random() * 0.45,
-        wind: 0.6 + Math.random() * 1.8,
-        width: 0.8 + Math.random() * 1.4
-      });
+    droplets.length = 0;
+    for (var i = 0; i < DROPLET_COUNT; i++) {
+      droplets.push(createDroplet());
     }
   }
 
-  function drawOverlay(timestamp) {
+  function createDroplet() {
+    var rx = 2.5 + Math.random() * 7;
+    var ry = rx * (0.45 + Math.random() * 0.35);
+    return {
+      x: Math.random() * OW,
+      y: Math.random() * OH,
+      rx: rx, ry: ry,
+      opacity: 0.06 + Math.random() * 0.12,
+      slideSpeed: 0,
+      slideAngle: 0,
+      growing: true,
+      growRate: 0.0004 + Math.random() * 0.0009,
+      maxRx: rx + Math.random() * 6
+    };
+  }
+
+  function drawDroplets(timestamp) {
     if (timestamp - lastFrameTime < FRAME_INTERVAL) {
-      overlayRAF = requestAnimationFrame(drawOverlay);
+      overlayRAF = requestAnimationFrame(drawDroplets);
       return;
     }
+    var dt = timestamp - lastFrameTime;
     lastFrameTime = timestamp;
+    slideCooldown += dt;
 
     ctx.clearRect(0, 0, OW, OH);
-    for (var i = 0; i < drops.length; i++) {
-      var d = drops[i];
+
+    for (var i = 0; i < droplets.length; i++) {
+      var d = droplets[i];
+
+      // Growth/shrink cycle
+      if (d.growing) {
+        d.rx += d.growRate;
+        if (d.rx >= d.maxRx) d.growing = false;
+      } else {
+        d.rx -= d.growRate * 0.5;
+        if (d.rx <= 2.5) { d.growing = true; d.maxRx = 2.5 + Math.random() * 7; }
+      }
+      d.ry = d.rx * (0.48 + 0.02 * Math.sin(d.rx));
+
+      // Occasional slide down
+      if (d.slideSpeed > 0.03) {
+        d.x += Math.cos(d.slideAngle) * d.slideSpeed;
+        d.y += Math.sin(d.slideAngle) * d.slideSpeed;
+        d.slideSpeed *= 0.965;
+        if (d.slideSpeed < 0.03) d.slideSpeed = 0;
+      }
+
+      if (slideCooldown > 600 && Math.random() < 0.008 && d.rx > 5 && d.slideSpeed === 0) {
+        d.slideSpeed = 1.2 + Math.random() * 3.5;
+        d.slideAngle = (Math.PI / 2) + (Math.random() - 0.5) * 0.55;
+        d.rx *= 0.65;
+        d.growing = true;
+        slideCooldown = 0;
+      }
+
+      // Wrap
+      if (d.y > OH + 20) {
+        var nd = createDroplet();
+        d.x = nd.x; d.y = -10; d.rx = nd.rx; d.ry = nd.ry;
+        d.opacity = nd.opacity; d.slideSpeed = 0;
+      }
+      if (d.x < -20) d.x = OW + 20;
+      if (d.x > OW + 20) d.x = -20;
+
+      // Draw droplet
+      ctx.save();
+      ctx.globalAlpha = d.opacity;
+
+      // Drop shadow
+      ctx.fillStyle = 'rgba(0,0,0,0.07)';
       ctx.beginPath();
-      ctx.moveTo(d.x, d.y);
-      ctx.lineTo(d.x + d.wind, d.y + d.len);
-      ctx.strokeStyle = getDropColor(d.opacity);
-      ctx.lineWidth = d.width;
-      ctx.lineCap = 'round';
+      ctx.ellipse(d.x + 1, d.y + 1.5, d.rx, d.ry, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Body
+      ctx.fillStyle = 'rgba(200,215,235,0.48)';
+      ctx.beginPath();
+      ctx.ellipse(d.x, d.y, d.rx, d.ry, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Highlight
+      var hx = d.x - d.rx * 0.25;
+      var hy = d.y - d.ry * 0.3;
+      ctx.fillStyle = 'rgba(255,255,255,0.58)';
+      ctx.beginPath();
+      ctx.ellipse(hx, hy, d.rx * 0.42, d.ry * 0.38, -0.2, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Edge
+      ctx.strokeStyle = 'rgba(255,255,255,0.16)';
+      ctx.lineWidth = 0.5;
+      ctx.beginPath();
+      ctx.ellipse(d.x, d.y, d.rx, d.ry, 0, 0, Math.PI * 2);
       ctx.stroke();
 
-      d.y += d.speed;
-      d.x -= d.wind * 0.5;
-      if (d.y > OH + 80) { d.y = -80; d.x = Math.random() * OW; }
-      if (d.x < -80) d.x = OW + 80;
-      if (d.x > OW + 80) d.x = -80;
+      ctx.restore();
     }
-    overlayRAF = requestAnimationFrame(drawOverlay);
+
+    overlayRAF = requestAnimationFrame(drawDroplets);
   }
 
   function startOverlay() {
     if (overlayRAF) return;
     lastFrameTime = 0;
-    overlayRAF = requestAnimationFrame(drawOverlay);
+    overlayRAF = requestAnimationFrame(drawDroplets);
   }
 
   function stopOverlay() {
     if (overlayRAF) { cancelAnimationFrame(overlayRAF); overlayRAF = null; }
   }
 
-  // 页面不可见时暂停
   document.addEventListener('visibilitychange', function() {
     if (document.hidden) stopOverlay();
     else startOverlay();
@@ -5282,17 +5326,17 @@ document.addEventListener('keydown', function(e) {
 
   window.addEventListener('resize', resizeOverlay);
 
-  buildDropColors();  // 预计算颜色查表
   resizeOverlay();
   startOverlay();
+  console.log('◈ 玻璃水珠覆盖层 v2.1 — 水滴折射 + 滑落 — 已启动');
 })();
 
-console.log('◈ 人员管理系统 — 阶段1 · 子阶段A — 加载完成');
-console.log('  ✓ iOS 19 液态玻璃 · 活力玻璃设计系统');
-console.log('  ✓ Canvas 动态天气背景（晨雨+雾）');
-console.log('  ✓ 侧边栏浅色玻璃 0.7s 滑入淡出动画');
-console.log('  ✓ 侧边栏高亮滑块滑动动画');
-console.log('  ✓ 人员卡片网格 (4列玻璃方块)');
+console.log('◈ 人员管理系统 v2.1.0 — iOS 液态玻璃 — 加载完成');
+console.log('  ✓ iOS 液态玻璃设计系统 · 超通透水光折射');
+console.log('  ✓ Canvas 真实细雨 + 柔雾天气引擎');
+console.log('  ✓ 玻璃水珠覆盖层 · 水滴折射 + 滑落效果');
+console.log('  ✓ 侧边栏/顶栏 固定布局 · 弹簧动画');
+console.log('  ✓ 6 页全玻璃卡片 · 自适应缩放');
 
 
 /* ================================================================
