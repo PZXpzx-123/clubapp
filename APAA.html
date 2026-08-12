@@ -3002,8 +3002,8 @@ body:not(.edit-mode) .settings-wrap .setting-select {
         <!-- 系统信息 -->
         <div class="settings-section">
           <div class="ss-title">系统信息</div>
-          <div class="info-row"><span class="ir-label">系统版本</span><span class="ir-value">v2.2.5</span></div>
-          <div class="info-row"><span class="ir-label">数据总量</span><span class="ir-value">156 名员工</span></div>
+          <div class="info-row"><span class="ir-label">系统版本</span><span class="ir-value">v2.2.6</span></div>
+          <div class="info-row"><span class="ir-label">数据总量</span><span class="ir-value" id="sysDataCount">— 名员工</span></div>
           <div class="info-row"><span class="ir-label">最后更新</span><span class="ir-value">2026-08-12</span></div>
           <div class="info-row"><span class="ir-label">浏览器</span><span class="ir-value" id="sysBrowser">—</span></div>
         </div>
@@ -3045,7 +3045,7 @@ body:not(.edit-mode) .settings-wrap .setting-select {
         <!-- 系统更新 -->
         <div class="settings-section">
           <div class="ss-title">系统更新</div>
-          <div class="info-row"><span class="ir-label">当前版本</span><span class="ir-value" id="sysVersion">v2.2.5</span></div>
+          <div class="info-row"><span class="ir-label">当前版本</span><span class="ir-value" id="sysVersion">v2.2.6</span></div>
           <div style="margin-top:8px;">
             <button class="btn btn-glass primary" id="btnCheckUpdate" style="width:100%;">🔍 检查更新</button>
           </div>
@@ -3333,7 +3333,7 @@ if ("serviceWorker" in navigator) {
     .catch(function(err) { console.log("[SW] 注册失败", err); });
 }
 // --- 应用版本（热更新检测用） ---
-const APP_VERSION = '2.2.5';
+const APP_VERSION = '2.2.6';
 let __updateAvailable = false;       // 是否有可用更新
 let __updateVersion = null;          // 新版本号
 let __updateChecking = false;        // 是否正在检查中
@@ -3541,7 +3541,7 @@ const cloudAppearance = {
       tone: document.getElementById('setTone')?.value ?? 'cool',
       zoom_level: parseInt((document.querySelector('#setZoom .zp-btn.active')?.dataset?.v), 10) || 100,
       toast_enabled: document.getElementById('setToast')?.checked ?? true,
-      page_size: parseInt(document.getElementById('setPageSize')?.value, 10) || 10,
+      page_size: (() => { const v = parseInt(document.getElementById('setPageSize')?.value, 10); return isNaN(v) ? 10 : v; })(),
     };
     await ensureCloudUser();
     const { error } = await sb.from('app_settings').upsert(row, { onConflict: 'user_id' });
@@ -3576,7 +3576,7 @@ const cloudAppearance = {
     apply('setTone',    data.tone,            'select');
     apply('setZoom',    data.zoom_level,      'range');
     // pageSize
-    if (data.page_size) {
+    if (data.page_size !== undefined && data.page_size !== null) {
       const psEl = document.getElementById('setPageSize');
       if (psEl) { psEl.value = data.page_size; setTimeout(function(){ psEl.dispatchEvent(new Event('change')); }, 200); }
     }
@@ -3731,9 +3731,9 @@ const cloudPersonnel = {
     } catch (e) { console.warn('[Cloud] 直接删除失败:', e); }
   },
 
-  /** 直接 upsert 单个人——立即操作云端 */
+  /** 直接 upsert 单个人——立即操作云端，返回是否成功 */
   async upsertPersonDirect(p) {
-    if (!cloudReady) return;
+    if (!cloudReady) return false;
     try {
       const uid = getUserId();
       await sb.from('personnel').upsert({
@@ -3743,12 +3743,13 @@ const cloudPersonnel = {
       }, { onConflict: 'user_id,id' });
       notifyChange();
       console.log('[Cloud] ⬆ 直接保存人员 id=' + p.id);
-    } catch (e) { console.warn('[Cloud] 直接保存失败:', e); }
+      return true;
+    } catch (e) { console.warn('[Cloud] 直接保存失败:', e); return false; }
   },
 
-  /** 直接 upsert 单个订单——立即操作云端 */
+  /** 直接 upsert 单个订单——立即操作云端，返回是否成功 */
   async upsertOrderDirect(o, personId) {
-    if (!cloudReady) return;
+    if (!cloudReady) return false;
     try {
       const uid = getUserId();
       await sb.from('orders').upsert({
@@ -3763,7 +3764,8 @@ const cloudPersonnel = {
       }, { onConflict: 'user_id,id' });
       notifyChange();
       console.log('[Cloud] ⬆ 直接保存订单 id=' + o.id);
-    } catch (e) { console.warn('[Cloud] 直接保存订单失败:', e); }
+      return true;
+    } catch (e) { console.warn('[Cloud] 直接保存订单失败:', e); return false; }
   }
 };
 
@@ -3834,9 +3836,9 @@ const cloudExam = {
     console.log(`[Cloud] ✓ 绩效考核已加载 (${examCandidates.length}考生)`);
   },
 
-  /** 直接 upsert 单个考生——立即操作云端 */
+  /** 直接 upsert 单个考生——立即操作云端，返回是否成功 */
   async upsertCandidateDirect(c) {
-    if (!cloudReady) return;
+    if (!cloudReady) return false;
     try {
       const uid = getUserId();
       await sb.from('exam_candidates').upsert({
@@ -3845,7 +3847,8 @@ const cloudExam = {
       }, { onConflict: 'user_id,id' });
       notifyChange();
       console.log('[Cloud] ⬆ 直接保存考生 id=' + c.id);
-    } catch (e) { console.warn('[Cloud] 直接保存考生失败:', e); }
+      return true;
+    } catch (e) { console.warn('[Cloud] 直接保存考生失败:', e); return false; }
   },
 
   /** 直接删除单个考生——立即操作云端 */
@@ -3965,6 +3968,9 @@ async function __handleRemoteChange(remoteTime) {
     await cloudLoadAll();
     filteredPeople = [...people];
     renderCards();
+    renderPersonnelList();
+    initPersonnelFilters();
+    renderExamCards();
     console.log('[Realtime] ✅ 数据已同步');
   } catch (e) {
     console.warn('[Realtime] 拉取失败:', e.message);
@@ -4043,7 +4049,7 @@ function stopRealtimeSync() {
 function showCloudUserUI() {
   const headerRight = document.querySelector('.topbar-actions');
   if (!headerRight) return;
-  if (document.getElementById('cloudUserBtn')) return;
+  if (document.getElementById('cloudUserBar')) return;
 
   const container = document.createElement('div');
   container.id = 'cloudUserBar';
@@ -4258,6 +4264,10 @@ let filteredPeople = [...people];
    ================================================================ */
 
 function renderCards() {
+  // 收敛 currentPage：删除/筛选/改每页数量后可能超出总页数，导致空页
+  const _totalPages = pageSize === 0 ? 1 : (Math.ceil(filteredPeople.length / pageSize) || 1);
+  if (currentPage > _totalPages) currentPage = _totalPages;
+
   // pageSize=0 表示"全部显示"
   const pageData = pageSize === 0 ? filteredPeople : filteredPeople.slice((currentPage - 1) * pageSize, currentPage * pageSize);
   const grid = document.getElementById('personGrid');
@@ -4349,6 +4359,8 @@ function goPage(p) {
 function updateStats() {
   const el = document.getElementById('statTotal');
   if (el) el.textContent = people.length;
+  const dc = document.getElementById('sysDataCount');
+  if (dc) dc.textContent = people.length + ' 名员工';
 }
 
 /* ================================================================
@@ -5676,12 +5688,12 @@ function submitAddCard(personId) {
   };
 
   // 先写云端，再同步本地
-  cloudPersonnel.upsertOrderDirect(order, personId).then(() => {
+  cloudPersonnel.upsertOrderDirect(order, personId).then(success => {
     if (!personOrders[personId]) personOrders[personId] = [];
     personOrders[personId].push(order);
     hideAddCardForm();
     renderOrderCards(personId);
-    showToast('订单「' + orderName + '」创建成功', true);
+    showToast(success ? '订单「' + orderName + '」创建成功' : '订单已保存到本地，云端同步失败', success);
   });
 }
 
@@ -6141,6 +6153,7 @@ function renderOverviewTable(year, month) {
     }
   });
 
+  document.getElementById('attSumTotal').textContent = people.length;
   document.getElementById('attSumPresent').textContent = todayPresent;
   document.getElementById('attSumLate').textContent = todayLate;
   document.getElementById('attSumLeave').textContent = todayLeave;
@@ -6315,6 +6328,7 @@ console.log('◈ 阶段4 — 考勤管理 — 已就绪');
    ================================================================ */
 
 const salDataCache = new Map(); // key: "YYYY-MM"
+let salCurrentYear = 0, salCurrentMonth = 0; // 当前薪酬视图年月（供行点击使用）
 
 function generateSalaryData(year, month) {
   const key = year + '-' + String(month).padStart(2,'0');
@@ -6355,6 +6369,7 @@ function generateSalaryData(year, month) {
    ================================================================ */
 
 function renderSalaryOverview(year, month) {
+  salCurrentYear = year; salCurrentMonth = month;
   const data = generateSalaryData(year, month);
   const totalAll = data.reduce((s, d) => s + d.total, 0);
   const totalBonus = data.reduce((s, d) => s + d.bonus, 0);
@@ -6388,7 +6403,7 @@ function renderSalaryOverview(year, month) {
     salBody.addEventListener('click', function(e) {
       var row = e.target.closest('.sal-row');
       if (!row) return;
-      showSalaryDetail(Number(row.dataset.sid), _salYear, _salMonth);
+      showSalaryDetail(Number(row.dataset.sid), salCurrentYear, salCurrentMonth);
     });
   }
 
@@ -6655,11 +6670,11 @@ function submitExamCandidate() {
   };
 
   // 先写云端，再同步本地
-  cloudExam.upsertCandidateDirect(candidate).then(() => {
+  cloudExam.upsertCandidateDirect(candidate).then(success => {
     examCandidates.push(candidate);
     hideExamAddForm();
     renderExamCards();
-    	showToast('考生「' + name + '」已添加', true);
+    showToast(success ? '考生「' + name + '」已添加' : '考生已保存到本地，云端同步失败', success);
   });
 }
 
@@ -6956,9 +6971,10 @@ function resetTrainView() {
   });
 
   function compareVersions(a, b) {
-    const pa = a.split('.').map(Number);
-    const pb = b.split('.').map(Number);
-    for (let i = 0; i < 3; i++) {
+    const pa = String(a).split('.').map(x => parseInt(x, 10) || 0);
+    const pb = String(b).split('.').map(x => parseInt(x, 10) || 0);
+    const len = Math.max(pa.length, pb.length);
+    for (let i = 0; i < len; i++) {
       if ((pa[i] || 0) > (pb[i] || 0)) return 1;
       if ((pa[i] || 0) < (pb[i] || 0)) return -1;
     }
@@ -7143,7 +7159,7 @@ function resetTrainView() {
       if ('caches' in window) {
         try {
           var cache = await caches.open('clubapp-v' + downloadedVersion);
-          await cache.put(updateUrl, new Response(merged, {
+          await cache.put(updateUrl, new Response(new TextEncoder().encode(htmlText), {
             headers: { 'Content-Type': 'text/html; charset=utf-8' }
           }));
         } catch(ce) { console.warn('[Update] Cache write failed:', ce); }
@@ -7238,9 +7254,6 @@ function resetTrainView() {
       if (cached && cached.version && cached.html) {
         if (compareVersions(cached.version, APP_VERSION) > 0) {
           console.log('[Update] Found cached v' + cached.version + ' > current v' + APP_VERSION);
-          // Re-save before navigate (belt and suspenders)
-          await clearUpdateDB();
-          await saveUpdateToDB(cached.version, cached.html);
           var blob = new Blob([cached.html], { type: 'text/html; charset=utf-8' });
           var blobUrl = URL.createObjectURL(blob);
           location.replace(blobUrl);
@@ -7343,6 +7356,7 @@ function resetTrainView() {
       document.body.style.transform = `scale(${scale})`;
       document.body.style.transformOrigin = 'top left';
       document.body.style.width = `${100 / scale}%`;
+      document.body.style.height = `${100 / scale}%`;
       cloudAutoSave();
     });
 
