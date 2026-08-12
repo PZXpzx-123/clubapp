@@ -1902,7 +1902,9 @@ body {
 }
 .exam-detail-sheet .ed-headcount {
   text-align: center; font-size: 12px; font-weight: 700; color: var(--text-2);
+  cursor: pointer; user-select: none;
 }
+.exam-detail-sheet .ed-headcount:hover { color: #3a5a9e; }
 .exam-detail-sheet .ed-headcount b { color: #3a5a9e; font-size: 14px; }
 
 .exam-detail-sheet .ed-btn {
@@ -3017,7 +3019,7 @@ body:not(.edit-mode) .settings-wrap .setting-select {
         <!-- 系统信息 -->
         <div class="settings-section">
           <div class="ss-title">系统信息</div>
-          <div class="info-row"><span class="ir-label">系统版本</span><span class="ir-value">v2.3.0</span></div>
+          <div class="info-row"><span class="ir-label">系统版本</span><span class="ir-value">v2.3.1</span></div>
           <div class="info-row"><span class="ir-label">数据总量</span><span class="ir-value" id="sysDataCount">— 名员工</span></div>
           <div class="info-row"><span class="ir-label">最后更新</span><span class="ir-value">2026-08-12</span></div>
           <div class="info-row"><span class="ir-label">浏览器</span><span class="ir-value" id="sysBrowser">—</span></div>
@@ -3060,7 +3062,7 @@ body:not(.edit-mode) .settings-wrap .setting-select {
         <!-- 系统更新 -->
         <div class="settings-section">
           <div class="ss-title">系统更新</div>
-          <div class="info-row"><span class="ir-label">当前版本</span><span class="ir-value" id="sysVersion">v2.3.0</span></div>
+          <div class="info-row"><span class="ir-label">当前版本</span><span class="ir-value" id="sysVersion">v2.3.1</span></div>
           <div style="margin-top:8px;">
             <button class="btn btn-glass primary" id="btnCheckUpdate" style="width:100%;">🔍 检查更新</button>
           </div>
@@ -3348,7 +3350,7 @@ if ("serviceWorker" in navigator) {
     .catch(function(err) { console.log("[SW] 注册失败", err); });
 }
 // --- 应用版本（热更新检测用） ---
-const APP_VERSION = '2.3.0';
+const APP_VERSION = '2.3.1';
 let __updateAvailable = false;       // 是否有可用更新
 let __updateVersion = null;          // 新版本号
 let __updateChecking = false;        // 是否正在检查中
@@ -3802,6 +3804,7 @@ const cloudExam = {
       add_time: c.addTime || '',
       pass_time: c.passTime || '',
       reject_time: c.rejectTime || '',
+      head_count: c.headcount || 0,
     }));
 
     // upsert 避免"先删后插失败"导致数据丢失
@@ -3845,6 +3848,7 @@ const cloudExam = {
         addTime: c.add_time || '',
         passTime: c.pass_time || '',
         rejectTime: c.reject_time || '',
+        headcount: c.head_count || 0,
       });
     }
 
@@ -3866,6 +3870,7 @@ const cloudExam = {
         id: c.id, user_id: uid, name: c.name,
         project: c.project || '护航', count: c.count || 0, status: c.status || 'pending',
         add_time: c.addTime || '', pass_time: c.passTime || '', reject_time: c.rejectTime || '',
+        head_count: c.headcount || 0,
       }, { onConflict: 'user_id,id' });
       notifyChange();
       console.log('[Cloud] ⬆ 直接保存考生 id=' + c.id);
@@ -6509,7 +6514,7 @@ function resetSalaryView() {
    ================================================================ */
 
 /* ---- 考生数据存储 ---- */
-const examCandidates = [];    /* [{ id, name, project, count, status, addTime, passTime, rejectTime }] */
+const examCandidates = [];    /* [{ id, name, project, count, status, addTime, passTime, rejectTime, headcount }] */
 let examIdCounter = 1;
 /* status: 'pending' | 'passed' | 'rejected' */
 
@@ -6545,11 +6550,11 @@ function renderExamCards() {
         ? '<span class="ec-status ec-st-rejected">✕ 未通过</span>'
         : '<span class="ec-status ec-st-pending">考核中</span>';
 
-    let timeHTML = '<div class="ec-time">🕐 添加 ' + escHtml(c.addTime || '--') + '</div>';
+    let timeHTML = '<div class="ec-time">添加 ' + escHtml(c.addTime || '--') + '</div>';
     if (c.status === 'passed') {
-      timeHTML += '<div class="ec-time">✅ 通过 ' + escHtml(c.passTime || '--') + '</div>';
+      timeHTML += '<div class="ec-time">通过 ' + escHtml(c.passTime || '--') + '</div>';
     } else if (c.status === 'rejected') {
-      timeHTML += '<div class="ec-time">❌ 拒绝 ' + escHtml(c.rejectTime || '--') + '</div>';
+      timeHTML += '<div class="ec-time">拒绝 ' + escHtml(c.rejectTime || '--') + '</div>';
     }
 
     return '<div class="exam-card" data-eid="' + c.id + '">' +
@@ -6595,6 +6600,9 @@ function openExamDetail(eid) {
       : c.status === 'rejected'
         ? '<div class="ed-row"><span class="ed-label">拒绝时间</span><span class="ed-value" style="color:#a82020;">' + escHtml(c.rejectTime || '--') + '</span></div>'
         : '') +
+    (c.status !== 'pending'
+      ? '<div class="ed-row"><span class="ed-label">人头</span><span class="ed-value">' + (c.headcount || 0) + '</span></div>'
+      : '') +
     (c.status === 'passed'
       ? '<div class="ed-row"><span class="ed-label">状态</span><span class="ed-value" style="color:#1e7a34;">✓ 已通过</span></div>'
       : c.status === 'rejected'
@@ -6604,9 +6612,8 @@ function openExamDetail(eid) {
   /* 按钮区 */
   let footerHTML = '';
   if (c.status === 'pending') {
-    const pendingCount = examCandidates.filter(x => x.status === 'pending').length;
     footerHTML =
-      '<div class="ed-headcount">人头：<b>' + pendingCount + '</b></div>' +
+      '<div class="ed-headcount" id="edHeadcount" title="点击修改人头数">人头：<b>' + (c.headcount || 0) + '</b></div>' +
       '<div class="ed-footer-btns">' +
         '<button class="ed-btn plus-one" id="edPlusOne">＋1 次数</button>' +
         '<button class="ed-btn pass-btn" id="edPass">✓ 通过</button>' +
@@ -6623,6 +6630,22 @@ function openExamDetail(eid) {
 
 function closeExamDetail() {
   document.getElementById('examDetailOverlay').classList.add('hidden');
+}
+
+/* 修改人头数（每个考生各自一个） */
+function editHeadcount(eid) {
+  const c = examCandidates.find(x => x.id === eid);
+  if (!c || c.status !== 'pending') return;
+  const val = prompt('修改「' + c.name + '」的人头数', c.headcount || 0);
+  if (val === null) return;
+  const num = parseInt(val, 10);
+  if (isNaN(num) || num < 0) { showToast('请输入有效的非负整数', false); return; }
+  c.headcount = num;
+  cloudExam.upsertCandidateDirect(c).then(() => {
+    openExamDetail(eid);
+    renderExamCards();
+  });
+  showToast('「' + c.name + '」人头数已更新为 ' + num, true);
 }
 
 /**
@@ -6723,7 +6746,8 @@ function submitExamCandidate() {
     project: project,
     count: 0,
     status: 'pending',
-    addTime: beijingNow()
+    addTime: beijingNow(),
+    headcount: 0
   };
 
   // 先写云端，再同步本地
@@ -6751,6 +6775,7 @@ function submitExamCandidate() {
     if (e.target.closest('#edPlusOne')) { if (!isNaN(oeid)) incrementExam(oeid); return; }
     if (e.target.closest('#edPass')) { if (!isNaN(oeid)) passExamDirectly(oeid); return; }
     if (e.target.closest('#edReject')) { if (!isNaN(oeid)) rejectExam(oeid); return; }
+    if (e.target.closest('#edHeadcount')) { if (!isNaN(oeid)) editHeadcount(oeid); return; }
     /* 考生卡片点击 → 展开详情 */
     const card = e.target.closest('.exam-card');
     if (card) {
