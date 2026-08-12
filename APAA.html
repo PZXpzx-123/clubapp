@@ -3002,7 +3002,7 @@ body:not(.edit-mode) .settings-wrap .setting-select {
         <!-- 系统信息 -->
         <div class="settings-section">
           <div class="ss-title">系统信息</div>
-          <div class="info-row"><span class="ir-label">系统版本</span><span class="ir-value">v2.2.4</span></div>
+          <div class="info-row"><span class="ir-label">系统版本</span><span class="ir-value">v2.2.5</span></div>
           <div class="info-row"><span class="ir-label">数据总量</span><span class="ir-value">156 名员工</span></div>
           <div class="info-row"><span class="ir-label">最后更新</span><span class="ir-value">2026-08-12</span></div>
           <div class="info-row"><span class="ir-label">浏览器</span><span class="ir-value" id="sysBrowser">—</span></div>
@@ -3010,10 +3010,6 @@ body:not(.edit-mode) .settings-wrap .setting-select {
         <!-- 外观设置 -->
         <div class="settings-section">
           <div class="ss-title">外观设置</div>
-          <div class="setting-row">
-            <div><div class="sr-label">毛玻璃效果</div><div class="sr-desc">启用半透明模糊背景</div></div>
-            <label class="toggle-sw"><input type="checkbox" id="setBlur" checked><span class="ts-slider"></span></label>
-          </div>
           <div class="setting-row">
             <div><div class="sr-label">动画效果</div><div class="sr-desc">启用页面切换动画</div></div>
             <label class="toggle-sw"><input type="checkbox" id="setAnim" checked><span class="ts-slider"></span></label>
@@ -3049,7 +3045,7 @@ body:not(.edit-mode) .settings-wrap .setting-select {
         <!-- 系统更新 -->
         <div class="settings-section">
           <div class="ss-title">系统更新</div>
-          <div class="info-row"><span class="ir-label">当前版本</span><span class="ir-value" id="sysVersion">v2.2.4</span></div>
+          <div class="info-row"><span class="ir-label">当前版本</span><span class="ir-value" id="sysVersion">v2.2.5</span></div>
           <div style="margin-top:8px;">
             <button class="btn btn-glass primary" id="btnCheckUpdate" style="width:100%;">🔍 检查更新</button>
           </div>
@@ -3337,7 +3333,7 @@ if ("serviceWorker" in navigator) {
     .catch(function(err) { console.log("[SW] 注册失败", err); });
 }
 // --- 应用版本（热更新检测用） ---
-const APP_VERSION = '2.2.4';
+const APP_VERSION = '2.2.5';
 let __updateAvailable = false;       // 是否有可用更新
 let __updateVersion = null;          // 新版本号
 let __updateChecking = false;        // 是否正在检查中
@@ -3539,7 +3535,6 @@ const cloudAppearance = {
     const uid = getUserId();
     const row = {
       user_id: uid,
-      blur_enabled: document.getElementById('setBlur')?.checked ?? true,
       anim_enabled: document.getElementById('setAnim')?.checked ?? true,
       dark_bg: document.getElementById('setDarkBg')?.checked ?? false,
       glass_intensity: document.getElementById('setGlass')?.value ?? 'balanced',
@@ -3574,7 +3569,6 @@ const cloudAppearance = {
         if (btn) btn.click();
       }
     };
-    apply('setBlur',    data.blur_enabled,    'checkbox');
     apply('setAnim',    data.anim_enabled,    'checkbox');
     apply('setDarkBg',  data.dark_bg,         'checkbox');
     apply('setToast',   data.toast_enabled,   'checkbox');
@@ -7263,34 +7257,10 @@ function resetTrainView() {
 
   // 页面加载时设置初始值
   setTimeout(() => {
-    const blurEl = document.getElementById('setBlur');
     const animEl = document.getElementById('setAnim');
     const darkEl = document.getElementById('setDarkBg');
     const toastEl = document.getElementById('setToast');
     const pageSizeEl = document.getElementById('setPageSize');
-
-    if (blurEl) blurEl.addEventListener('change', function() {
-      const root = document.documentElement;
-      if (this.checked) {
-        root.style.removeProperty('--blur-sm'); root.style.removeProperty('--blur-md');
-        root.style.removeProperty('--blur-lg'); root.style.removeProperty('--blur-xl');
-        root.style.removeProperty('--sidebar-blur');
-        root.style.removeProperty('--glass-light'); root.style.removeProperty('--glass-medium');
-        root.style.removeProperty('--glass-card'); root.style.removeProperty('--glass-heavy');
-        root.style.removeProperty('--glass-subtle');
-      } else {
-        root.style.setProperty('--blur-sm', 'none'); root.style.setProperty('--blur-md', 'none');
-        root.style.setProperty('--blur-lg', 'none'); root.style.setProperty('--blur-xl', 'none');
-        root.style.setProperty('--sidebar-blur', 'none');
-        root.style.setProperty('--glass-light', 'rgba(255,255,255,0.70)');
-        root.style.setProperty('--glass-medium', 'rgba(255,255,255,0.78)');
-        root.style.setProperty('--glass-card', 'rgba(255,255,255,0.82)');
-        root.style.setProperty('--glass-heavy', 'rgba(255,255,255,0.72)');
-        root.style.setProperty('--glass-subtle', 'rgba(255,255,255,0.60)');
-      }
-      reApplyDarkMode();
-      cloudAutoSave();
-    });
 
     /* ---- 玻璃强度 ---- */
     const glassEl = document.getElementById('setGlass');
