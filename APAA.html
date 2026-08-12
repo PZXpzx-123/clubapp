@@ -6930,6 +6930,117 @@ function resetTrainView() {
     }
   }
 
+  /* ---- 暗色模式变量同步（向 documentElement 写入/清除，与玻璃强度同机制） ---- */
+  function syncDarkModeVars(enable) {
+    var r = document.documentElement;
+    if (enable) {
+      r.style.setProperty('--bg',               'rgba(18, 20, 26, 0.92)');
+      r.style.setProperty('--glass-heavy',      'rgba(255,255,255,0.06)');
+      r.style.setProperty('--glass-medium',     'rgba(255,255,255,0.04)');
+      r.style.setProperty('--glass-light',      'rgba(255,255,255,0.025)');
+      r.style.setProperty('--glass-subtle',     'rgba(255,255,255,0.015)');
+      r.style.setProperty('--glass-card',       'rgba(255,255,255,0.07)');
+      r.style.setProperty('--blur-xl',          'blur(14px) saturate(130%)');
+      r.style.setProperty('--blur-lg',          'blur(10px) saturate(125%)');
+      r.style.setProperty('--blur-md',          'blur(7px) saturate(120%)');
+      r.style.setProperty('--blur-sm',          'blur(5px) saturate(115%)');
+      r.style.setProperty('--sidebar-bg',       'rgba(255,255,255,0.07)');
+      r.style.setProperty('--sidebar-blur',     'blur(16px) saturate(130%)');
+      r.style.setProperty('--sidebar-text',     '#e4e6ec');
+      r.style.setProperty('--sidebar-text-2',   '#9a9da8');
+      r.style.setProperty('--sidebar-text-3',   'rgba(255,255,255,0.16)');
+      r.style.setProperty('--sidebar-hover',    'rgba(255,255,255,0.05)');
+      r.style.setProperty('--sidebar-active',   'rgba(255,255,255,0.08)');
+      r.style.setProperty('--sidebar-slider',   'rgba(255,255,255,0.06)');
+      r.style.setProperty('--sidebar-border',   'rgba(255,255,255,0.10)');
+      r.style.setProperty('--sidebar-divider',  'rgba(255,255,255,0.04)');
+      r.style.setProperty('--text-1',           '#e4e6ec');
+      r.style.setProperty('--text-2',           '#9a9da8');
+      r.style.setProperty('--text-3',           '#6a6d78');
+      r.style.setProperty('--border-glass',     'rgba(255,255,255,0.10)');
+      r.style.setProperty('--border-subtle',    'rgba(255,255,255,0.06)');
+      r.style.setProperty('--border-dark',      'rgba(255,255,255,0.04)');
+      r.style.setProperty('--glass-edge',       'inset 0 1px 0 rgba(255,255,255,0.18), inset 0 -1px 0 rgba(0,0,0,0.30), inset 1px 0 0 rgba(255,255,255,0.08), inset -1px 0 0 rgba(255,255,255,0.06)');
+      r.style.setProperty('--accent-blue',      '#8aaddb');
+      r.style.setProperty('--accent-purple',    '#a89ad4');
+      r.style.setProperty('--accent-teal',      '#8ec8c8');
+      r.style.setProperty('--accent-coral',     '#d4a89c');
+      r.style.setProperty('--shadow-sm',        '0 2px 12px rgba(0,0,0,0.18)');
+      r.style.setProperty('--shadow-md',        '0 8px 32px rgba(0,0,0,0.24)');
+      r.style.setProperty('--shadow-lg',        '0 20px 60px rgba(0,0,0,0.36)');
+    } else {
+      var vars = ['--bg','--glass-heavy','--glass-medium','--glass-light','--glass-subtle','--glass-card',
+        '--blur-xl','--blur-lg','--blur-md','--blur-sm',
+        '--sidebar-bg','--sidebar-blur','--sidebar-text','--sidebar-text-2','--sidebar-text-3',
+        '--sidebar-hover','--sidebar-active','--sidebar-slider','--sidebar-border','--sidebar-divider',
+        '--text-1','--text-2','--text-3',
+        '--border-glass','--border-subtle','--border-dark',
+        '--glass-edge',
+        '--accent-blue','--accent-purple','--accent-teal','--accent-coral',
+        '--shadow-sm','--shadow-md','--shadow-lg'];
+      for (var i = 0; i < vars.length; i++) r.style.removeProperty(vars[i]);
+    }
+  }
+  function reApplyDarkMode() {
+    if (document.getElementById('setDarkBg')?.checked) syncDarkModeVars(true);
+  }
+
+  /* 同步暗色模式 CSS 变量到 documentElement（内联样式，与其他设置同优先级） */
+  function syncDarkModeVars(enable) {
+    const r = document.documentElement;
+    if (enable) {
+      r.style.setProperty('--bg', 'rgba(18, 20, 26, 0.92)');
+      r.style.setProperty('--glass-heavy', 'rgba(255,255,255,0.06)');
+      r.style.setProperty('--glass-medium', 'rgba(255,255,255,0.04)');
+      r.style.setProperty('--glass-light', 'rgba(255,255,255,0.025)');
+      r.style.setProperty('--glass-subtle', 'rgba(255,255,255,0.015)');
+      r.style.setProperty('--glass-card', 'rgba(255,255,255,0.07)');
+      r.style.setProperty('--blur-xl', 'blur(14px) saturate(130%)');
+      r.style.setProperty('--blur-lg', 'blur(10px) saturate(125%)');
+      r.style.setProperty('--blur-md', 'blur(7px) saturate(120%)');
+      r.style.setProperty('--blur-sm', 'blur(5px) saturate(115%)');
+      r.style.setProperty('--sidebar-bg', 'rgba(255,255,255,0.07)');
+      r.style.setProperty('--sidebar-blur', 'blur(16px) saturate(130%)');
+      r.style.setProperty('--sidebar-text', '#e4e6ec');
+      r.style.setProperty('--sidebar-text-2', '#9a9da8');
+      r.style.setProperty('--sidebar-text-3', 'rgba(255,255,255,0.16)');
+      r.style.setProperty('--sidebar-hover', 'rgba(255,255,255,0.05)');
+      r.style.setProperty('--sidebar-active', 'rgba(255,255,255,0.08)');
+      r.style.setProperty('--sidebar-slider', 'rgba(255,255,255,0.06)');
+      r.style.setProperty('--sidebar-border', 'rgba(255,255,255,0.10)');
+      r.style.setProperty('--sidebar-divider', 'rgba(255,255,255,0.04)');
+      r.style.setProperty('--text-1', '#e4e6ec');
+      r.style.setProperty('--text-2', '#9a9da8');
+      r.style.setProperty('--text-3', '#6a6d78');
+      r.style.setProperty('--border-glass', 'rgba(255,255,255,0.10)');
+      r.style.setProperty('--border-subtle', 'rgba(255,255,255,0.06)');
+      r.style.setProperty('--border-dark', 'rgba(255,255,255,0.04)');
+      r.style.setProperty('--glass-edge', 'inset 0 1px 0 rgba(255,255,255,0.18), inset 0 -1px 0 rgba(0,0,0,0.30), inset 1px 0 0 rgba(255,255,255,0.08), inset -1px 0 0 rgba(255,255,255,0.06)');
+      r.style.setProperty('--accent-blue', '#8aaddb');
+      r.style.setProperty('--accent-purple', '#a89ad4');
+      r.style.setProperty('--accent-teal', '#8ec8c8');
+      r.style.setProperty('--accent-coral', '#d4a89c');
+      r.style.setProperty('--shadow-sm', '0 2px 12px rgba(0,0,0,0.18)');
+      r.style.setProperty('--shadow-md', '0 8px 32px rgba(0,0,0,0.24)');
+      r.style.setProperty('--shadow-lg', '0 20px 60px rgba(0,0,0,0.36)');
+    } else {
+      var vars = ['--bg','--glass-heavy','--glass-medium','--glass-light','--glass-subtle','--glass-card',
+        '--blur-xl','--blur-lg','--blur-md','--blur-sm',
+        '--sidebar-bg','--sidebar-blur','--sidebar-text','--sidebar-text-2','--sidebar-text-3',
+        '--sidebar-hover','--sidebar-active','--sidebar-slider','--sidebar-border','--sidebar-divider',
+        '--text-1','--text-2','--text-3',
+        '--border-glass','--border-subtle','--border-dark',
+        '--glass-edge',
+        '--accent-blue','--accent-purple','--accent-teal','--accent-coral',
+        '--shadow-sm','--shadow-md','--shadow-lg'];
+      vars.forEach(function(v){ r.style.removeProperty(v); });
+    }
+  }
+  /* 在其他设置变更后重新施加暗色模式（确保暗色始终是最外层覆盖） */
+  function reApplyDarkMode() {
+    if (document.getElementById('setDarkBg')?.checked) syncDarkModeVars(true);
+  }
+
   // 页面加载时设置初始值
   setTimeout(() => {
     const blurEl = document.getElementById('setBlur');
@@ -6957,6 +7068,7 @@ function resetTrainView() {
         root.style.setProperty('--glass-heavy', 'rgba(255,255,255,0.72)');
         root.style.setProperty('--glass-subtle', 'rgba(255,255,255,0.60)');
       }
+      reApplyDarkMode();
       cloudAutoSave();
     });
 
@@ -6999,6 +7111,7 @@ function resetTrainView() {
           root.style.removeProperty('--blur-md'); root.style.removeProperty('--blur-sm');
           root.style.removeProperty('--sidebar-blur'); root.style.removeProperty('--sidebar-bg');
       }
+      reApplyDarkMode();
       cloudAutoSave();
     });
 
@@ -7023,6 +7136,7 @@ function resetTrainView() {
           root.style.removeProperty('--accent-blue'); root.style.removeProperty('--accent-purple');
           root.style.removeProperty('--accent-teal'); root.style.removeProperty('--accent-coral');
       }
+      reApplyDarkMode();
       cloudAutoSave();
     });
 
@@ -7065,8 +7179,10 @@ function resetTrainView() {
     if (darkEl) darkEl.addEventListener('change', function() {
       if (this.checked) {
         document.body.classList.add('dark-mode');
+        syncDarkModeVars(true);
       } else {
         document.body.classList.remove('dark-mode');
+        syncDarkModeVars(false);
       }
       cloudAutoSave();
     });
@@ -7087,6 +7203,7 @@ function resetTrainView() {
   /* 立即应用深色模式（避免加载闪烁） */
   if (document.getElementById('setDarkBg')?.checked) {
     document.body.classList.add('dark-mode');
+    syncDarkModeVars(true);
   }
 })();
 
