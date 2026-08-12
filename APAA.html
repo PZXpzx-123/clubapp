@@ -1743,6 +1743,12 @@ body {
 .exam-card .ec-count.warn { color: #ff9f0a; }
 .exam-card .ec-count.danger { color: #ff3b30; }
 
+/* 时间信息（添加/通过/拒绝） */
+.exam-card .ec-time {
+  font-size: 10.5px; color: var(--text-3);
+  position: relative; z-index: 1; line-height: 1.5;
+}
+
 /* 状态标签 */
 .exam-card .ec-status {
   font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 6px;
@@ -1889,8 +1895,15 @@ body {
 
 .exam-detail-sheet .ed-footer {
   padding: 12px 22px; border-top: 0.5px solid rgba(0,0,0,0.035);
-  display: flex; gap: 8px; justify-content: center;
+  display: flex; flex-direction: column; gap: 10px;
 }
+.exam-detail-sheet .ed-footer-btns {
+  display: flex; gap: 8px;
+}
+.exam-detail-sheet .ed-headcount {
+  text-align: center; font-size: 12px; font-weight: 700; color: var(--text-2);
+}
+.exam-detail-sheet .ed-headcount b { color: #3a5a9e; font-size: 14px; }
 
 .exam-detail-sheet .ed-btn {
   flex: 1; padding: 10px 0; border-radius: 10px;
@@ -3004,7 +3017,7 @@ body:not(.edit-mode) .settings-wrap .setting-select {
         <!-- 系统信息 -->
         <div class="settings-section">
           <div class="ss-title">系统信息</div>
-          <div class="info-row"><span class="ir-label">系统版本</span><span class="ir-value">v2.2.9</span></div>
+          <div class="info-row"><span class="ir-label">系统版本</span><span class="ir-value">v2.3.0</span></div>
           <div class="info-row"><span class="ir-label">数据总量</span><span class="ir-value" id="sysDataCount">— 名员工</span></div>
           <div class="info-row"><span class="ir-label">最后更新</span><span class="ir-value">2026-08-12</span></div>
           <div class="info-row"><span class="ir-label">浏览器</span><span class="ir-value" id="sysBrowser">—</span></div>
@@ -3047,7 +3060,7 @@ body:not(.edit-mode) .settings-wrap .setting-select {
         <!-- 系统更新 -->
         <div class="settings-section">
           <div class="ss-title">系统更新</div>
-          <div class="info-row"><span class="ir-label">当前版本</span><span class="ir-value" id="sysVersion">v2.2.9</span></div>
+          <div class="info-row"><span class="ir-label">当前版本</span><span class="ir-value" id="sysVersion">v2.3.0</span></div>
           <div style="margin-top:8px;">
             <button class="btn btn-glass primary" id="btnCheckUpdate" style="width:100%;">🔍 检查更新</button>
           </div>
@@ -3335,7 +3348,7 @@ if ("serviceWorker" in navigator) {
     .catch(function(err) { console.log("[SW] 注册失败", err); });
 }
 // --- 应用版本（热更新检测用） ---
-const APP_VERSION = '2.2.9';
+const APP_VERSION = '2.3.0';
 let __updateAvailable = false;       // 是否有可用更新
 let __updateVersion = null;          // 新版本号
 let __updateChecking = false;        // 是否正在检查中
@@ -3786,6 +3799,9 @@ const cloudExam = {
       project: c.project || '护航',
       count: c.count || 0,
       status: c.status || 'pending',
+      add_time: c.addTime || '',
+      pass_time: c.passTime || '',
+      reject_time: c.rejectTime || '',
     }));
 
     // upsert 避免"先删后插失败"导致数据丢失
@@ -3826,6 +3842,9 @@ const cloudExam = {
         project: c.project || '护航',
         count: c.count || 0,
         status: c.status || 'pending',
+        addTime: c.add_time || '',
+        passTime: c.pass_time || '',
+        rejectTime: c.reject_time || '',
       });
     }
 
@@ -3846,6 +3865,7 @@ const cloudExam = {
       await sb.from('exam_candidates').upsert({
         id: c.id, user_id: uid, name: c.name,
         project: c.project || '护航', count: c.count || 0, status: c.status || 'pending',
+        add_time: c.addTime || '', pass_time: c.passTime || '', reject_time: c.rejectTime || '',
       }, { onConflict: 'user_id,id' });
       notifyChange();
       console.log('[Cloud] ⬆ 直接保存考生 id=' + c.id);
@@ -6489,9 +6509,18 @@ function resetSalaryView() {
    ================================================================ */
 
 /* ---- 考生数据存储 ---- */
-const examCandidates = [];    /* [{ id, name, project, count, status }] */
+const examCandidates = [];    /* [{ id, name, project, count, status, addTime, passTime, rejectTime }] */
 let examIdCounter = 1;
 /* status: 'pending' | 'passed' | 'rejected' */
+
+/* 北京时间（UTC+8）格式化：YYYY-MM-DD HH:mm */
+function beijingNow() {
+  const d = new Date();
+  const bj = new Date(d.getTime() + (d.getTimezoneOffset() + 480) * 60000);
+  const pad = n => String(n).padStart(2, '0');
+  return bj.getFullYear() + '-' + pad(bj.getMonth() + 1) + '-' + pad(bj.getDate()) +
+         ' ' + pad(bj.getHours()) + ':' + pad(bj.getMinutes());
+}
 
 /**
  * 渲染考生卡片网格
@@ -6516,9 +6545,17 @@ function renderExamCards() {
         ? '<span class="ec-status ec-st-rejected">✕ 未通过</span>'
         : '<span class="ec-status ec-st-pending">考核中</span>';
 
+    let timeHTML = '<div class="ec-time">🕐 添加 ' + escHtml(c.addTime || '--') + '</div>';
+    if (c.status === 'passed') {
+      timeHTML += '<div class="ec-time">✅ 通过 ' + escHtml(c.passTime || '--') + '</div>';
+    } else if (c.status === 'rejected') {
+      timeHTML += '<div class="ec-time">❌ 拒绝 ' + escHtml(c.rejectTime || '--') + '</div>';
+    }
+
     return '<div class="exam-card" data-eid="' + c.id + '">' +
       '<div class="ec-name">' + escHtml(c.name) + '</div>' +
       '<div class="ec-count ' + countClass + '">考核次数：' + c.count + ' / 3</div>' +
+      timeHTML +
       statusTag +
     '</div>';
   }
@@ -6552,6 +6589,12 @@ function openExamDetail(eid) {
     '<div class="ed-row"><span class="ed-label">名字</span><span class="ed-value">' + escHtml(c.name) + '</span></div>' +
     '<div class="ed-row"><span class="ed-label">项目</span><span class="ed-value">' + escHtml(c.project) + '</span></div>' +
     '<div class="ed-row"><span class="ed-label">考核次数</span><span class="ed-value">' + c.count + ' / 3</span></div>' +
+    '<div class="ed-row"><span class="ed-label">添加时间</span><span class="ed-value">' + escHtml(c.addTime || '--') + '</span></div>' +
+    (c.status === 'passed'
+      ? '<div class="ed-row"><span class="ed-label">通过时间</span><span class="ed-value" style="color:#1e7a34;">' + escHtml(c.passTime || '--') + '</span></div>'
+      : c.status === 'rejected'
+        ? '<div class="ed-row"><span class="ed-label">拒绝时间</span><span class="ed-value" style="color:#a82020;">' + escHtml(c.rejectTime || '--') + '</span></div>'
+        : '') +
     (c.status === 'passed'
       ? '<div class="ed-row"><span class="ed-label">状态</span><span class="ed-value" style="color:#1e7a34;">✓ 已通过</span></div>'
       : c.status === 'rejected'
@@ -6561,10 +6604,14 @@ function openExamDetail(eid) {
   /* 按钮区 */
   let footerHTML = '';
   if (c.status === 'pending') {
+    const pendingCount = examCandidates.filter(x => x.status === 'pending').length;
     footerHTML =
-      '<button class="ed-btn plus-one" id="edPlusOne">＋1 次数</button>' +
-      '<button class="ed-btn pass-btn" id="edPass">✓ 通过</button>' +
-      '<button class="ed-btn reject-btn" id="edReject">✕ 拒绝</button>';
+      '<div class="ed-headcount">人头：<b>' + pendingCount + '</b></div>' +
+      '<div class="ed-footer-btns">' +
+        '<button class="ed-btn plus-one" id="edPlusOne">＋1 次数</button>' +
+        '<button class="ed-btn pass-btn" id="edPass">✓ 通过</button>' +
+        '<button class="ed-btn reject-btn" id="edReject">✕ 拒绝</button>' +
+      '</div>';
   }
 
   document.getElementById('edFooter').innerHTML = footerHTML;
@@ -6590,6 +6637,7 @@ function incrementExam(eid) {
   if (c.count >= 3) {
     /* 满3次自动拒绝 */
     c.status = 'rejected';
+    c.rejectTime = beijingNow();
     // 先写云端，再刷新本地
     cloudExam.upsertCandidateDirect(c).then(() => {
       closeExamDetail();
@@ -6614,6 +6662,7 @@ function rejectExam(eid) {
   const c = examCandidates.find(x => x.id === eid);
   if (!c || c.status !== 'pending') return;
   c.status = 'rejected';
+  c.rejectTime = beijingNow();
   // 先写云端，再刷新本地
   cloudExam.upsertCandidateDirect(c).then(() => {
     closeExamDetail();
@@ -6629,6 +6678,7 @@ function passExamDirectly(eid) {
   if (!c || c.status !== 'pending') return;
 
   c.status = 'passed';
+  c.passTime = beijingNow();
 
   // 先写云端，再刷新本地
   cloudExam.upsertCandidateDirect(c).then(() => {
@@ -6672,7 +6722,8 @@ function submitExamCandidate() {
     name: name,
     project: project,
     count: 0,
-    status: 'pending'
+    status: 'pending',
+    addTime: beijingNow()
   };
 
   // 先写云端，再同步本地
