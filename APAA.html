@@ -2126,6 +2126,8 @@ body {
   pointer-events: none;
 }
 .detail-overlay:not(.hidden) { pointer-events: auto; }
+/* 关闭动画期间允许点击穿透，否则透明的 backdrop 会吞掉对卡片的点击（"有时点卡片没反应"） */
+.detail-overlay.closing { pointer-events: none; }
 
 .detail-backdrop {
   position: absolute; inset: 0;
@@ -3002,7 +3004,7 @@ body:not(.edit-mode) .settings-wrap .setting-select {
         <!-- 系统信息 -->
         <div class="settings-section">
           <div class="ss-title">系统信息</div>
-          <div class="info-row"><span class="ir-label">系统版本</span><span class="ir-value">v2.2.7</span></div>
+          <div class="info-row"><span class="ir-label">系统版本</span><span class="ir-value">v2.2.9</span></div>
           <div class="info-row"><span class="ir-label">数据总量</span><span class="ir-value" id="sysDataCount">— 名员工</span></div>
           <div class="info-row"><span class="ir-label">最后更新</span><span class="ir-value">2026-08-12</span></div>
           <div class="info-row"><span class="ir-label">浏览器</span><span class="ir-value" id="sysBrowser">—</span></div>
@@ -3045,7 +3047,7 @@ body:not(.edit-mode) .settings-wrap .setting-select {
         <!-- 系统更新 -->
         <div class="settings-section">
           <div class="ss-title">系统更新</div>
-          <div class="info-row"><span class="ir-label">当前版本</span><span class="ir-value" id="sysVersion">v2.2.7</span></div>
+          <div class="info-row"><span class="ir-label">当前版本</span><span class="ir-value" id="sysVersion">v2.2.9</span></div>
           <div style="margin-top:8px;">
             <button class="btn btn-glass primary" id="btnCheckUpdate" style="width:100%;">🔍 检查更新</button>
           </div>
@@ -3333,7 +3335,7 @@ if ("serviceWorker" in navigator) {
     .catch(function(err) { console.log("[SW] 注册失败", err); });
 }
 // --- 应用版本（热更新检测用） ---
-const APP_VERSION = '2.2.7';
+const APP_VERSION = '2.2.9';
 let __updateAvailable = false;       // 是否有可用更新
 let __updateVersion = null;          // 新版本号
 let __updateChecking = false;        // 是否正在检查中
@@ -4515,6 +4517,7 @@ let detailPersonId = null;
 let detailCardRect = null;
 let detailIsOpen = false;
 let detailIsClosing = false;
+let detailCloseTimer = null;
 
 /* ---- 卡片点击（事件委托） ---- */
 document.getElementById('personGrid').addEventListener('click', function(e) {
@@ -4546,8 +4549,9 @@ document.getElementById('personGrid').addEventListener('click', function(e) {
 
 
 function openDetail(id, cardEl) {
-  // 如果正在关闭动画中，立即结束关闭状态
+  // 如果正在关闭动画中，立即结束关闭状态（并取消待执行的关闭清理定时器，防止它把新打开的面板隐藏掉）
   if (detailIsClosing) {
+    if (detailCloseTimer) { clearTimeout(detailCloseTimer); detailCloseTimer = null; }
     var ov = document.getElementById('detailOverlay');
     ov.classList.add('hidden');
     ov.classList.remove('closing');
@@ -4646,7 +4650,8 @@ function closeDetail() {
   sheet.classList.remove('expanded');
 
   // 动画结束后清理
-  setTimeout(function() {
+  if (detailCloseTimer) clearTimeout(detailCloseTimer);
+  detailCloseTimer = setTimeout(function() {
     overlay.classList.add('hidden');
     overlay.classList.remove('closing');
     sheet.style.cssText = '';  // 清理内联样式，避免下次打开闪现
@@ -4654,6 +4659,7 @@ function closeDetail() {
     detailPersonId = null;
     detailCardRect = null;
     detailIsClosing = false;
+    detailCloseTimer = null;
   }, 450);
 }
 
