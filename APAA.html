@@ -2048,12 +2048,11 @@ input[type="range"]#setZoom::-moz-range-thumb {
   box-shadow: var(--glass-edge), 0 30px 80px rgba(0,0,0,0.18);
   overflow: hidden;
   z-index: 1;
-  /* 过渡动画: 0.6s 从卡片位置展开 */
-  transition: top 0.6s cubic-bezier(0.22, 1, 0.36, 1),
-              left 0.6s cubic-bezier(0.22, 1, 0.36, 1),
-              width 0.6s cubic-bezier(0.22, 1, 0.36, 1),
-              height 0.6s cubic-bezier(0.22, 1, 0.36, 1),
-              border-radius 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+  /* 过渡动画: transform + border-radius（GPU 合成，不触发 layout） */
+  transition: transform 0.55s cubic-bezier(0.22, 0.61, 0.36, 1),
+              border-radius 0.55s cubic-bezier(0.22, 0.61, 0.36, 1),
+              opacity 0.40s ease;
+  will-change: transform, border-radius;
   display: flex; flex-direction: column;
 }
 /* 液态玻璃顶部光泽线 */
@@ -2065,9 +2064,14 @@ input[type="range"]#setZoom::-moz-range-thumb {
 }
 
 .detail-sheet.expanded {
-  top: 10vh !important; left: 10vw !important;
-  width: 80vw !important; height: 80vh !important;
+  /* 展开时 transform 动画至全尺寸（由 JS inline style 驱动） */
   border-radius: 24px !important;
+}
+/* 关闭时的收缩动画（GPU 合成 — opacity + scale，不触发 layout） */
+.detail-overlay.closing .detail-sheet {
+  opacity: 0;
+  transform: scale(0.92) !important;
+  transition: opacity 0.40s ease, transform 0.40s cubic-bezier(0.22, 0.61, 0.36, 1) !important;
 }
 
 .detail-inner {
@@ -4289,8 +4293,7 @@ let detailIsClosing = false;
 
 /* ---- 卡片点击（事件委托） ---- */
 document.getElementById('personGrid').addEventListener('click', function(e) {
-  if (detailIsOpen || detailIsClosing) return;
-  // 忽略按钮点击（编辑/删除）
+  if (detailIsOpen) return; // 已展开时不允许新卡片点击（关闭动画期间允许中断）
   if (e.target.closest('button')) return;
   const card = e.target.closest('.person-card');
   if (!card) return;
@@ -4300,12 +4303,18 @@ document.getElementById('personGrid').addEventListener('click', function(e) {
 });
 
 function openDetail(id, cardEl) {
-  // 如果正在关闭中，强制中断关闭动画
+  // 如果正在关闭动画中，立即结束关闭状态
+  if (detailIsClosing) {
+    var ov = document.getElementById('detailOverlay');
+    ov.classList.add('hidden');
+    ov.classList.remove('closing');
+    detailIsClosing = false;
+  }
+  // 如果已展开，先隐藏再打开新的
   if (detailIsOpen) {
-    // 已经在打开状态 — 先关闭再打开新的
-    const overlay = document.getElementById('detailOverlay');
-    overlay.classList.add('hidden');
-    overlay.classList.remove('closing');
+    var ov2 = document.getElementById('detailOverlay');
+    ov2.classList.add('hidden');
+    ov2.classList.remove('closing');
   }
 
   const p = people.find(x => x.id === id);
@@ -4315,47 +4324,67 @@ function openDetail(id, cardEl) {
 
   const overlay = document.getElementById('detailOverlay');
   const sheet   = document.getElementById('detailSheet');
-  const inner   = document.getElementById('detailInner');
 
   // 先清空上次残留的内联样式（避免从旧位置开始过渡）
   sheet.style.cssText = '';
 
-  // 锁定背后页面滚动（必须在 getBoundingClientRect 之前，避免滚动条消失导致布局偏移）
+  // ① 批量读取所有布局值（在任何写入之前一次性完成）
+  var cardRect = cardEl.getBoundingClientRect();
+  var vw = window.innerWidth;
+  var vh = window.innerHeight;
+  // 目标尺寸：80vw × 80vh 居中
+  var tw = vw * 0.8;
+  var th = vh * 0.8;
+  var tl = vw * 0.1;
+  var tt = vh * 0.1;
+  var scaleX = cardRect.width / tw;
+  var scaleY = cardRect.height / th;
+  // 以中心点为基准计算位移（配合 transform-origin: center center）
+  var tx = (cardRect.left + cardRect.width / 2) - (tl + tw / 2);
+  var ty = (cardRect.top + cardRect.height / 2) - (tt + th / 2);
+
+  // 锁定背后页面滚动
   document.body.style.overflow = 'hidden';
 
-  detailCardRect = cardEl.getBoundingClientRect();
-
-  // 1) 填充内容
+  // ② 填充内容
   buildDetailContent(p);
 
-  // 2) 初始定位：精确匹配卡片位置
-  const r = detailCardRect;
-  sheet.style.top    = r.top + 'px';
-  sheet.style.left   = r.left + 'px';
-  sheet.style.width  = r.width + 'px';
-  sheet.style.height = r.height + 'px';
+  // ③ 初始定位：sheet 已是最终尺寸，但通过 transform 缩放到卡片位置
+  sheet.style.position = 'fixed';
+  sheet.style.top    = tt + 'px';
+  sheet.style.left   = tl + 'px';
+  sheet.style.width  = tw + 'px';
+  sheet.style.height = th + 'px';
   sheet.style.borderRadius = '14px';
+  sheet.style.transform = 'translate(' + tx + 'px, ' + ty + 'px) scale(' + scaleX + ', ' + scaleY + ')';
+  sheet.style.transformOrigin = 'center center';
+  sheet.style.transition = 'none'; // 初始定位无过渡
+
   sheet.classList.remove('expanded');
 
-  // 3) 显示覆盖层
+  // ④ 显示覆盖层
   overlay.classList.remove('hidden', 'closing');
 
-  // 4) 下一帧展开到 ~80% 屏幕
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      sheet.classList.add('expanded');
-      // 显式覆盖内联样式 — 展开到 80vw × 80vh 居中
-      sheet.style.top = '10vh';
-      sheet.style.left = '10vw';
-      sheet.style.width = '80vw';
-      sheet.style.height = '80vh';
-      sheet.style.borderRadius = '24px';
-    });
+  // ⑤ 下一帧：启用过渡，展开到全尺寸（GPU 合成 — 仅 transform + border-radius）
+  requestAnimationFrame(function() {
+    sheet.style.transition = '';
+    sheet.classList.add('expanded');
+    sheet.style.transform = 'translate(0, 0) scale(1, 1)';
+    sheet.style.borderRadius = '24px';
   });
 
-  // 5) 内容滚动到顶部
-  setTimeout(() => {
-    const detailInner = document.getElementById('detailInner');
+  // ⑥ 动画完成后清理 will-change / 过渡
+  setTimeout(function() {
+    sheet.style.transform = '';
+    sheet.style.transformOrigin = '';
+    sheet.style.transition = '';
+    sheet.style.overflow = 'auto';
+    sheet.classList.remove('expanded');
+  }, 600);
+
+  // ⑦ 内容滚动到顶部
+  setTimeout(function() {
+    var detailInner = document.getElementById('detailInner');
     if (detailInner) detailInner.scrollTop = 0;
   }, 650);
 }
@@ -4369,19 +4398,20 @@ function closeDetail() {
   const overlay = document.getElementById('detailOverlay');
   const sheet   = document.getElementById('detailSheet');
 
-  // 收回动画
+  // 收回动画：opacity + scale（GPU 合成，由 .detail-overlay.closing .detail-sheet CSS 驱动）
   overlay.classList.add('closing');
   sheet.classList.remove('expanded');
 
   // 动画结束后清理
-  setTimeout(() => {
+  setTimeout(function() {
     overlay.classList.add('hidden');
     overlay.classList.remove('closing');
     sheet.style.cssText = '';  // 清理内联样式，避免下次打开闪现
+    sheet.classList.remove('expanded');
     detailPersonId = null;
     detailCardRect = null;
     detailIsClosing = false;
-  }, 660);
+  }, 450);
 }
 
 /* ---- 点击背景关闭 ---- */
