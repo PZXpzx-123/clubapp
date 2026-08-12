@@ -149,7 +149,7 @@ body.dark-mode .sidebar::before { background: linear-gradient(90deg, transparent
 body.dark-mode .sidebar-logo .logo-mark { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.10); }
 body.dark-mode .topbar-stage { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.10); }
 body.dark-mode .toggle-sw .ts-slider { background: rgba(255,255,255,0.16); border-color: rgba(255,255,255,0.12); }
-body.dark-mode .toggle-sw input:checked + .ts-slider { background: #80a4ca; }
+body.dark-mode .toggle-sw input:checked + .ts-slider { background: #3b82f6; border-color: #3b82f6; }
 body.dark-mode .nav-badge.now { background: rgba(255,255,255,0.10); color: var(--text-2); }
 body.dark-mode .nav-badge.later { color: var(--text-3); border-color: rgba(255,255,255,0.12); }
 body.dark-mode .setting-row { border-bottom-color: rgba(255,255,255,0.048); }
@@ -1964,21 +1964,22 @@ body {
 .settings-section { background: var(--glass-card); backdrop-filter: var(--blur-sm); -webkit-backdrop-filter: var(--blur-sm); border: 0.5px solid var(--border-glass); border-radius: var(--r-lg); padding: 20px 24px; box-shadow: var(--glass-edge), var(--shadow-sm); }
 .settings-section .ss-title { font-size: 12px; font-weight: 700; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 16px; padding-bottom: 10px; border-bottom: 0.5px solid var(--border-subtle); }
 
-.setting-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 0.5px solid rgba(0,0,0,0.03); }
+.setting-row { display: flex; align-items: center; justify-content: space-between; padding: 13px 0; border-bottom: 0.5px solid rgba(0,0,0,0.03); }
 .setting-row:last-child { border-bottom: none; }
 .setting-row .sr-label { font-size: 14px; font-weight: 600; color: var(--text-1); }
-.setting-row .sr-desc  { font-size: 11px; color: var(--text-2); margin-top: 2px; }
+.setting-row .sr-desc  { font-size: 12px; color: var(--text-2); margin-top: 3px; }
 
-/* Toggle 开关 */
-.toggle-sw { position: relative; width: 44px; height: 26px; flex-shrink: 0; }
+/* Toggle 开关 — 加大加亮 */
+.toggle-sw { position: relative; width: 52px; height: 30px; flex-shrink: 0; }
 .toggle-sw input { opacity: 0; width: 0; height: 0; }
-.toggle-sw .ts-slider { position: absolute; inset: 0; background: rgba(0,0,0,0.12); border-radius: 13px; cursor: pointer; transition: background 0.3s ease; border: 0.5px solid rgba(0,0,0,0.06); }
-.toggle-sw .ts-slider::before { content: ''; position: absolute; left: 3px; top: 3px; width: 20px; height: 20px; background: #fff; border-radius: 50%; transition: transform 0.3s ease; box-shadow: 0 1px 4px rgba(0,0,0,0.10); }
-.toggle-sw input:checked + .ts-slider { background: #6889b4; }
-.toggle-sw input:checked + .ts-slider::before { transform: translateX(18px); }
+.toggle-sw .ts-slider { position: absolute; inset: 0; background: rgba(0,0,0,0.14); border-radius: 15px; cursor: pointer; transition: background 0.25s ease; border: 1px solid rgba(0,0,0,0.08); }
+.toggle-sw .ts-slider::before { content: ''; position: absolute; left: 3px; top: 3px; width: 22px; height: 22px; background: #fff; border-radius: 50%; transition: transform 0.25s ease; box-shadow: 0 2px 6px rgba(0,0,0,0.12); }
+.toggle-sw input:checked + .ts-slider { background: #3b82f6; border-color: #3b82f6; box-shadow: 0 0 12px rgba(59,130,246,0.35); }
+.toggle-sw input:checked + .ts-slider::before { transform: translateX(22px); }
 
-/* 下拉选择 */
-.setting-select { padding: 8px 12px; border-radius: 8px; border: 0.5px solid var(--border-glass); background: var(--glass-card); backdrop-filter: var(--blur-md); -webkit-backdrop-filter: var(--blur-md); font-size: 13px; font-family: var(--font); color: var(--text-1); cursor: pointer; outline: none; box-shadow: var(--glass-edge); }
+/* 下拉选择 — 更醒目 */
+.setting-select { padding: 9px 14px; border-radius: 9px; border: 1px solid var(--border-glass); background: var(--glass-card); backdrop-filter: var(--blur-md); -webkit-backdrop-filter: var(--blur-md); font-size: 13px; font-weight: 600; font-family: var(--font); color: var(--text-1); cursor: pointer; outline: none; box-shadow: var(--glass-edge); min-width: 110px; text-align: center; }
+.setting-select:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.12); }
 
 /* UI 缩放预设按钮组 */
 .zoom-presets {
@@ -3001,7 +3002,7 @@ body:not(.edit-mode) .settings-wrap .setting-select {
         <!-- 系统信息 -->
         <div class="settings-section">
           <div class="ss-title">系统信息</div>
-          <div class="info-row"><span class="ir-label">系统版本</span><span class="ir-value">v2.1.9</span></div>
+          <div class="info-row"><span class="ir-label">系统版本</span><span class="ir-value">v2.2.0</span></div>
           <div class="info-row"><span class="ir-label">数据总量</span><span class="ir-value">156 名员工</span></div>
           <div class="info-row"><span class="ir-label">最后更新</span><span class="ir-value">2026-08-12</span></div>
           <div class="info-row"><span class="ir-label">浏览器</span><span class="ir-value" id="sysBrowser">—</span></div>
@@ -3048,7 +3049,7 @@ body:not(.edit-mode) .settings-wrap .setting-select {
         <!-- 系统更新 -->
         <div class="settings-section">
           <div class="ss-title">系统更新</div>
-          <div class="info-row"><span class="ir-label">当前版本</span><span class="ir-value" id="sysVersion">v2.1.9</span></div>
+          <div class="info-row"><span class="ir-label">当前版本</span><span class="ir-value" id="sysVersion">v2.2.0</span></div>
           <div style="margin-top:8px;">
             <button class="btn btn-glass primary" id="btnCheckUpdate" style="width:100%;">🔍 检查更新</button>
           </div>
@@ -3336,7 +3337,7 @@ if ("serviceWorker" in navigator) {
     .catch(function(err) { console.log("[SW] 注册失败", err); });
 }
 // --- 应用版本（热更新检测用） ---
-const APP_VERSION = '2.1.9';
+const APP_VERSION = '2.2.0';
 let __updateAvailable = false;       // 是否有可用更新
 let __updateVersion = null;          // 新版本号
 let __updateChecking = false;        // 是否正在检查中
