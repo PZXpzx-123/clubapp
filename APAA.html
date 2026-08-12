@@ -3015,6 +3015,9 @@ body:not(.edit-mode) .settings-wrap .setting-select {
           <div class="info-row"><span class="ir-label">数据总量</span><span class="ir-value">156 名员工</span></div>
           <div class="info-row"><span class="ir-label">最后更新</span><span class="ir-value">2026-08-12</span></div>
           <div class="info-row"><span class="ir-label">浏览器</span><span class="ir-value" id="sysBrowser">—</span></div>
+          <div id="installRow" style="display:none; margin-top:10px;">
+            <button class="btn btn-glass primary" id="btnInstall" style="width:100%;">📲 安装到桌面</button>
+          </div>
         </div>
         <!-- 外观设置 -->
         <div class="settings-section">
@@ -7215,6 +7218,48 @@ function resetTrainView() {
       cloudAutoSave();
     });
   }, 100);
+
+  /* ---- PWA 安装到桌面 ---- */
+  (function() {
+    var deferredPrompt = null;
+    var installRow = document.getElementById('installRow');
+    var btnInstall = document.getElementById('btnInstall');
+
+    // 已经是独立窗口（已安装）→ 隐藏按钮
+    if (window.matchMedia('(display-mode: standalone)').matches || navigator.standalone) {
+      if (installRow) installRow.style.display = 'none';
+      return;
+    }
+
+    // Android Chrome / Edge — beforeinstallprompt
+    window.addEventListener('beforeinstallprompt', function(e) {
+      e.preventDefault();
+      deferredPrompt = e;
+      if (installRow) installRow.style.display = 'block';
+    });
+
+    // 安装按钮点击
+    if (btnInstall) btnInstall.addEventListener('click', function() {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then(function(r) {
+          console.log('[PWA] 用户选择:', r.outcome);
+          deferredPrompt = null;
+          if (installRow) installRow.style.display = 'none';
+        });
+      } else if (/iPhone|iPad|iPod/.test(navigator.userAgent)) {
+        // iOS Safari — 弹出操作指引
+        alert('点击 Safari 底部 分享按钮 → 滑动找到「添加到主屏幕」→ 点击完成');
+      } else {
+        alert('请在浏览器菜单中选择「添加到主屏幕」或「安装应用」');
+      }
+    });
+
+    // iOS Safari — 直接显示按钮（不支持 beforeinstallprompt）
+    if (/iPhone|iPad|iPod/.test(navigator.userAgent) && installRow && !deferredPrompt) {
+      installRow.style.display = 'block';
+    }
+  })();
 
   /* 立即应用深色模式（避免加载闪烁） */
   if (document.getElementById('setDarkBg')?.checked) {
