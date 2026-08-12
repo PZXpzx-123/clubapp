@@ -67,7 +67,7 @@
     inset -1px 0 0 rgba(255,255,255,0.26);
 
   /* 强调色 */
-  --accent-blue:   #5779a6;
+  --accent-blue:   var(--accent-blue);
   --accent-purple: #7a71a4;
   --accent-teal:   #6a9a9a;
   --accent-coral:  #ae7e76;
@@ -130,7 +130,7 @@ body.dark-mode {
     inset 1px 0 0 rgba(255,255,255,0.10),
     inset -1px 0 0 rgba(255,255,255,0.08);
 
-  --accent-blue:   #80a4ca;
+  --accent-blue:   var(--accent-blue);
   --accent-purple: #9d94ca;
   --accent-teal:   #8abcbc;
   --accent-coral:  #ca9a90;
@@ -149,13 +149,13 @@ body.dark-mode .sidebar::before { background: linear-gradient(90deg, transparent
 body.dark-mode .sidebar-logo .logo-mark { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.10); }
 body.dark-mode .topbar-stage { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.10); }
 body.dark-mode .toggle-sw .ts-slider { background: rgba(255,255,255,0.16); border-color: rgba(255,255,255,0.12); }
-body.dark-mode .toggle-sw input:checked + .ts-slider { background: linear-gradient(135deg, #3b82f6, #2563eb); border-color: #3b82f6; }
+body.dark-mode .toggle-sw input:checked + .ts-slider { background: linear-gradient(135deg, var(--accent-blue), #1d4ed8); border-color: var(--accent-blue); }
 body.dark-mode .setting-row { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.06); }
-body.dark-mode .setting-select { background: rgba(59,130,246,0.08); color: #60a5fa; border-color: #60a5fa; }
+body.dark-mode .setting-select { background: rgba(59,130,246,0.08); color: var(--accent-blue); border-color: var(--accent-blue); }
 body.dark-mode .glass-highlight-box { background: linear-gradient(135deg, rgba(59,130,246,0.10), rgba(99,102,241,0.06)); border-color: rgba(96,165,250,0.35); box-shadow: 0 0 20px rgba(59,130,246,0.10), inset 0 1px 0 rgba(255,255,255,0.06); }
-body.dark-mode .glass-highlight-box .ghb-title { color: #60a5fa; border-bottom-color: rgba(96,165,250,0.20); }
+body.dark-mode .glass-highlight-box .ghb-title { color: var(--accent-blue); border-bottom-color: rgba(96,165,250,0.20); }
 body.dark-mode .glass-highlight-box .ghb-row { border-bottom-color: rgba(96,165,250,0.10); }
-body.dark-mode .ghb-select { background: rgba(59,130,246,0.12); color: #60a5fa; border-color: rgba(96,165,250,0.40); }
+body.dark-mode .ghb-select { background: rgba(59,130,246,0.12); color: var(--accent-blue); border-color: rgba(96,165,250,0.40); }
 body.dark-mode .nav-badge.now { background: rgba(255,255,255,0.10); color: var(--text-2); }
 body.dark-mode .nav-badge.later { color: var(--text-3); border-color: rgba(255,255,255,0.12); }
 body.dark-mode .setting-row { border-bottom-color: rgba(255,255,255,0.048); }
@@ -1999,7 +1999,7 @@ body {
 }
 .glass-highlight-box .ghb-title {
   font-size: 13px; font-weight: 700;
-  color: #3b82f6;
+  color: var(--accent-blue);
   text-transform: uppercase; letter-spacing: 1.5px;
   margin-bottom: 12px; padding-bottom: 8px;
   border-bottom: 1px solid rgba(59,130,246,0.15);
@@ -2025,22 +2025,22 @@ body {
   border: 1.5px solid rgba(59,130,246,0.40);
   background: rgba(59,130,246,0.06);
   font-size: 14px; font-weight: 700; font-family: var(--font);
-  color: #3b82f6; cursor: pointer; outline: none;
+  color: var(--accent-blue); cursor: pointer; outline: none;
   min-width: 120px; text-align: center;
   transition: all 0.2s ease;
 }
-.ghb-select:hover { background: rgba(59,130,246,0.12); border-color: #3b82f6; }
+.ghb-select:hover { background: rgba(59,130,246,0.12); border-color: var(--accent-blue); }
 
 /* Toggle 开关 — 大号渐变 */
 .toggle-sw { position: relative; width: 56px; height: 32px; flex-shrink: 0; }
 .toggle-sw input { opacity: 0; width: 0; height: 0; }
 .toggle-sw .ts-slider { position: absolute; inset: 0; background: rgba(0,0,0,0.16); border-radius: 16px; cursor: pointer; transition: all 0.3s ease; border: 1px solid rgba(0,0,0,0.10); }
 .toggle-sw .ts-slider::before { content: ''; position: absolute; left: 4px; top: 4px; width: 22px; height: 22px; background: #fff; border-radius: 50%; transition: all 0.3s ease; box-shadow: 0 2px 8px rgba(0,0,0,0.14); }
-.toggle-sw input:checked + .ts-slider { background: linear-gradient(135deg, #3b82f6, #2563eb); border-color: #3b82f6; box-shadow: 0 0 16px rgba(59,130,246,0.40); }
+.toggle-sw input:checked + .ts-slider { background: linear-gradient(135deg, var(--accent-blue), #1d4ed8); border-color: var(--accent-blue); box-shadow: 0 0 16px rgba(59,130,246,0.40); }
 .toggle-sw input:checked + .ts-slider::before { transform: translateX(24px); box-shadow: 0 2px 8px rgba(59,130,246,0.30); }
 
 /* 下拉选择 — 突出蓝色 */
-.setting-select { padding: 10px 16px; border-radius: 9px; border: 1px solid #3b82f6; background: rgba(59,130,246,0.04); font-size: 13px; font-weight: 700; font-family: var(--font); color: #3b82f6; cursor: pointer; outline: none; min-width: 110px; text-align: center; transition: all 0.2s ease; }
+.setting-select { padding: 10px 16px; border-radius: 9px; border: 1px solid var(--accent-blue); background: rgba(59,130,246,0.04); font-size: 13px; font-weight: 700; font-family: var(--font); color: var(--accent-blue); cursor: pointer; outline: none; min-width: 110px; text-align: center; transition: all 0.2s ease; }
 .setting-select:hover { background: rgba(59,130,246,0.08); }
 
 /* UI 缩放预设按钮组 */
@@ -3066,7 +3066,7 @@ body:not(.edit-mode) .settings-wrap .ghb-select {
         <!-- 系统信息 -->
         <div class="settings-section">
           <div class="ss-title">系统信息</div>
-          <div class="info-row"><span class="ir-label">系统版本</span><span class="ir-value">v2.2.2</span></div>
+          <div class="info-row"><span class="ir-label">系统版本</span><span class="ir-value">v2.2.3</span></div>
           <div class="info-row"><span class="ir-label">数据总量</span><span class="ir-value">156 名员工</span></div>
           <div class="info-row"><span class="ir-label">最后更新</span><span class="ir-value">2026-08-12</span></div>
           <div class="info-row"><span class="ir-label">浏览器</span><span class="ir-value" id="sysBrowser">—</span></div>
@@ -3118,7 +3118,7 @@ body:not(.edit-mode) .settings-wrap .ghb-select {
         <!-- 系统更新 -->
         <div class="settings-section">
           <div class="ss-title">系统更新</div>
-          <div class="info-row"><span class="ir-label">当前版本</span><span class="ir-value" id="sysVersion">v2.2.2</span></div>
+          <div class="info-row"><span class="ir-label">当前版本</span><span class="ir-value" id="sysVersion">v2.2.3</span></div>
           <div style="margin-top:8px;">
             <button class="btn btn-glass primary" id="btnCheckUpdate" style="width:100%;">🔍 检查更新</button>
           </div>
@@ -3406,7 +3406,7 @@ if ("serviceWorker" in navigator) {
     .catch(function(err) { console.log("[SW] 注册失败", err); });
 }
 // --- 应用版本（热更新检测用） ---
-const APP_VERSION = '2.2.2';
+const APP_VERSION = '2.2.3';
 let __updateAvailable = false;       // 是否有可用更新
 let __updateVersion = null;          // 新版本号
 let __updateChecking = false;        // 是否正在检查中
@@ -7280,7 +7280,7 @@ function resetTrainView() {
       r.style.setProperty('--border-subtle', 'rgba(255,255,255,0.06)');
       r.style.setProperty('--border-dark', 'rgba(255,255,255,0.04)');
       r.style.setProperty('--glass-edge', 'inset 0 1px 0 rgba(255,255,255,0.18),inset 0 -1px 0 rgba(0,0,0,0.30),inset 1px 0 0 rgba(255,255,255,0.08),inset -1px 0 0 rgba(255,255,255,0.06)');
-      r.style.setProperty('--accent-blue', '#8aaddb');
+      r.style.setProperty('--accent-blue', '#60a5fa');
       r.style.setProperty('--accent-purple', '#a89ad4');
       r.style.setProperty('--accent-teal', '#8ec8c8');
       r.style.setProperty('--accent-coral', '#d4a89c');
@@ -7357,7 +7357,6 @@ function resetTrainView() {
         root.style.setProperty('--glass-heavy', 'rgba(255,255,255,0.72)');
         root.style.setProperty('--glass-subtle', 'rgba(255,255,255,0.60)');
       }
-      reApplyDarkMode();
       cloudAutoSave();
     });
 
@@ -7400,7 +7399,6 @@ function resetTrainView() {
           root.style.removeProperty('--blur-md'); root.style.removeProperty('--blur-sm');
           root.style.removeProperty('--sidebar-blur'); root.style.removeProperty('--sidebar-bg');
       }
-      reApplyDarkMode();
       cloudAutoSave();
     });
 
@@ -7425,7 +7423,6 @@ function resetTrainView() {
           root.style.removeProperty('--accent-blue'); root.style.removeProperty('--accent-purple');
           root.style.removeProperty('--accent-teal'); root.style.removeProperty('--accent-coral');
       }
-      reApplyDarkMode();
       cloudAutoSave();
     });
 
