@@ -1089,6 +1089,7 @@ body {
   from { opacity: 0; transform: scale(0.82) translateY(16px); }
   to   { opacity: 1; transform: scale(1)    translateY(0); }
 }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
 .order-card            { animation: cardPopIn 0.38s var(--ease-out-back) forwards; }
 .order-card:nth-child(1)  { animation-delay: 0.00s; }
 .order-card:nth-child(2)  { animation-delay: 0.06s; }
@@ -3015,7 +3016,7 @@ body:not(.edit-mode) .settings-wrap .setting-select {
         <!-- 系统信息 -->
         <div class="settings-section">
           <div class="ss-title">系统信息</div>
-          <div class="info-row"><span class="ir-label">系统版本</span><span class="ir-value">v2.1.5</span></div>
+          <div class="info-row"><span class="ir-label">系统版本</span><span class="ir-value">v2.1.6</span></div>
           <div class="info-row"><span class="ir-label">数据总量</span><span class="ir-value">156 名员工</span></div>
           <div class="info-row"><span class="ir-label">最后更新</span><span class="ir-value">2026-08-12</span></div>
           <div class="info-row"><span class="ir-label">浏览器</span><span class="ir-value" id="sysBrowser">—</span></div>
@@ -3058,7 +3059,7 @@ body:not(.edit-mode) .settings-wrap .setting-select {
         <!-- 系统更新 -->
         <div class="settings-section">
           <div class="ss-title">系统更新</div>
-          <div class="info-row"><span class="ir-label">当前版本</span><span class="ir-value" id="sysVersion">v2.1.5</span></div>
+          <div class="info-row"><span class="ir-label">当前版本</span><span class="ir-value" id="sysVersion">v2.1.6</span></div>
           <div style="margin-top:8px;">
             <button class="btn btn-glass primary" id="btnCheckUpdate" style="width:100%;">🔍 检查更新</button>
           </div>
@@ -3346,7 +3347,7 @@ if ("serviceWorker" in navigator) {
     .catch(function(err) { console.log("[SW] 注册失败", err); });
 }
 // --- 应用版本（热更新检测用） ---
-const APP_VERSION = '2.1.5';
+const APP_VERSION = '2.1.6';
 let __updateAvailable = false;       // 是否有可用更新
 let __updateVersion = null;          // 新版本号
 let __updateChecking = false;        // 是否正在检查中
@@ -6869,13 +6870,6 @@ function resetTrainView() {
   const updateStatusEl = document.getElementById('updateStatus');
   const btnCheck = document.getElementById('btnCheckUpdate');
 
-  /** 带超时的 fetch，避免网络不通时无限挂起 */
-  function fetchWithTimeout(url, timeoutMs) {
-    var ctrl = new AbortController();
-    var timer = setTimeout(function() { ctrl.abort(); }, timeoutMs);
-    return fetch(url, { signal: ctrl.signal }).finally(function() { clearTimeout(timer); });
-  }
-
   if (btnCheck) btnCheck.addEventListener('click', async function() {
     if (__updateChecking) return;
     __updateChecking = true;
@@ -6885,28 +6879,57 @@ function resetTrainView() {
 
     var latestVersion = null;
     var lastError = '';
-    var CHECK_TIMEOUT = 8000; // 8 秒超时
+    var CHECK_TIMEOUT = 15000; // 15 秒超时
 
-    // 策略1: 优先拉 version.json（仅 ~30 字节，速度快）
+    // 通用请求函数 — 优先 fetch，降级 XHR
+    async function tryFetch(url, timeoutMs) {
+      // 方法1: fetch + AbortController
+      try {
+        var ctrl = new AbortController();
+        var timer = setTimeout(function() { ctrl.abort(); }, timeoutMs);
+        var resp = await fetch(url, { signal: ctrl.signal, mode: 'cors', cache: 'no-cache' });
+        clearTimeout(timer);
+        return resp;
+      } catch(e) {
+        // 方法2: XMLHttpRequest（部分 WebView 对 fetch 支持不好）
+        return new Promise(function(resolve, reject) {
+          var xhr = new XMLHttpRequest();
+          var timer = setTimeout(function() { xhr.abort(); reject(new Error('XHR 超时')); }, timeoutMs);
+          xhr.open('GET', url, true);
+          xhr.timeout = timeoutMs;
+          xhr.onload = function() {
+            clearTimeout(timer);
+            resolve({ ok: xhr.status >= 200 && xhr.status < 300, status: xhr.status, text: function() { return Promise.resolve(xhr.responseText); }, json: function() { return Promise.resolve(JSON.parse(xhr.responseText)); } });
+          };
+          xhr.onerror = function() { clearTimeout(timer); reject(new Error('网络错误')); };
+          xhr.ontimeout = function() { clearTimeout(timer); reject(new Error('XHR 超时')); };
+          xhr.send();
+        });
+      }
+    }
+
+    // 策略1: 拉 version.json
     try {
       if (updateStatusEl) updateStatusEl.textContent = '正在获取版本信息...';
-      var resp = await fetchWithTimeout(VERSION_JSON_URL + '?t=' + Date.now(), CHECK_TIMEOUT);
+      var resp = await tryFetch(VERSION_JSON_URL + '?t=' + Date.now(), CHECK_TIMEOUT);
       if (resp.ok) {
-        var json = await resp.json();
+        var json = resp.json ? await resp.json() : JSON.parse(await resp.text());
         latestVersion = json.v;
         console.log('[Update] version.json → v' + latestVersion);
       }
     } catch (e) {
-      lastError = e.name === 'AbortError' ? '连接超时（version.json）' : e.message;
+      lastError = e.message || '连接超时（version.json）';
+      console.warn('[Update] version.json 失败:', lastError);
     }
 
-    // 策略2: 降级拉完整 HTML 解析版本号
+    // 策略2: 拉完整 HTML
     if (!latestVersion) {
       try {
-        if (updateStatusEl) updateStatusEl.textContent = '正在下载版本文件...';
-        var resp2 = await fetchWithTimeout(UPDATE_URL + '?t=' + Date.now(), CHECK_TIMEOUT);
+        if (updateStatusEl) updateStatusEl.textContent = '正在获取版本文件...';
+        var resp2 = await tryFetch(UPDATE_URL + '?t=' + Date.now(), CHECK_TIMEOUT);
         if (!resp2.ok) throw new Error('HTTP ' + resp2.status);
-        var html = await resp2.text();
+        var html = resp2.text ? await resp2.text() : '';
+        if (!html) throw new Error('空响应');
         var match = html.match(/const\s+APP_VERSION\s*=\s*['"]([\d.]+)['"]/);
         if (match) {
           latestVersion = match[1];
@@ -6915,16 +6938,18 @@ function resetTrainView() {
           throw new Error('无法解析版本号');
         }
       } catch (e) {
-        lastError = lastError ? lastError + ' / ' + (e.name === 'AbortError' ? '连接超时（HTML）' : e.message) : (e.name === 'AbortError' ? '连接超时（HTML）' : e.message);
+        var msg = e.message || '连接超时（HTML）';
+        lastError = lastError ? lastError + ' / ' + msg : msg;
+        console.warn('[Update] HTML 拉取失败:', msg);
       }
     }
 
     if (!latestVersion) {
       if (updateStatusEl) {
-        updateStatusEl.innerHTML = '<span style="color:#a82020;">✕ 检查失败：' + escHtml(lastError || '无法连接更新服务器') + '</span>';
-        setTimeout(function() { if (updateStatusEl) updateStatusEl.style.display = 'none'; }, 5000);
+        updateStatusEl.innerHTML = '<span style="color:#a82020;">✕ 检查失败：' + escHtml(lastError || '无法连接更新服务器') + '</span>'
+          + '<br><span style="font-size:10px;color:var(--text-3);">请确认：① 手机已联网 ② 打包时启用了"网络访问"权限</span>';
+        setTimeout(function() { if (updateStatusEl) updateStatusEl.style.display = 'none'; }, 8000);
       }
-      console.warn('[Update] 检查失败:', lastError || 'fetch 被阻止（可能是 file:// 协议限制）');
     } else {
       __updateVersion = latestVersion;
 
@@ -7050,41 +7075,66 @@ function resetTrainView() {
     if (okBtn) okBtn.style.display = 'none';
 
     try {
-      var resp = await fetchWithTimeout(updateUrl + '?t=' + Date.now(), 30000);
-      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      // 下载 — 优先 fetch（有进度条），降级 XHR
+      var htmlText = null;
+      var merged = null;
+      try {
+        var resp = await fetch(updateUrl + '?t=' + Date.now(), { mode: 'cors', cache: 'no-cache' });
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
 
-      var total = parseInt(resp.headers.get('content-length') || '0', 10);
-      var loaded = 0;
-      var reader = resp.body.getReader();
-      var chunks = [];
+        var total = parseInt(resp.headers.get('content-length') || '0', 10);
+        var loaded = 0;
+        var reader = resp.body.getReader();
+        var chunks = [];
 
-      while (true) {
-        var chunk = await reader.read();
-        if (chunk.done) break;
-        chunks.push(chunk.value);
-        loaded += chunk.value.length;
-        if (total > 0) {
-          var pct = Math.round(loaded / total * 100);
-          var bar = document.getElementById('updateProgressBar');
-          var txt = document.getElementById('updateProgressText');
-          if (bar) bar.style.width = pct + '%';
-          if (txt) txt.textContent = 'Downloaded ' + Math.round(loaded/1024) + ' / ' + Math.round(total/1024) + ' KB (' + pct + '%)';
+        while (true) {
+          var chunk = await reader.read();
+          if (chunk.done) break;
+          chunks.push(chunk.value);
+          loaded += chunk.value.length;
+          if (total > 0) {
+            var pct = Math.round(loaded / total * 100);
+            var bar = document.getElementById('updateProgressBar');
+            var txt = document.getElementById('updateProgressText');
+            if (bar) bar.style.width = pct + '%';
+            if (txt) txt.textContent = 'Downloaded ' + Math.round(loaded/1024) + ' / ' + Math.round(total/1024) + ' KB (' + pct + '%)';
+          }
         }
-      }
 
-      // Merge chunks
-      var totalLen = 0;
-      for (var i = 0; i < chunks.length; i++) totalLen += chunks[i].length;
-      var merged = new Uint8Array(totalLen);
-      var pos = 0;
-      for (var i = 0; i < chunks.length; i++) {
-        merged.set(chunks[i], pos);
-        pos += chunks[i].length;
-      }
+        var totalLen = 0;
+        for (var i = 0; i < chunks.length; i++) totalLen += chunks[i].length;
+        merged = new Uint8Array(totalLen);
+        var pos = 0;
+        for (var i = 0; i < chunks.length; i++) {
+          merged.set(chunks[i], pos);
+          pos += chunks[i].length;
+        }
 
-      // Decode to string
-      var decoder = new TextDecoder('utf-8');
-      var htmlText = decoder.decode(merged);
+        var decoder = new TextDecoder('utf-8');
+        htmlText = decoder.decode(merged);
+      } catch(fetchErr) {
+        console.warn('[Update] fetch 下载失败，尝试 XHR:', fetchErr.message);
+        // XHR 降级（无进度条）
+        if (body) {
+          body.innerHTML = '<p style="margin-bottom:12px;">🔄 Downloading v' + __updateVersion + '... (XHR)</p>'
+            + '<div style="background:var(--sidebar-slider);border-radius:8px;height:10px;overflow:hidden;">'
+            + '<div style="background:var(--accent-blue);height:100%;width:50%;border-radius:8px;animation:pulse 1s infinite;"></div></div>'
+            + '<p style="font-size:11px;color:var(--text-3);margin-top:8px;">使用备用方式下载...</p>';
+        }
+        htmlText = await new Promise(function(resolve, reject) {
+          var xhr = new XMLHttpRequest();
+          xhr.open('GET', updateUrl + '?t=' + Date.now(), true);
+          xhr.timeout = 30000;
+          xhr.onload = function() {
+            if (xhr.status >= 200 && xhr.status < 300) resolve(xhr.responseText);
+            else reject(new Error('HTTP ' + xhr.status));
+          };
+          xhr.onerror = function() { reject(new Error('网络错误')); };
+          xhr.ontimeout = function() { reject(new Error('下载超时')); };
+          xhr.send();
+        });
+        if (!htmlText) throw new Error('XHR 返回空内容');
+      }
 
       // Verify downloaded content has correct version
       var versionMatch = htmlText.match(/const\s+APP_VERSION\s*=\s*['"]([\d.]+)['"]/);
