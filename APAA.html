@@ -212,7 +212,7 @@ body {
   background: var(--sidebar-slider);
   z-index: 0;
   pointer-events: none;
-  transition: top 0.7s var(--ease-out-expo);
+  transition: transform 0.55s var(--ease-out-expo); will-change: transform;
   /* 顶部光泽 */
   box-shadow: var(--glass-edge);
 }
@@ -399,7 +399,7 @@ body {
 .topbar-search input:focus {
   background: var(--glass-light);
   border-color: rgba(255,255,255,0.55);
-  box-shadow: 0 0 0 3px rgba(255,255,255,0.08),
+  box-shadow: 0 0 0 3px rgba(0,122,255,0.32),
               var(--glass-edge);
 }
 
@@ -518,7 +518,6 @@ body {
   display: flex; flex-direction: column;
   gap: 10px;
   min-height: 170px;
-  will-change: transform;
 }
 
 /* 卡片顶部光泽 */
@@ -2047,7 +2046,7 @@ input[type="range"]#setZoom::-moz-range-thumb {
   border-radius: var(--r-lg);
   box-shadow: var(--glass-edge), 0 30px 80px rgba(0,0,0,0.18);
   overflow: hidden;
-  z-index: 1;
+  z-index: 5; /* detail-sheet 在上层 */
   /* 过渡动画: transform + border-radius（GPU 合成，不触发 layout） */
   transition: transform 0.55s cubic-bezier(0.22, 0.61, 0.36, 1),
               border-radius 0.55s cubic-bezier(0.22, 0.61, 0.36, 1),
@@ -2503,6 +2502,13 @@ body:not(.edit-mode) .settings-wrap .setting-select {
 
   /* 分页 */
   .pagination-bar { flex-direction: column; gap: 8px; padding: 10px 14px; }
+
+  /* 平板端禁用毛玻璃（省 GPU） */
+  .sidebar { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(22,24,32,0.96); }
+  .topbar { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(242,244,248,0.96); }
+  .person-card, .order-card, .exam-card, .stat-card { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(255,255,255,0.92); }
+  .detail-sheet { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(242,244,248,0.96); }
+  .modal, .modal-overlay { backdrop-filter: none; -webkit-backdrop-filter: none; }
 }
 
 /* --- 手机竖屏: ≤520px --- */
@@ -2550,6 +2556,12 @@ body:not(.edit-mode) .settings-wrap .setting-select {
     width: 97vw !important; height: 96vh !important;
     border-radius: 16px !important;
   }
+  /* 禁用毛玻璃（省 GPU） */
+  .sidebar { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(22,24,32,0.96); }
+  .topbar { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(242,244,248,0.96); }
+  .person-card, .order-card, .exam-card, .stat-card { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(255,255,255,0.92); }
+  .detail-sheet { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(242,244,248,0.96); }
+  .modal, .modal-overlay { backdrop-filter: none; -webkit-backdrop-filter: none; }
   .detail-hero { padding: 12px 14px 8px; gap: 8px; }
   .detail-hero-avatar { width: 40px; height: 40px; font-size: 17px; }
   .detail-hero-name { font-size: 16px; }
@@ -3211,13 +3223,19 @@ const VERSION_JSON_URL = UPDATE_URL.replace(/APAA\.html$/i, 'version.json');
 
 // --- 忙碌状态追踪（有未保存数据或弹窗打开时标记为忙碌） ---
 function isAppBusy() {
-  // 有弹窗打开
-  if (!document.getElementById('personModalOverlay').classList.contains('hidden')) return true;
-  if (!document.getElementById('deleteModalOverlay').classList.contains('hidden')) return true;
-  if (document.getElementById('detailOverlay') && !document.getElementById('detailOverlay').classList.contains('hidden')) return true;
-  if (document.getElementById('addCardOverlay') && document.getElementById('addCardOverlay').classList.contains('show')) return true;
-  if (document.getElementById('examAddOverlay') && document.getElementById('examAddOverlay').classList.contains('show')) return true;
-  if (document.getElementById('examDetailOverlay') && !document.getElementById('examDetailOverlay').classList.contains('hidden')) return true;
+  // 有弹窗打开（全部使用可选链，防止 DOM 缺失崩溃）
+  var pm = document.getElementById('personModalOverlay');
+  if (pm && !pm.classList.contains('hidden')) return true;
+  var dm = document.getElementById('deleteModalOverlay');
+  if (dm && !dm.classList.contains('hidden')) return true;
+  var dob = document.getElementById('detailOverlay');
+  if (dob && !dob.classList.contains('hidden')) return true;
+  var ac = document.getElementById('addCardOverlay');
+  if (ac && ac.classList.contains('show')) return true;
+  var ea = document.getElementById('examAddOverlay');
+  if (ea && ea.classList.contains('show')) return true;
+  var ed = document.getElementById('examDetailOverlay');
+  if (ed && !ed.classList.contains('hidden')) return true;
   // 有待保存的云端数据
   if (cloudSaveTimer) return true;
   return false;
@@ -3420,9 +3438,9 @@ const cloudAppearance = {
     const apply = (id, val, type) => {
       const el = document.getElementById(id);
       if (!el) return;
-      if (type === 'checkbox') { el.checked = val; el.dispatchEvent(new Event('change')); }
-      else if (type === 'select') { el.value = val; el.dispatchEvent(new Event('change')); }
-      else if (type === 'range') { el.value = val; el.dispatchEvent(new Event('input')); }
+      if (type === 'checkbox') { el.checked = val; setTimeout(function(){ el.dispatchEvent(new Event('change')); }, 200); }
+      else if (type === 'select') { el.value = val; setTimeout(function(){ el.dispatchEvent(new Event('change')); }, 200); }
+      else if (type === 'range') { el.value = val; setTimeout(function(){ el.dispatchEvent(new Event('input')); }, 200); }
     };
     apply('setBlur',    data.blur_enabled,    'checkbox');
     apply('setAnim',    data.anim_enabled,    'checkbox');
@@ -3435,7 +3453,7 @@ const cloudAppearance = {
     // pageSize
     if (data.page_size) {
       const psEl = document.getElementById('setPageSize');
-      if (psEl) { psEl.value = data.page_size; psEl.dispatchEvent(new Event('change')); }
+      if (psEl) { psEl.value = data.page_size; setTimeout(function(){ psEl.dispatchEvent(new Event('change')); }, 200); }
     }
   }
 };
@@ -3469,21 +3487,14 @@ const cloudPersonnel = {
       for (let i = 0; i < personnelRows.length; i += 200) {
         const batch = personnelRows.slice(i, i + 200);
         const { error } = await sb.from('personnel').upsert(batch, { onConflict: 'user_id,id' });
-        if (error) console.warn('[Cloud] 人员保存失败:', error.message);
+        if (error) throw new Error('人员保存失败: ' + error.message);
       }
     }
 
     // 清理云端多余的人员（本地已删除的）
-    const localPersonIds = new Set(personnelRows.map(r => r.id));
-    const { data: cloudPers } = await sb.from('personnel').select('id').eq('user_id', uid);
-    if (cloudPers) {
-      const staleIds = cloudPers.filter(cp => !localPersonIds.has(cp.id)).map(cp => cp.id);
-      if (staleIds.length > 0) {
-        for (let i = 0; i < staleIds.length; i += 200) {
-          await sb.from('personnel').delete().in('id', staleIds.slice(i, i + 200));
-        }
-      }
-    }
+    // 注意：不再做"云端多余人员删除"（stale-deletion），
+    // 因为共享 user_id 模式下会误删其他客户端刚添加的数据。
+    // 人员删除统一由 deletePersonDirect() 负责。
 
     // 保存订单
     const allOrderIds = Object.keys(personOrders);
@@ -3513,21 +3524,12 @@ const cloudPersonnel = {
       for (let i = 0; i < orderRows.length; i += 200) {
         const batch = orderRows.slice(i, i + 200);
         const { error } = await sb.from('orders').upsert(batch, { onConflict: 'user_id,id' });
-        if (error) console.warn('[Cloud] 订单保存失败:', error.message);
+        if (error) throw new Error('订单保存失败: ' + error.message);
       }
     }
 
-    // 清理云端多余的订单（本地已删除的）
-    const localOrderIds = new Set(orderRows.map(r => r.id));
-    const { data: cloudOrders } = await sb.from('orders').select('id').eq('user_id', uid);
-    if (cloudOrders) {
-      const staleIds = cloudOrders.filter(co => !localOrderIds.has(co.id)).map(co => co.id);
-      if (staleIds.length > 0) {
-        for (let i = 0; i < staleIds.length; i += 200) {
-          await sb.from('orders').delete().in('id', staleIds.slice(i, i + 200));
-        }
-      }
-    }
+    // 注意：不再做"云端多余订单删除"（stale-deletion），
+    // 订单删除统一由 deleteOrderCard() 负责。
 
     console.log(`[Cloud] ✓ 人员档案已同步 (${personnelRows.length}人, ${orderRows.length}单)`);
   },
@@ -3774,7 +3776,7 @@ function cloudAutoSave() {
 }
 
 // ================================================================
-// 轻量变更通知：有人上传 → 其他设备2秒内自动拉取
+// Realtime 实时推送：有人上传 → 云端即时推送给所有在线设备
 // ================================================================
 let __lastChangeTime = null;  // 上次已知的云端变更时间戳
 
@@ -3785,47 +3787,117 @@ async function notifyChange() {
     const now = new Date().toISOString();
     await sb.from('changes').upsert({ id: 1, updated_at: now }, { onConflict: 'id' });
     __lastChangeTime = now;  // 更新本地时间戳，防止自己重复拉取
-    console.log('[Cloud] 🔔 已广播变更通知');
+    console.log('[Realtime] 🔔 已广播变更通知');
   } catch (e) { /* 静默 */ }
 }
 
-/** 轻量轮询：只查一行时间戳，变了才拉全量数据 */
-let __cloudPollTimer = null;
+// --- Realtime 同步（替代轮询） ---
+let __realtimeChannel = null;
+let __fallbackTimer = null;
 function _isEditing() {
-  return (!document.getElementById('personModalOverlay').classList.contains('hidden')) ||
-         (!document.getElementById('deleteModalOverlay').classList.contains('hidden')) ||
-         (document.getElementById('addCardOverlay') && document.getElementById('addCardOverlay').classList.contains('show')) ||
-         (document.getElementById('examAddOverlay') && document.getElementById('examAddOverlay').classList.contains('show'));
+  var pm = document.getElementById('personModalOverlay');
+  var dm = document.getElementById('deleteModalOverlay');
+  var ac = document.getElementById('addCardOverlay');
+  var ea = document.getElementById('examAddOverlay');
+  // 同时检查 confirmOverlay / examDetailOverlay / editPopover
+  var co = document.getElementById('confirmOverlay');
+  var ed = document.getElementById('examDetailOverlay');
+  var ep = document.getElementById('editPopover');
+  return (pm && !pm.classList.contains('hidden')) ||
+         (dm && !dm.classList.contains('hidden')) ||
+         (ac && ac.classList.contains('show')) ||
+         (ea && ea.classList.contains('show')) ||
+         (co && !co.classList.contains('hidden')) ||
+         (ed && !ed.classList.contains('hidden')) ||
+         (ep && !ep.classList.contains('hidden'));
 }
-function startCloudPolling() {
-  if (__cloudPollTimer) return;
-  __cloudPollTimer = setInterval(async () => {
-    if (!cloudReady || !__cloudLoadDone) return;
-    if (_isEditing()) return;
-    try {
-      // 只查 changes 表一行（~200字节），不拉全量数据
-      const { data } = await sb.from('changes').select('updated_at').eq('id', 1).maybeSingle();
-      const remoteTime = data?.updated_at;
-      if (remoteTime) {
-        // 首次启动记下时间戳，不触发加载
-        if (!__lastChangeTime) {
-          __lastChangeTime = remoteTime;
-          return;
-        }
-        // 时间戳变了 = 有人上传过 → 拉取最新数据
-        if (remoteTime !== __lastChangeTime) {
-          console.log('[Cloud] 🔔 检测到远端变更，拉取最新数据...');
-          __lastChangeTime = remoteTime;
-          await cloudLoadAll();
-          filteredPeople = [...people];
-          renderCards();
-        }
+
+/** 收到远端变更时的统一处理：所有防护在此集中 */
+async function __handleRemoteChange(remoteTime) {
+  if (!remoteTime) return;
+  // 首次启动记下时间戳，不触发加载
+  if (!__lastChangeTime) {
+    __lastChangeTime = remoteTime;
+    return;
+  }
+  // 时间戳没变 = 自己触发的推送，跳过
+  if (remoteTime === __lastChangeTime) return;
+  // 本地有未保存的变更，跳过拉取（保留用户编辑中数据）
+  if (cloudDirty) {
+    console.log('[Realtime] ⏸ 远端变更，本地有未保存数据，跳过拉取');
+    __lastChangeTime = remoteTime;
+    return;
+  }
+  // 用户正在编辑中，跳过拉取
+  if (_isEditing()) {
+    console.log('[Realtime] ⏸ 远端变更，用户正在编辑中，跳过拉取');
+    __lastChangeTime = remoteTime;
+    return;
+  }
+  console.log('[Realtime] 🔔 收到实时推送，拉取最新数据...');
+  __lastChangeTime = remoteTime;
+  try {
+    await cloudLoadAll();
+    filteredPeople = [...people];
+    renderCards();
+    console.log('[Realtime] ✅ 数据已同步');
+  } catch (e) {
+    console.warn('[Realtime] 拉取失败:', e.message);
+  }
+}
+
+/** 启动 Realtime 订阅 + 断线兜底轮询 (30s) */
+function startRealtimeSync() {
+  if (__realtimeChannel) return;
+  console.log('[Realtime] 📡 启动实时订阅...');
+  __realtimeChannel = sb
+    .channel('changes-watcher')
+    .on('postgres_changes',
+      { event: 'UPDATE', schema: 'public', table: 'changes', filter: 'id=eq.1' },
+      async function(payload) {
+        var remoteTime = payload.new?.updated_at;
+        if (remoteTime) await __handleRemoteChange(remoteTime);
       }
-    } catch (_) { /* 静默 */ }
-  }, 2000);
+    )
+    .subscribe(function(status) {
+      if (status === 'SUBSCRIBED') {
+        console.log('[Realtime] ✅ 实时推送已连接');
+        if (__fallbackTimer) { clearInterval(__fallbackTimer); __fallbackTimer = null; }
+      }
+      if (status === 'CLOSED' || status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+        console.warn('[Realtime] ⚠ 连接断开，启动兜底轮询 (30s)');
+        if (!__fallbackTimer) {
+          __fallbackTimer = setInterval(async function() {
+            if (!cloudReady || !__cloudLoadDone || _isEditing() || cloudDirty) return;
+            try {
+              var refetch = await sb.from('changes').select('updated_at').eq('id', 1).maybeSingle();
+              if (refetch.data?.updated_at) await __handleRemoteChange(refetch.data.updated_at);
+            } catch (_) {}
+          }, 30000);
+        }
+        // 10s 后尝试重连
+        setTimeout(function() {
+          if (__realtimeChannel) {
+            __realtimeChannel.unsubscribe();
+            __realtimeChannel = null;
+          }
+          if (cloudReady && __cloudLoadDone) startRealtimeSync();
+        }, 10000);
+      }
+    });
 }
-function stopCloudPolling() {
-  if (__cloudPollTimer) { clearInterval(__cloudPollTimer); __cloudPollTimer = null; }
+
+/** 停止 Realtime 订阅 */
+function stopRealtimeSync() {
+  if (__realtimeChannel) {
+    __realtimeChannel.unsubscribe();
+    __realtimeChannel = null;
+    console.log('[Realtime] ⏹ 已断开实时推送');
+  }
+  if (__fallbackTimer) {
+    clearInterval(__fallbackTimer);
+    __fallbackTimer = null;
+  }
 }
 
 // ================================================================
@@ -3984,10 +4056,13 @@ async function initCloud() {
     renderCards();
     showCloudUserUI();
     __cloudLoadDone = true;
-    startCloudPolling(); // 启动轻量轮询（2秒检查 changes 时间戳）
+    startRealtimeSync(); // 启动 Realtime 实时推送（替代轮询）
     console.log('[Cloud] 🚀 云端已加载 (人员:' + people.length + ', 订单:' + Object.keys(personOrders).length + ', 考生:' + examCandidates.length + ')');
   } catch (e) {
     console.warn('[Cloud] ❌ 云端不可用:', e.message);
+		loadLocalData();
+		filteredPeople = [...people];
+		renderCards();
     showCloudUserUI();
     showToast('云端连接失败，请检查网络后刷新', false);
   }
@@ -3999,7 +4074,7 @@ console.log('◈ 分区 11z — Supabase 云端同步引擎 — 已就绪');
 // 共享工具函数
 // ================================================================
 
-/** Lehmer 确定性伪随机数生成器 — 返回 [0,1) 浮点 */
+/** Lehmer 确定性伪随机数生成器 — 返回 0..1 之间的浮点数 */
 function seededRNG(seed) {
   let s = seed;
   return function() { s = (s * 16807 + 0) % 2147483647; return (s - 1) / 2147483646; };
@@ -4030,6 +4105,7 @@ function $(id) {
 
 const avColors = ['#5b7ec2','#c47b74','#5a9e9e','#7b6fc0','#b08060','#c08090','#6090b0','#70a080'];
 function avColor(name) {
+  if (!name || typeof name !== 'string') return avColors[0]; // 防止 null/undefined 崩溃
   let h = 0; for (let c of name) h = c.charCodeAt(0) + ((h << 5) - h);
   return avColors[Math.abs(h) % avColors.length];
 }
@@ -4302,6 +4378,24 @@ document.getElementById('personGrid').addEventListener('click', function(e) {
   openDetail(id, card);
 });
 
+	// 悬停动态 will-change（离开后移除，降低 GPU 内存占用）
+	var pgEl = document.getElementById('personGrid');
+	if (pgEl && !pgEl._hoverPatched) {
+		pgEl._hoverPatched = true;
+		pgEl.addEventListener('mouseenter', function(e) {
+			var c = e.target.closest('.person-card');
+			if (c) c.style.willChange = 'transform';
+		}, true);
+		pgEl.addEventListener('mouseleave', function(e) {
+			var c = e.target.closest('.person-card');
+			if (c) c.addEventListener('transitionend', function h() {
+				c.style.willChange = 'auto';
+				c.removeEventListener('transitionend', h);
+			}, {once: true});
+		}, true);
+	}
+
+
 function openDetail(id, cardEl) {
   // 如果正在关闭动画中，立即结束关闭状态
   if (detailIsClosing) {
@@ -4429,12 +4523,12 @@ function buildDetailContent(p) {
   inner.innerHTML = `
     <button class="detail-close-btn" id="detailCloseBtn" title="关闭">✕</button>
     <div class="detail-hero">
-      <div class="detail-hero-avatar" style="background:${avColor(p.name)}">${escHtml(p.name[0] || '?')}</div>
+      <div class="detail-hero-avatar" style="background:${avColor(p.name)}">${escHtml((p.name || '?')[0])}</div>
       <div class="detail-hero-info">
         <div class="detail-hero-name">${escHtml(p.name)}</div>
         <div class="detail-hero-code">${escHtml(p.code)}</div>
         <div class="detail-hero-meta">
-          <span class="status-tag ${p.status}">${stLabel}</span>
+          <span class="status-tag ${escHtml(p.status)}">${stLabel}</span>
           <span class="detail-hero-dept">${escHtml(p.dept)} · ${escHtml(p.title)}</span>
         </div>
       </div>
@@ -4680,7 +4774,7 @@ function switchPage(targetPage) {
   if (slider && navEl && targetNavItem) {
     const navRect = navEl.getBoundingClientRect();
     const itemRect = targetNavItem.getBoundingClientRect();
-    slider.style.top = (itemRect.top - navRect.top + navEl.scrollTop) + 'px';
+    slider.style.transform = "translateY(" + (itemRect.top - navRect.top + navEl.scrollTop) + "px)";
   }
 
   // 更新标题
@@ -4751,7 +4845,7 @@ document.addEventListener('keydown', function(e) {
   if (slider && activeItem && nav) {
     const navRect = nav.getBoundingClientRect();
     const itemRect = activeItem.getBoundingClientRect();
-    slider.style.top = (itemRect.top - navRect.top + nav.scrollTop) + 'px';
+    slider.style.transform = "translateY(" + (itemRect.top - navRect.top + nav.scrollTop) + "px)";
   }
 })();
 
@@ -5195,14 +5289,15 @@ function openProfile(personId) {
   if (!listView || !profileView) return;
 
   /* 填充内容 */
-  document.getElementById('profileAvatar').style.background = avColor(person.name);
-  document.getElementById('profileAvatar').textContent = (person.name || '?')[0];
-  document.getElementById('profileName').textContent = person.name;
-  document.getElementById('profileTitle').textContent = person.title;
-  document.getElementById('profileDept').textContent = person.dept;
+  var avEl = document.getElementById('profileAvatar');
+  if (avEl) { avEl.style.background = avColor(person.name); avEl.textContent = (person.name || '?')[0]; }
+  var pnEl = document.getElementById('profileName'); if (pnEl) pnEl.textContent = person.name;
+  var ptEl = document.getElementById('profileTitle'); if (ptEl) ptEl.textContent = person.title;
+  var pdEl = document.getElementById('profileDept'); if (pdEl) pdEl.textContent = person.dept;
 
   const statusLabels = { active: '在岗', leave: '请假', inactive: '离职' };
-  document.getElementById('profileBasic').innerHTML = [
+  var pbEl = document.getElementById('profileBasic');
+  if (pbEl) pbEl.innerHTML = [
     { l:'姓名', v:escHtml(person.name) }, { l:'代号', v:escHtml(person.code) },
     { l:'部门', v:escHtml(person.dept) }, { l:'职位', v:escHtml(person.title) },
     { l:'状态', v:statusLabels[person.status] || escHtml(person.status) }, { l:'入职日期', v:escHtml(person.date || '--') }
@@ -5499,12 +5594,19 @@ async function deleteOrderCard(orderId, personId) {
   const order = getOrders(personId).find(o => o.id === orderId);
   if (!order) return;
   if (!confirm('确定要删除订单「' + order.orderName + '」吗？此操作不可撤销。')) return;
-  personOrders[personId] = getOrders(personId).filter(o => o.id !== orderId);
-  if (orderTimers[orderId]) { clearInterval(orderTimers[orderId]); delete orderTimers[orderId]; }
-  // 直接删除云端订单
-  try { await sb.from('orders').delete().eq('id', orderId).eq('user_id', getUserId()); notifyChange(); } catch(_){}
-  renderOrderCards(personId);
-  showToast('订单「' + order.orderName + '」已删除', true);
+  // 先删云端，成功后再更新本地状态
+  try {
+    const { error } = await sb.from('orders').delete().eq('id', orderId).eq('user_id', getUserId());
+    if (error) throw new Error(error.message);
+    notifyChange();
+    personOrders[personId] = getOrders(personId).filter(o => o.id !== orderId);
+    if (orderTimers[orderId]) { clearInterval(orderTimers[orderId]); delete orderTimers[orderId]; }
+    renderOrderCards(personId);
+    showToast('订单「' + order.orderName + '」已删除', true);
+  } catch (e) {
+    console.warn('[Cloud] 删除订单失败:', e);
+    showToast('⚠️ 删除失败，请检查网络后重试', false);
+  }
 }
 
 /* ---- 倒计时定时器 ---- */
@@ -6106,9 +6208,17 @@ function renderSalaryOverview(year, month) {
   }).join('');
 
   // 行点击 → 单人详情
-  document.querySelectorAll('#salTableBody .sal-row').forEach(row => {
-    row.addEventListener('click', () => showSalaryDetail(Number(row.dataset.sid), year, month));
-  });
+  // 行点击 -> 单人详情（事件委托）
+  var salBody = document.getElementById('salTableBody');
+  if (salBody && !salBody._salDelegated) {
+    salBody._salDelegated = true;
+    salBody.addEventListener('click', function(e) {
+      var row = e.target.closest('.sal-row');
+      if (!row) return;
+      showSalaryDetail(Number(row.dataset.sid), _salYear, _salMonth);
+    });
+  }
+
 
   // 月份切换
   document.getElementById('salPrevMonth').onclick = () => {
@@ -6376,8 +6486,8 @@ function submitExamCandidate() {
     examCandidates.push(candidate);
     hideExamAddForm();
     renderExamCards();
+    	showToast('考生「' + name + '」已添加', true);
   });
-  showToast('考生「' + name + '」已添加', true);
 }
 
 /* ---- 事件绑定 ---- */
@@ -6466,6 +6576,7 @@ function getTrainStatus(courseId) {
    ================================================================ */
 
 function renderTrainOverview() {
+	trainEnrollCache.clear(); // 清空缓存确保数据最新
   generateTrainData();
 
   let ongoing = 0, done = 0, upcoming = 0, totalRate = 0;
@@ -6663,14 +6774,20 @@ function resetTrainView() {
   }
 
   async function doUpdate() {
-    // 强制保存当前数据到本地
+    // 强制保存当前数据到本地（保底——即使云端失败也能恢复）
     saveLocalData();
-    // 如果云端同步定时器在等待，立即触发并等待完成
+    // 立即触发云端同步
     if (cloudSaveTimer) { clearTimeout(cloudSaveTimer); cloudSaveTimer = null; cloudDirty = false; }
-    try { await cloudSaveAll(); } catch (e) { /* 尽力保存 */ }
-    showToast('正在跳转最新版本...', true);
-    // 跳转到远程部署的最新版本（保留查询参数以便追踪）
-    location.replace(UPDATE_URL);
+    try {
+      await cloudSaveAll();
+      showToast('正在跳转最新版本...', true);
+      location.replace(UPDATE_URL);
+    } catch (e) {
+      console.warn('[Update] 云端保存失败，数据已保存到本地:', e.message);
+      if (confirm('云端保存失败，数据已保留在本地。\n\n是否仍然跳转？')) {
+        location.replace(UPDATE_URL);
+      }
+    }
   }
 
   // 页面加载时设置初始值
@@ -7117,10 +7234,11 @@ document.addEventListener('click', function(e) {
 
 (function patchSalaryEdit() {
   // 事件委托：在 #salHistoryBox tbody 上挂一个监听器
-  var salBody = document.querySelector('#salHistoryBox tbody');
-  if (salBody && !salBody._editPatched) {
-    salBody._editPatched = true;
-    salBody.addEventListener('click', function(e) {
+  // 事件委托挂在 #salHistoryBox（稳定父元素），因为 tbody 会被 innerHTML 替换
+  var salBox = document.getElementById('salHistoryBox');
+  if (salBox && !salBox._editPatched) {
+    salBox._editPatched = true;
+    salBox.addEventListener('click', function(e) {
       if (appMode !== 'edit') return;
       var cell = e.target.closest('td.editable-val');
       if (!cell) return;
@@ -7285,7 +7403,7 @@ setTimeout(initCloud, 10);
 
 // 关闭页面/标签前强制保存本地数据（防止3秒防抖窗口内数据丢失）
 window.addEventListener('beforeunload', () => {
-  if (__cloudPollTimer) { clearInterval(__cloudPollTimer); __cloudPollTimer = null; }
+  stopRealtimeSync();
   for (var tid in orderTimers) { clearInterval(orderTimers[tid]); }
   try {
     localStorage.setItem(LS_KEYS.people, JSON.stringify(people));
