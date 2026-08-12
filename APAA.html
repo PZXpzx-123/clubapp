@@ -3015,7 +3015,7 @@ body:not(.edit-mode) .settings-wrap .setting-select {
         <!-- 系统信息 -->
         <div class="settings-section">
           <div class="ss-title">系统信息</div>
-          <div class="info-row"><span class="ir-label">系统版本</span><span class="ir-value">v2.1.4</span></div>
+          <div class="info-row"><span class="ir-label">系统版本</span><span class="ir-value">v2.1.5</span></div>
           <div class="info-row"><span class="ir-label">数据总量</span><span class="ir-value">156 名员工</span></div>
           <div class="info-row"><span class="ir-label">最后更新</span><span class="ir-value">2026-08-12</span></div>
           <div class="info-row"><span class="ir-label">浏览器</span><span class="ir-value" id="sysBrowser">—</span></div>
@@ -3058,7 +3058,7 @@ body:not(.edit-mode) .settings-wrap .setting-select {
         <!-- 系统更新 -->
         <div class="settings-section">
           <div class="ss-title">系统更新</div>
-          <div class="info-row"><span class="ir-label">当前版本</span><span class="ir-value" id="sysVersion">v2.1.4</span></div>
+          <div class="info-row"><span class="ir-label">当前版本</span><span class="ir-value" id="sysVersion">v2.1.5</span></div>
           <div style="margin-top:8px;">
             <button class="btn btn-glass primary" id="btnCheckUpdate" style="width:100%;">🔍 检查更新</button>
           </div>
@@ -3346,7 +3346,7 @@ if ("serviceWorker" in navigator) {
     .catch(function(err) { console.log("[SW] 注册失败", err); });
 }
 // --- 应用版本（热更新检测用） ---
-const APP_VERSION = '2.1.4';
+const APP_VERSION = '2.1.5';
 let __updateAvailable = false;       // 是否有可用更新
 let __updateVersion = null;          // 新版本号
 let __updateChecking = false;        // 是否正在检查中
@@ -4922,11 +4922,8 @@ function switchPage(targetPage) {
 
   // === 滑动高亮条 ===
   const slider = document.querySelector('.nav-slider');
-  const navEl = document.querySelector('.sidebar-nav');
-  if (slider && navEl && targetNavItem) {
-    const navRect = navEl.getBoundingClientRect();
-    const itemRect = targetNavItem.getBoundingClientRect();
-    slider.style.transform = "translateY(" + (itemRect.top - navRect.top + navEl.scrollTop) + "px)";
+  if (slider && targetNavItem) {
+    slider.style.transform = "translateY(" + targetNavItem.offsetTop + "px)";
   }
 
   // 更新标题
@@ -4993,11 +4990,8 @@ document.addEventListener('keydown', function(e) {
 (function initSlider() {
   const slider = document.querySelector('.nav-slider');
   const activeItem = document.querySelector('.nav-item.active');
-  const nav = document.querySelector('.sidebar-nav');
-  if (slider && activeItem && nav) {
-    const navRect = nav.getBoundingClientRect();
-    const itemRect = activeItem.getBoundingClientRect();
-    slider.style.transform = "translateY(" + (itemRect.top - navRect.top + nav.scrollTop) + "px)";
+  if (slider && activeItem) {
+    slider.style.transform = "translateY(" + activeItem.offsetTop + "px)";
   }
 })();
 
