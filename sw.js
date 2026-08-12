@@ -1,13 +1,13 @@
-// Service Worker — ClubApp v2.0.7
-const CACHE = 'clubapp-v2.1.0';
+// Service Worker — ClubApp v2.1.1
+const CACHE = 'clubapp-v2.1.1';
 
 self.addEventListener('install', (e) => {
-  console.log('[SW] install v2.1.0');
+  console.log('[SW] install v2.1.1');
   self.skipWaiting();
 });
 
 self.addEventListener('activate', (e) => {
-  console.log('[SW] activate v2.1.0');
+  console.log('[SW] activate v2.1.1');
   e.waitUntil(clients.claim());
   e.waitUntil(caches.keys().then(keys =>
     Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
