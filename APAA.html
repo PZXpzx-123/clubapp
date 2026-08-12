@@ -94,6 +94,7 @@ body {
   color: var(--text-1);
   display: flex;
   min-height: 100vh;
+  min-height: 100dvh; /* 动态视口 — 手机浏览器地址栏不遮挡 */
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   scrollbar-gutter: stable;
@@ -315,6 +316,7 @@ body {
   margin-left: 248px; flex: 1;
   display: flex; flex-direction: column;
   min-height: 100vh;
+  min-height: 100dvh; /* 动态视口 */
   position: relative; z-index: 1;
 }
 /* ================================================================
