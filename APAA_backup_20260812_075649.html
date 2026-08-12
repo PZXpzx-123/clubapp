@@ -4,9 +4,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://qstrmmaihqyguttnkyvt.supabase.co https://pzxpzx-123.github.io; img-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://qstrmmaihqyguttnkyvt.supabase.co; img-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none';">
 <title>人员管理系统</title>
-	<link rel="manifest" href="manifest.json">
 <!--
   人员管理系统 — iOS 液态玻璃风格
   阶段 1 — 外观与布局：侧边栏动画 + 卡片网格
@@ -17,160 +16,72 @@
    ================================================================ */
 
 :root {
-  /* ===== iOS 液态玻璃 v2.1 · 超通透水光 ===== */
+  /* ===== iOS 液态玻璃 · 超通透 ===== */
 
-  /* 背景 — 半透明，Canvas 天气穿透 */
-  --bg: rgba(238, 241, 248, 0.84);
+  /* 背景色 — 半透明玻璃感，透视天气 Canvas */
+  --bg: rgba(240, 242, 248, 0.88);
 
-  /* 玻璃层级 */
-  --glass-heavy:  rgba(255,255,255,0.18);
-  --glass-medium: rgba(255,255,255,0.11);
-  --glass-light:  rgba(255,255,255,0.065);
-  --glass-subtle: rgba(255,255,255,0.038);
+  /* 玻璃 — 近乎消失，仅保留微弱雾面 */
+  --glass-heavy:  rgba(255,255,255,0.12);
+  --glass-medium: rgba(255,255,255,0.08);
+  --glass-light:  rgba(255,255,255,0.05);
+  --glass-subtle: rgba(255,255,255,0.03);
 
-  /* 卡片 */
-  --glass-card:   rgba(255,255,255,0.20);
+  /* 卡片专用 — 微白保证文字勉强可读 */
+  --glass-card:   rgba(255,255,255,0.14);
 
-  /* 模糊 — iOS 高饱和 */
-  --blur-xl:  blur(20px) saturate(190%);
-  --blur-lg:  blur(14px) saturate(180%);
-  --blur-md:  blur(10px) saturate(170%);
-  --blur-sm:  blur(6px) saturate(160%);
+  /* 模糊 — 大幅降低保留细节 */
+  --blur-xl:  blur(14px) saturate(170%);
+  --blur-lg:  blur(10px) saturate(160%);
+  --blur-md:  blur(7px) saturate(150%);
+  --blur-sm:  blur(5px) saturate(140%);
 
   /* 侧边栏 */
-  --sidebar-bg:    rgba(255,255,255,0.13);
-  --sidebar-blur:  blur(22px) saturate(190%);
-  --sidebar-text:    #17191c;
-  --sidebar-text-2:  #575962;
-  --sidebar-text-3:  rgba(0,0,0,0.23);
-  --sidebar-hover:   rgba(0,0,0,0.038);
-  --sidebar-active:  rgba(0,0,0,0.055);
-  --sidebar-slider:  rgba(0,0,0,0.048);
-  --sidebar-border:  rgba(255,255,255,0.24);
-  --sidebar-divider: rgba(0,0,0,0.038);
+  --sidebar-bg:    rgba(255,255,255,0.10);
+  --sidebar-blur:  blur(16px) saturate(170%);
+  --sidebar-text:    #1a1c1e;
+  --sidebar-text-2:  #5a5c64;
+  --sidebar-text-3:  rgba(0,0,0,0.20);
+  --sidebar-hover:   rgba(0,0,0,0.03);
+  --sidebar-active:  rgba(0,0,0,0.04);
+  --sidebar-slider:  rgba(0,0,0,0.04);
+  --sidebar-border:  rgba(255,255,255,0.20);
+  --sidebar-divider: rgba(0,0,0,0.03);
 
-  /* 文字 */
-  --text-1:   #16181a;
-  --text-2:   #53565f;
-  --text-3:   #8b8d95;
+  /* 颜色 */
+  --text-1:   #181a1c;
+  --text-2:   #555860;
+  --text-3:   #8e9098;
 
-  /* 边框 */
-  --border-glass:  rgba(255,255,255,0.38);
-  --border-subtle: rgba(255,255,255,0.15);
-  --border-dark:   rgba(0,0,0,0.038);
+  --border-glass:  rgba(255,255,255,0.32);
+  --border-subtle: rgba(255,255,255,0.12);
+  --border-dark:   rgba(0,0,0,0.03);
 
-  /* 玻璃边缘折射 — 四向水光 */
+  /* 玻璃边缘折射 — 四边水光折射 */
   --glass-edge:
-    inset 0 1px 0 rgba(255,255,255,0.75),
-    inset 0 -1px 0 rgba(0,0,0,0.09),
-    inset 1px 0 0 rgba(255,255,255,0.34),
-    inset -1px 0 0 rgba(255,255,255,0.26);
+    inset 0 1px 0 rgba(255,255,255,0.70),
+    inset 0 -1px 0 rgba(0,0,0,0.12),
+    inset 1px 0 0 rgba(255,255,255,0.30),
+    inset -1px 0 0 rgba(255,255,255,0.22);
 
   /* 强调色 */
-  --accent-blue:   #5779a6;
-  --accent-purple: #7a71a4;
-  --accent-teal:   #6a9a9a;
-  --accent-coral:  #ae7e76;
+  --accent-blue:   #6889b4;
+  --accent-purple: #887eb4;
+  --accent-teal:   #76a8a8;
+  --accent-coral:  #bc8c84;
 
   /* 阴影 */
-  --shadow-sm: 0 1px 6px rgba(0,0,0,0.018), 0 3px 14px rgba(0,0,0,0.022);
-  --shadow-md: 0 2px 10px rgba(0,0,0,0.026), 0 7px 28px rgba(0,0,0,0.032);
-  --shadow-lg: 0 3px 16px rgba(0,0,0,0.035), 0 14px 44px rgba(0,0,0,0.045);
+  --shadow-sm: 0 2px 12px rgba(0,0,0,0.018);
+  --shadow-md: 0 8px 32px rgba(0,0,0,0.028);
+  --shadow-lg: 0 20px 60px rgba(0,0,0,0.06);
 
-  --r-xl: 24px; --r-lg: 18px; --r-md: 13px; --r-sm: 9px;
+  --r-xl: 22px; --r-lg: 16px; --r-md: 12px; --r-sm: 8px;
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-out-back: cubic-bezier(0.34, 1.56, 0.64, 1);
   --ease-in-out:    cubic-bezier(0.65, 0, 0.35, 1);
-  --ease-spring:    cubic-bezier(0.22, 0.85, 0.35, 1.03);
-  --page-transition: 0.35s;
+  --page-transition: 0.7s;
   --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "PingFang SC", "Microsoft YaHei", sans-serif;
   --font-mono: "SF Mono", "Menlo", "Consolas", monospace;
-}
-
-
-/* ================================================================
-   统一深色模式 — body.dark-mode 覆盖所有变量
-   ================================================================ */
-body.dark-mode {
-  --bg: rgba(12, 14, 18, 0.88);
-
-  --glass-heavy:  rgba(255,255,255,0.08);
-  --glass-medium: rgba(255,255,255,0.05);
-  --glass-light:  rgba(255,255,255,0.03);
-  --glass-subtle: rgba(255,255,255,0.018);
-  --glass-card:   rgba(255,255,255,0.09);
-
-  --blur-xl: blur(20px) saturate(138%);
-  --blur-lg: blur(14px) saturate(130%);
-  --blur-md: blur(10px) saturate(124%);
-  --blur-sm: blur(6px) saturate(120%);
-
-  --sidebar-bg:    rgba(255,255,255,0.085);
-  --sidebar-blur:  blur(22px) saturate(138%);
-  --sidebar-text:    #e8eaf0;
-  --sidebar-text-2:  #9ea2ac;
-  --sidebar-text-3:  rgba(255,255,255,0.19);
-  --sidebar-hover:   rgba(255,255,255,0.058);
-  --sidebar-active:  rgba(255,255,255,0.095);
-  --sidebar-slider:  rgba(255,255,255,0.068);
-  --sidebar-border:  rgba(255,255,255,0.12);
-  --sidebar-divider: rgba(255,255,255,0.048);
-
-  --text-1:   #e8eaf0;
-  --text-2:   #9ea2ac;
-  --text-3:   #6f717c;
-
-  --border-glass:  rgba(255,255,255,0.12);
-  --border-subtle: rgba(255,255,255,0.07);
-  --border-dark:   rgba(255,255,255,0.048);
-
-  --glass-edge:
-    inset 0 1px 0 rgba(255,255,255,0.22),
-    inset 0 -1px 0 rgba(0,0,0,0.34),
-    inset 1px 0 0 rgba(255,255,255,0.10),
-    inset -1px 0 0 rgba(255,255,255,0.08);
-
-  --accent-blue:   #80a4ca;
-  --accent-purple: #9d94ca;
-  --accent-teal:   #8abcbc;
-  --accent-coral:  #ca9a90;
-
-  --shadow-sm: 0 1px 6px rgba(0,0,0,0.14), 0 3px 14px rgba(0,0,0,0.12);
-  --shadow-md: 0 2px 10px rgba(0,0,0,0.18), 0 7px 28px rgba(0,0,0,0.16);
-  --shadow-lg: 0 3px 16px rgba(0,0,0,0.24), 0 14px 44px rgba(0,0,0,0.20);
-
-  background: #0e1016;
-}
-body.dark-mode #weatherCanvas { opacity: 0.30; }
-body.dark-mode #rainOverlay  { opacity: 0.52; }
-
-body.dark-mode .sidebar { box-shadow: 2px 0 55px rgba(0,0,0,0.32); }
-body.dark-mode .sidebar::before { background: linear-gradient(90deg, transparent 10%, rgba(255,255,255,0.22) 50%, transparent 90%); }
-body.dark-mode .sidebar-logo .logo-mark { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.10); }
-body.dark-mode .topbar-stage { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.10); }
-body.dark-mode .toggle-sw .ts-slider { background: rgba(255,255,255,0.16); border-color: rgba(255,255,255,0.12); }
-body.dark-mode .toggle-sw input:checked + .ts-slider { background: #80a4ca; }
-body.dark-mode .nav-badge.now { background: rgba(255,255,255,0.10); color: var(--text-2); }
-body.dark-mode .nav-badge.later { color: var(--text-3); border-color: rgba(255,255,255,0.12); }
-body.dark-mode .setting-row { border-bottom-color: rgba(255,255,255,0.048); }
-body.dark-mode .profile-field { border-bottom-color: rgba(255,255,255,0.048); }
-body.dark-mode .hamburger-btn span { background: var(--text-1); }
-
-/* 移动端保留毛玻璃效果 — 与桌面一致 */
-
-/* ================================================================
-   GPU 合成层修复 — Android 旋转后 backdrop-filter 不丢失
-   ================================================================ */
-.person-card, .order-card, .exam-card, .stat-card, .att-sum-card,
-.sal-sum-card, .sal-table-wrap, .perf-sum-card, .perf-table-wrap,
-.train-sum-card, .train-table-wrap, .settings-section, .sal-history-box,
-.perf-history-box, .sal-detail-header, .perf-detail-header, .train-course-header,
-.sidebar, .topbar, .detail-sheet, .modal, .edit-popover, .profile-view,
-.personnel-search, .sal-back-btn, .perf-back-btn, .train-back-btn, .icon-btn,
-.sal-table th, .perf-table th, .train-table th, .modal-overlay {
-  transform: translateZ(0);
-  -webkit-backface-visibility: hidden;
-  backface-visibility: hidden;
 }
 
 /* 全局重置 */
@@ -183,13 +94,12 @@ body {
   color: var(--text-1);
   display: flex;
   min-height: 100vh;
-  min-height: 100dvh;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   scrollbar-gutter: stable;
 
-  /* 透明 — Canvas 天气穿透，bg 色由 main-content 的 ::before 伪元素承载 */
-  background: var(--bg);
+  /* 透明 — 让 Canvas 天气层完全穿透 */
+  background: transparent;
 }
 
 /* Canvas 天气背景层 */
@@ -217,17 +127,16 @@ body {
   backdrop-filter: var(--sidebar-blur);
   -webkit-backdrop-filter: var(--sidebar-blur);
   border-right: 0.5px solid var(--sidebar-border);
-  box-shadow: 2px 0 45px rgba(0,0,0,0.05);
+  box-shadow: 2px 0 40px rgba(0,0,0,0.04);
   display: flex; flex-direction: column;
-  transition: transform 0.40s var(--ease-spring);
-  overflow: hidden;
+  transition: transform var(--ease-out-expo) 0.5s;
 }
 
 /* 侧边栏顶部光泽线 */
 .sidebar::before {
   content: '';
   position: absolute; top: 0; left: 0; right: 0; height: 0.5px;
-  background: linear-gradient(90deg, transparent 10%, rgba(255,255,255,0.60) 50%, transparent 90%);
+  background: linear-gradient(90deg, transparent 8%, rgba(255,255,255,0.55) 50%, transparent 92%);
   z-index: 1; pointer-events: none;
 }
 
@@ -257,12 +166,12 @@ body {
 
 /* 导航 */
 .sidebar-nav {
-  flex: 1; overflow-y: auto; overflow-x: hidden; padding: 6px 0;
-  scrollbar-width: none;
-  position: relative;
+  flex: 1; overflow-y: auto; padding: 6px 0;
+  scrollbar-width: thin; scrollbar-color: rgba(0,0,0,0.06) transparent;
+  position: relative; /* 锚定滑块的定位参考 */
 }
-.sidebar-nav::-webkit-scrollbar { width: 0; display: none; }
-.sidebar-nav::-webkit-scrollbar-thumb { display: none; }
+.sidebar-nav::-webkit-scrollbar { width: 2px; }
+.sidebar-nav::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.06); border-radius: 8px; }
 
 .nav-section-label {
   padding: 16px 20px 5px;
@@ -296,29 +205,21 @@ body {
 
 /* 滑动高亮滑块 */
 .nav-slider {
-  position: absolute; top: 0;
+  position: absolute;
   left: 9px; right: 9px;
   height: 38px; /* 与 nav-item 高度一致 */
   border-radius: var(--r-sm);
   background: var(--sidebar-slider);
   z-index: 0;
   pointer-events: none;
-  transition: transform 0.50s var(--ease-spring); will-change: transform;
+  transition: top 0.7s var(--ease-out-expo);
   /* 顶部光泽 */
   box-shadow: var(--glass-edge);
 }
 
 .nav-item .nav-dot {
-  width: 10px; height: 10px; border-radius: 50%;
-  background: currentColor; opacity: 0.45;
-  flex-shrink: 0; margin: 0 5px;
-  transition: opacity 0.25s ease, box-shadow 0.25s ease;
+  font-size: 15px; width: 20px; text-align: center; flex-shrink: 0;
 }
-.nav-item.active .nav-dot {
-  opacity: 1;
-  box-shadow: 0 0 8px currentColor;
-}
-.nav-item:hover .nav-dot { opacity: 0.80; }
 
 .nav-badge {
   margin-left: auto;
@@ -421,14 +322,14 @@ body {
    ================================================================ */
 
 .topbar {
-  position: fixed; top: 12px; left: 260px; right: 12px; z-index: 110;
-  height: 58px;
+  position: sticky; top: 10px; z-index: 110;
+  margin: 10px 18px 0;
   background: var(--glass-card);
   backdrop-filter: var(--blur-lg);
   -webkit-backdrop-filter: var(--blur-lg);
   border: 0.5px solid var(--border-glass);
   border-radius: var(--r-xl);
-  padding: 0 20px;
+  padding: 13px 20px;
   display: flex; align-items: center; gap: 14px;
   box-shadow: var(--glass-edge), var(--shadow-sm);
 }
@@ -498,7 +399,7 @@ body {
 .topbar-search input:focus {
   background: var(--glass-light);
   border-color: rgba(255,255,255,0.55);
-  box-shadow: 0 0 0 3px rgba(0,122,255,0.32),
+  box-shadow: 0 0 0 3px rgba(255,255,255,0.08),
               var(--glass-edge);
 }
 
@@ -531,9 +432,8 @@ body {
    ================================================================ */
 
 .content-area {
-  padding: 82px 18px 16px; flex: 1;
+  padding: 16px 18px; flex: 1;
   position: relative;
-  display: flex; flex-direction: column;
 }
 
 /* ================================================================
@@ -573,7 +473,7 @@ body {
 .stat-card:hover {
   transform: translateY(-2px);
   box-shadow: var(--glass-edge), var(--shadow-md);
-  background: rgba(255,255,255,0.35);
+  background: rgba(255,255,255,0.30);
 }
 
 .stat-icon-box {
@@ -618,6 +518,7 @@ body {
   display: flex; flex-direction: column;
   gap: 10px;
   min-height: 170px;
+  will-change: transform;
 }
 
 /* 卡片顶部光泽 */
@@ -631,7 +532,7 @@ body {
 .person-card:hover {
   transform: translateY(-4px);
   box-shadow: var(--glass-edge), 0 16px 40px rgba(0,0,0,0.06);
-  background: rgba(255,255,255,0.33);
+  background: rgba(255,255,255,0.28);
 }
 
 /* 卡片头部：头像 + 基本信息 */
@@ -732,23 +633,15 @@ body {
    分区 5c: 人员档案页面 — 列表 + 详情
    ================================================================ */
 
-/* 人员档案页 — flex 撑满内容区 */
-#page-personnel {
-  flex: 1; min-height: 0;
-  display: flex; flex-direction: column;
-}
-
 /* 档案页面容器 */
 .personnel-wrap {
   display: flex; flex-direction: column; gap: 14px;
   max-width: 960px; margin: 0 auto; width: 100%;
-  flex: 1; min-height: 0;
 }
 
 /* ---- 列表视图 ---- */
 .personnel-list-view {
   display: flex; flex-direction: column; gap: 12px;
-  flex: 1; min-height: 0;
   transition: opacity 0.3s ease, transform 0.3s var(--ease-out-expo);
 }
 
@@ -782,21 +675,11 @@ body {
   box-shadow: var(--glass-edge);
 }
 
-/* 列表 — flex:1 撑满剩余空间，内部滚动 */
+/* 列表 */
 .personnel-list {
   display: flex; flex-direction: column; gap: 6px;
-  flex: 1; min-height: 0;
-  overflow-y: auto;
+  max-height: calc(100vh - 260px); overflow-y: auto;
   padding-right: 4px;
-}
-/* 手机：收紧间距 */
-@media (max-width: 520px) {
-  .personnel-list { gap: 4px; }
-  .personnel-wrap { gap: 8px; }
-  .personnel-toolbar { gap: 6px; }
-  .personnel-search { padding: 8px 10px; font-size: 12px; }
-  .personnel-filter { padding: 6px 8px; font-size: 11px; }
-  .personnel-item { padding: 8px 10px; }
 }
 
 .personnel-list::-webkit-scrollbar { width: 4px; }
@@ -870,22 +753,23 @@ body {
   max-width: 720px; width: 100%;
   margin-left: auto; margin-right: auto;
 }
-/* Hero 展开：初始毛玻璃态（transform 替代 top/left/width/height — GPU 合成，不触发 layout） */
+/* Hero 展开：初始毛玻璃态（JS 注入 top/left/width/height/border-radius） */
 .profile-view.hero-start {
   background: rgba(255,255,255,0.15);
   backdrop-filter: blur(30px);
   -webkit-backdrop-filter: blur(30px);
   overflow: hidden;
-  border-radius: 16px;
 }
-/* Hero 展开过渡 — 仅 transform + border-radius + background（三属性均为 GPU 合成属性） */
+/* Hero 展开过渡 */
 .profile-view.hero-expanding {
-  transition: transform 0.50s cubic-bezier(0.22, 0.61, 0.36, 1),
+  transition: top 0.50s cubic-bezier(0.22, 0.61, 0.36, 1),
+              left 0.50s cubic-bezier(0.22, 0.61, 0.36, 1),
+              width 0.50s cubic-bezier(0.22, 0.61, 0.36, 1),
+              height 0.50s cubic-bezier(0.22, 0.61, 0.36, 1),
               border-radius 0.50s cubic-bezier(0.22, 0.61, 0.36, 1),
               background 0.45s ease,
               backdrop-filter 0.45s ease;
   overflow: hidden;
-  will-change: transform, border-radius;
 }
 /* 展开期间内容不可见 */
 .profile-view.hero-expanding > * { opacity: 0; }
@@ -896,8 +780,6 @@ body {
   -webkit-backdrop-filter: none;
   border-radius: 0 !important;
   overflow-y: auto;
-  transform: none !important;
-  will-change: auto;
 }
 
 .profile-view .profile-back-row {
@@ -922,7 +804,7 @@ body {
   line-height: 1;
 }
 .profile-nav-btn:hover {
-  background: rgba(255,255,255,0.33);
+  background: rgba(255,255,255,0.28);
   transform: scale(1.08);
 }
 .profile-nav-btn:active {
@@ -1013,12 +895,19 @@ body {
 /* 档案响应式 */
 @media (max-width: 768px) {
   .profile-section .ps-fields { grid-template-columns: 1fr; }
-  .sidebar { backdrop-filter: var(--sidebar-blur); -webkit-backdrop-filter: var(--sidebar-blur); background: var(--sidebar-bg); }
-  .person-card { box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-  .order-card { box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-  .modal { box-shadow: 0 8px 24px rgba(0,0,0,0.12); }
-  .topbar { position: fixed; top: 8px; left: 8px; right: 8px; height: 50px; }
-  .content-area { padding-top: 70px; }
+  /* 移动端禁用 backdrop-filter（GPU过热主因），改用不透明背景 */
+  .sidebar { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(22,24,32,0.96); }
+  .topbar { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(242,244,248,0.96); }
+  .person-card { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(255,255,255,0.92); }
+  .order-card { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(255,255,255,0.92); }
+  .exam-card { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(255,255,255,0.92); }
+  .stat-card { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(255,255,255,0.92); }
+  .detail-sheet { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(242,244,248,0.96); }
+  .modal, .modal-overlay { backdrop-filter: none; -webkit-backdrop-filter: none; }
+  /* 移动端降低大模糊阴影，减少 GPU 绘制压力 */
+  .person-card { box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+  .order-card { box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+  .modal { box-shadow: 0 8px 24px rgba(0,0,0,0.10); }
 }
 
 /* ================================================================
@@ -2157,12 +2046,13 @@ input[type="range"]#setZoom::-moz-range-thumb {
   border-radius: var(--r-lg);
   box-shadow: var(--glass-edge), 0 30px 80px rgba(0,0,0,0.18);
   overflow: hidden;
-  z-index: 5; /* detail-sheet 在上层 */
-  /* 过渡动画: transform + border-radius（GPU 合成，不触发 layout） */
-  transition: transform 0.55s cubic-bezier(0.22, 0.61, 0.36, 1),
-              border-radius 0.55s cubic-bezier(0.22, 0.61, 0.36, 1),
-              opacity 0.40s ease;
-  will-change: transform, border-radius;
+  z-index: 1;
+  /* 过渡动画: 0.6s 从卡片位置展开 */
+  transition: top 0.6s cubic-bezier(0.22, 1, 0.36, 1),
+              left 0.6s cubic-bezier(0.22, 1, 0.36, 1),
+              width 0.6s cubic-bezier(0.22, 1, 0.36, 1),
+              height 0.6s cubic-bezier(0.22, 1, 0.36, 1),
+              border-radius 0.6s cubic-bezier(0.22, 1, 0.36, 1);
   display: flex; flex-direction: column;
 }
 /* 液态玻璃顶部光泽线 */
@@ -2174,14 +2064,9 @@ input[type="range"]#setZoom::-moz-range-thumb {
 }
 
 .detail-sheet.expanded {
-  /* 展开时 transform 动画至全尺寸（由 JS inline style 驱动） */
+  top: 10vh !important; left: 10vw !important;
+  width: 80vw !important; height: 80vh !important;
   border-radius: 24px !important;
-}
-/* 关闭时的收缩动画（GPU 合成 — opacity + scale，不触发 layout） */
-.detail-overlay.closing .detail-sheet {
-  opacity: 0;
-  transform: scale(0.92) !important;
-  transition: opacity 0.40s ease, transform 0.40s cubic-bezier(0.22, 0.61, 0.36, 1) !important;
 }
 
 .detail-inner {
@@ -2567,17 +2452,6 @@ body:not(.edit-mode) .settings-wrap .setting-select {
   /* 卡片网格 */
   .person-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
 
-  /* 手机端卡片提高不透明度 — 毛玻璃可见且不过黑 */
-  .person-card, .order-card, .exam-card, .stat-card,
-  .att-sum-card, .sal-sum-card, .perf-sum-card, .train-sum-card {
-    background: rgba(255,255,255,0.48);
-  }
-  body.dark-mode .person-card, body.dark-mode .order-card, body.dark-mode .exam-card,
-  body.dark-mode .stat-card, body.dark-mode .att-sum-card, body.dark-mode .sal-sum-card,
-  body.dark-mode .perf-sum-card, body.dark-mode .train-sum-card {
-    background: rgba(26,28,34,0.82);
-  }
-
   /* 表单 */
   .form-row { grid-template-columns: 1fr; }
 
@@ -2588,7 +2462,7 @@ body:not(.edit-mode) .settings-wrap .setting-select {
   .topbar-stage { display: none; }
 
   /* 内容区 */
-  .content-area { padding: 8px 8px 0 8px; }
+  .content-area { padding: 8px; }
 
   /* 模态弹窗 */
   .modal { width: 96vw; max-height: 85vh; border-radius: 18px; }
@@ -2623,54 +2497,22 @@ body:not(.edit-mode) .settings-wrap .setting-select {
   .settings-column { flex-direction: column; }
 
   /* 分页 */
-  .pagination-bar { flex-direction: column; gap: 4px; padding: 6px 14px; margin-top: 4px; }
-
-
-  /* 档案详情 — 平板适配 */
-  .profile-view { padding: 64px 16px 32px; }
-  .profile-header { padding: 16px 20px; }
-  .profile-header .ph-avatar { width: 48px; height: 48px; font-size: 20px; }
-  .profile-section .ps-fields { grid-template-columns: 1fr 1fr; }
+  .pagination-bar { flex-direction: column; gap: 8px; padding: 10px 14px; }
 }
 
 /* --- 手机竖屏: ≤520px --- */
 @media (max-width: 520px) {
-  .stats-grid { grid-template-columns: 1fr 1fr; max-width: none; gap: 4px; margin-bottom: 4px; }
-  .stat-card { padding: 6px 10px; gap: 6px; }
-  .stat-icon-box { width: 28px; height: 28px; font-size: 14px; }
-  .stat-value { font-size: 18px; }
-  .stat-label { font-size: 9px; margin-top: 1px; }
-  .person-grid { grid-template-columns: 1fr; gap: 4px; }
-  .person-card { min-height: 100px; padding: 8px; gap: 4px; }
-  .card-avatar { width: 30px; height: 30px; font-size: 13px; }
-  .card-name { font-size: 12px; }
-  .card-row { font-size: 10px; }
-  .card-btn { padding: 3px 8px; font-size: 10px; }
+  .stats-grid { grid-template-columns: 1fr; }
+  .person-grid { grid-template-columns: 1fr; }
   .att-summary { grid-template-columns: repeat(2, 1fr); }
   .sal-summary { grid-template-columns: 1fr 1fr; }
-  .topbar { margin: 2px 2px 0; padding: 4px 8px; gap: 4px; }
-  .topbar-title { font-size: 12px; }
-  .content-area { padding: 2px 2px 0 2px; }
-  .pagination-bar { padding: 3px 14px; margin-top: 2px; }
-  .page-btn { width: 26px; height: 26px; font-size: 10px; }
+  .topbar { margin: 4px 4px 0; padding: 8px 12px; gap: 8px; }
+  .page-btn { width: 28px; height: 28px; font-size: 10px; }
   .detail-stats-row { grid-template-columns: repeat(3, 1fr); gap: 4px; }
   .detail-stat-val { font-size: 15px; }
   .detail-stat-label { font-size: 9px; }
   .detail-hero-name { font-size: 17px; }
   .modal { width: 98vw; border-radius: 16px; }
-
-  /* 档案详情 — 手机适配 */
-  .profile-view { padding: 56px 12px 24px; gap: 10px; }
-  .profile-header { padding: 14px 16px; gap: 12px; }
-  .profile-header .ph-avatar { width: 42px; height: 42px; font-size: 18px; }
-  .profile-header .ph-name { font-size: 17px; }
-  .profile-header .ph-title { font-size: 12px; }
-  .profile-section { padding: 12px 14px; }
-  .profile-section .ps-fields { grid-template-columns: 1fr; }
-  .profile-nav-btn { width: 30px; height: 30px; font-size: 16px; }
-  .profile-back-btn { padding: 6px 12px; font-size: 12px; }
-  .order-cards-grid { grid-template-columns: 1fr; gap: 6px; }
-  .order-card { padding: 12px 14px; gap: 6px; }
 }
 
 /* --- 横屏模式（高度受限）--- */
@@ -2695,7 +2537,7 @@ body:not(.edit-mode) .settings-wrap .setting-select {
   .att-sum-card .asc-value { font-size: 20px; }
 
   /* 分页 */
-  .pagination-bar { padding: 4px 14px; margin-top: 2px; }
+  .pagination-bar { padding: 8px 14px; margin-top: 8px; }
 
   /* 详情面板 — 极限利用高度 */
   .detail-sheet.expanded {
@@ -2742,39 +2584,39 @@ body:not(.edit-mode) .settings-wrap .setting-select {
     <div class="nav-section-label">核心功能</div>
 
     <div class="nav-item active" data-page="appearance">
-      <span class="nav-dot"></span>外观与布局
+      <span class="nav-dot">◉</span>外观与布局
       <span class="nav-badge now">阶段1</span>
     </div>
 
     <div class="nav-item" data-page="personnel">
-      <span class="nav-dot"></span>人员档案
+      <span class="nav-dot">◎</span>人员档案
       <span class="nav-badge later">已完成</span>
     </div>
 
     <div class="nav-item" data-page="performance">
-      <span class="nav-dot"></span>绩效考核
+      <span class="nav-dot">◎</span>绩效考核
       <span class="nav-badge later">已完成</span>
     </div>
 
     <div class="nav-section-label">更多</div>
 
     <div class="nav-item" data-page="salary">
-      <span class="nav-dot"></span>薪酬管理
+      <span class="nav-dot">◎</span>薪酬管理
       <span class="nav-badge later">已完成</span>
     </div>
 
     <div class="nav-item" data-page="attendance">
-      <span class="nav-dot"></span>考勤管理
+      <span class="nav-dot">◎</span>考勤管理
       <span class="nav-badge later">已完成</span>
     </div>
 
     <div class="nav-item" data-page="training">
-      <span class="nav-dot"></span>培训管理
+      <span class="nav-dot">◎</span>培训管理
       <span class="nav-badge later">已完成</span>
     </div>
 
     <div class="nav-item" data-page="settings">
-      <span class="nav-dot"></span>系统设置
+      <span class="nav-dot">◎</span>系统设置
       <span class="nav-badge later">已完成</span>
     </div>
   </nav>
@@ -3015,9 +2857,9 @@ body:not(.edit-mode) .settings-wrap .setting-select {
         <!-- 系统信息 -->
         <div class="settings-section">
           <div class="ss-title">系统信息</div>
-          <div class="info-row"><span class="ir-label">系统版本</span><span class="ir-value">v2.1.3</span></div>
+          <div class="info-row"><span class="ir-label">系统版本</span><span class="ir-value">v2.0.0</span></div>
           <div class="info-row"><span class="ir-label">数据总量</span><span class="ir-value">156 名员工</span></div>
-          <div class="info-row"><span class="ir-label">最后更新</span><span class="ir-value">2026-08-12</span></div>
+          <div class="info-row"><span class="ir-label">最后更新</span><span class="ir-value">2026-08-11</span></div>
           <div class="info-row"><span class="ir-label">浏览器</span><span class="ir-value" id="sysBrowser">—</span></div>
         </div>
         <!-- 外观设置 -->
@@ -3034,6 +2876,12 @@ body:not(.edit-mode) .settings-wrap .setting-select {
           <div class="setting-row">
             <div><div class="sr-label">深色背景</div><div class="sr-desc">使用深色调渐变背景</div></div>
             <label class="toggle-sw"><input type="checkbox" id="setDarkBg"><span class="ts-slider"></span></label>
+          </div>
+          <div class="setting-row">
+            <div><div class="sr-label">侧边栏风格</div><div class="sr-desc">浅色液态玻璃 / 深色液态玻璃</div></div>
+            <select class="setting-select" id="setSidebar">
+              <option value="dark">深色玻璃</option><option value="light" selected>浅色玻璃</option>
+            </select>
           </div>
           <div class="setting-row">
             <div><div class="sr-label">玻璃强度</div><div class="sr-desc">轻盈 / 均衡 / 厚重</div></div>
@@ -3058,7 +2906,7 @@ body:not(.edit-mode) .settings-wrap .setting-select {
         <!-- 系统更新 -->
         <div class="settings-section">
           <div class="ss-title">系统更新</div>
-          <div class="info-row"><span class="ir-label">当前版本</span><span class="ir-value" id="sysVersion">v2.1.3</span></div>
+          <div class="info-row"><span class="ir-label">当前版本</span><span class="ir-value" id="sysVersion">v2.0.0</span></div>
           <div style="margin-top:8px;">
             <button class="btn btn-glass primary" id="btnCheckUpdate" style="width:100%;">🔍 检查更新</button>
           </div>
@@ -3338,15 +3186,8 @@ body:not(.edit-mode) .settings-wrap .setting-select {
      分区 11: JavaScript — 数据层
      ================================================================ -->
 <script>
-
-// --- Service Worker (PWA 更新缓存) ---
-if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("/clubapp/sw.js", { scope: "/clubapp/" })
-    .then(function(reg) { console.log("[SW] 已注册", reg.scope); })
-    .catch(function(err) { console.log("[SW] 注册失败", err); });
-}
 // --- 应用版本（热更新检测用） ---
-const APP_VERSION = '2.1.3';
+const APP_VERSION = '2.0.5';
 let __updateAvailable = false;       // 是否有可用更新
 let __updateVersion = null;          // 新版本号
 let __updateChecking = false;        // 是否正在检查中
@@ -3357,7 +3198,7 @@ let __updateChecking = false;        // 是否正在检查中
 // 方案2: Supabase Storage 公开桶
 //   https://xxx.supabase.co/storage/v1/object/public/app/APAA.html
 // 方案3: 任何静态托管 (Vercel / Netlify / Cloudflare Pages)
-const UPDATE_URL = 'https://pzxpzx-123.github.io/clubapp/APAA.html';
+const UPDATE_URL = 'https://qstrmmaihqyguttnkyvt.supabase.co/storage/v1/object/public/app/APAA.html';
 
 // 版本检查 URL — 取同一个远程目录下的 version.json，比拉整个 HTML 快 ~1000 倍
 // version.json 内容格式: {"v":"2.0.6"}
@@ -3365,19 +3206,13 @@ const VERSION_JSON_URL = UPDATE_URL.replace(/APAA\.html$/i, 'version.json');
 
 // --- 忙碌状态追踪（有未保存数据或弹窗打开时标记为忙碌） ---
 function isAppBusy() {
-  // 有弹窗打开（全部使用可选链，防止 DOM 缺失崩溃）
-  var pm = document.getElementById('personModalOverlay');
-  if (pm && !pm.classList.contains('hidden')) return true;
-  var dm = document.getElementById('deleteModalOverlay');
-  if (dm && !dm.classList.contains('hidden')) return true;
-  var dob = document.getElementById('detailOverlay');
-  if (dob && !dob.classList.contains('hidden')) return true;
-  var ac = document.getElementById('addCardOverlay');
-  if (ac && ac.classList.contains('show')) return true;
-  var ea = document.getElementById('examAddOverlay');
-  if (ea && ea.classList.contains('show')) return true;
-  var ed = document.getElementById('examDetailOverlay');
-  if (ed && !ed.classList.contains('hidden')) return true;
+  // 有弹窗打开
+  if (!document.getElementById('personModalOverlay').classList.contains('hidden')) return true;
+  if (!document.getElementById('deleteModalOverlay').classList.contains('hidden')) return true;
+  if (document.getElementById('detailOverlay') && !document.getElementById('detailOverlay').classList.contains('hidden')) return true;
+  if (document.getElementById('addCardOverlay') && document.getElementById('addCardOverlay').classList.contains('show')) return true;
+  if (document.getElementById('examAddOverlay') && document.getElementById('examAddOverlay').classList.contains('show')) return true;
+  if (document.getElementById('examDetailOverlay') && !document.getElementById('examDetailOverlay').classList.contains('hidden')) return true;
   // 有待保存的云端数据
   if (cloudSaveTimer) return true;
   return false;
@@ -3555,6 +3390,7 @@ const cloudAppearance = {
       blur_enabled: document.getElementById('setBlur')?.checked ?? true,
       anim_enabled: document.getElementById('setAnim')?.checked ?? true,
       dark_bg: document.getElementById('setDarkBg')?.checked ?? false,
+      sidebar_style: document.getElementById('setSidebar')?.value ?? 'light',
       glass_intensity: document.getElementById('setGlass')?.value ?? 'balanced',
       tone: document.getElementById('setTone')?.value ?? 'cool',
       zoom_level: parseInt(document.getElementById('setZoom')?.value, 10) || 100,
@@ -3579,21 +3415,22 @@ const cloudAppearance = {
     const apply = (id, val, type) => {
       const el = document.getElementById(id);
       if (!el) return;
-      if (type === 'checkbox') { el.checked = val; setTimeout(function(){ el.dispatchEvent(new Event('change')); }, 200); }
-      else if (type === 'select') { el.value = val; setTimeout(function(){ el.dispatchEvent(new Event('change')); }, 200); }
-      else if (type === 'range') { el.value = val; setTimeout(function(){ el.dispatchEvent(new Event('input')); }, 200); }
+      if (type === 'checkbox') { el.checked = val; el.dispatchEvent(new Event('change')); }
+      else if (type === 'select') { el.value = val; el.dispatchEvent(new Event('change')); }
+      else if (type === 'range') { el.value = val; el.dispatchEvent(new Event('input')); }
     };
     apply('setBlur',    data.blur_enabled,    'checkbox');
     apply('setAnim',    data.anim_enabled,    'checkbox');
     apply('setDarkBg',  data.dark_bg,         'checkbox');
     apply('setToast',   data.toast_enabled,   'checkbox');
+    apply('setSidebar', data.sidebar_style,   'select');
     apply('setGlass',   data.glass_intensity, 'select');
     apply('setTone',    data.tone,            'select');
     apply('setZoom',    data.zoom_level,      'range');
     // pageSize
     if (data.page_size) {
       const psEl = document.getElementById('setPageSize');
-      if (psEl) { psEl.value = data.page_size; setTimeout(function(){ psEl.dispatchEvent(new Event('change')); }, 200); }
+      if (psEl) { psEl.value = data.page_size; psEl.dispatchEvent(new Event('change')); }
     }
   }
 };
@@ -3627,14 +3464,21 @@ const cloudPersonnel = {
       for (let i = 0; i < personnelRows.length; i += 200) {
         const batch = personnelRows.slice(i, i + 200);
         const { error } = await sb.from('personnel').upsert(batch, { onConflict: 'user_id,id' });
-        if (error) throw new Error('人员保存失败: ' + error.message);
+        if (error) console.warn('[Cloud] 人员保存失败:', error.message);
       }
     }
 
     // 清理云端多余的人员（本地已删除的）
-    // 注意：不再做"云端多余人员删除"（stale-deletion），
-    // 因为共享 user_id 模式下会误删其他客户端刚添加的数据。
-    // 人员删除统一由 deletePersonDirect() 负责。
+    const localPersonIds = new Set(personnelRows.map(r => r.id));
+    const { data: cloudPers } = await sb.from('personnel').select('id').eq('user_id', uid);
+    if (cloudPers) {
+      const staleIds = cloudPers.filter(cp => !localPersonIds.has(cp.id)).map(cp => cp.id);
+      if (staleIds.length > 0) {
+        for (let i = 0; i < staleIds.length; i += 200) {
+          await sb.from('personnel').delete().in('id', staleIds.slice(i, i + 200));
+        }
+      }
+    }
 
     // 保存订单
     const allOrderIds = Object.keys(personOrders);
@@ -3664,12 +3508,21 @@ const cloudPersonnel = {
       for (let i = 0; i < orderRows.length; i += 200) {
         const batch = orderRows.slice(i, i + 200);
         const { error } = await sb.from('orders').upsert(batch, { onConflict: 'user_id,id' });
-        if (error) throw new Error('订单保存失败: ' + error.message);
+        if (error) console.warn('[Cloud] 订单保存失败:', error.message);
       }
     }
 
-    // 注意：不再做"云端多余订单删除"（stale-deletion），
-    // 订单删除统一由 deleteOrderCard() 负责。
+    // 清理云端多余的订单（本地已删除的）
+    const localOrderIds = new Set(orderRows.map(r => r.id));
+    const { data: cloudOrders } = await sb.from('orders').select('id').eq('user_id', uid);
+    if (cloudOrders) {
+      const staleIds = cloudOrders.filter(co => !localOrderIds.has(co.id)).map(co => co.id);
+      if (staleIds.length > 0) {
+        for (let i = 0; i < staleIds.length; i += 200) {
+          await sb.from('orders').delete().in('id', staleIds.slice(i, i + 200));
+        }
+      }
+    }
 
     console.log(`[Cloud] ✓ 人员档案已同步 (${personnelRows.length}人, ${orderRows.length}单)`);
   },
@@ -3916,7 +3769,7 @@ function cloudAutoSave() {
 }
 
 // ================================================================
-// Realtime 实时推送：有人上传 → 云端即时推送给所有在线设备
+// 轻量变更通知：有人上传 → 其他设备2秒内自动拉取
 // ================================================================
 let __lastChangeTime = null;  // 上次已知的云端变更时间戳
 
@@ -3927,129 +3780,47 @@ async function notifyChange() {
     const now = new Date().toISOString();
     await sb.from('changes').upsert({ id: 1, updated_at: now }, { onConflict: 'id' });
     __lastChangeTime = now;  // 更新本地时间戳，防止自己重复拉取
-    console.log('[Realtime] 🔔 已广播变更通知');
+    console.log('[Cloud] 🔔 已广播变更通知');
   } catch (e) { /* 静默 */ }
 }
 
-// --- Realtime 同步（替代轮询） ---
-let __realtimeChannel = null;
-let __fallbackTimer = null;
+/** 轻量轮询：只查一行时间戳，变了才拉全量数据 */
+let __cloudPollTimer = null;
 function _isEditing() {
-  var pm = document.getElementById('personModalOverlay');
-  var dm = document.getElementById('deleteModalOverlay');
-  var ac = document.getElementById('addCardOverlay');
-  var ea = document.getElementById('examAddOverlay');
-  // 同时检查 confirmOverlay / examDetailOverlay / editPopover
-  var co = document.getElementById('confirmOverlay');
-  var ed = document.getElementById('examDetailOverlay');
-  var ep = document.getElementById('editPopover');
-  return (pm && !pm.classList.contains('hidden')) ||
-         (dm && !dm.classList.contains('hidden')) ||
-         (ac && ac.classList.contains('show')) ||
-         (ea && ea.classList.contains('show')) ||
-         (co && !co.classList.contains('hidden')) ||
-         (ed && !ed.classList.contains('hidden')) ||
-         (ep && !ep.classList.contains('hidden'));
+  return (!document.getElementById('personModalOverlay').classList.contains('hidden')) ||
+         (!document.getElementById('deleteModalOverlay').classList.contains('hidden')) ||
+         (document.getElementById('addCardOverlay') && document.getElementById('addCardOverlay').classList.contains('show')) ||
+         (document.getElementById('examAddOverlay') && document.getElementById('examAddOverlay').classList.contains('show'));
 }
-
-/** 收到远端变更时的统一处理：所有防护在此集中 */
-async function __handleRemoteChange(remoteTime) {
-  if (!remoteTime) return;
-  // 首次启动记下时间戳，不触发加载
-  if (!__lastChangeTime) {
-    __lastChangeTime = remoteTime;
-    return;
-  }
-  // 时间戳没变 = 自己触发的推送，跳过
-  if (remoteTime === __lastChangeTime) return;
-  // 本地有未保存的变更，跳过拉取（保留用户编辑中数据）
-  if (cloudDirty) {
-    console.log('[Realtime] ⏸ 远端变更，本地有未保存数据，跳过拉取');
-    __lastChangeTime = remoteTime;
-    return;
-  }
-  // 用户正在编辑中，跳过拉取
-  if (_isEditing()) {
-    console.log('[Realtime] ⏸ 远端变更，用户正在编辑中，跳过拉取');
-    __lastChangeTime = remoteTime;
-    return;
-  }
-  console.log('[Realtime] 🔔 收到实时推送，拉取最新数据...');
-  __lastChangeTime = remoteTime;
-  try {
-    await cloudLoadAll();
-    filteredPeople = [...people];
-    renderCards();
-    console.log('[Realtime] ✅ 数据已同步');
-  } catch (e) {
-    console.warn('[Realtime] 拉取失败:', e.message);
-  }
-}
-
-/** 启动 Realtime 订阅 + 断线兜底轮询 (30s) */
-function startRealtimeSync() {
-  if (__realtimeChannel) return;
-
-  /* 自定义 REST 客户端不支持 channel()，直接走兜底轮询 */
-  if (typeof sb.channel !== 'function') {
-    console.log('[Realtime] ℹ 当前为 REST 模式，启用兜底轮询 (30s)');
-    startFallbackPolling();
-    return;
-  }
-
-  console.log('[Realtime] 📡 启动实时订阅...');
-  __realtimeChannel = sb
-    .channel('changes-watcher')
-    .on('postgres_changes',
-      { event: 'UPDATE', schema: 'public', table: 'changes', filter: 'id=eq.1' },
-      async function(payload) {
-        var remoteTime = payload.new?.updated_at;
-        if (remoteTime) await __handleRemoteChange(remoteTime);
-      }
-    )
-    .subscribe(function(status) {
-      if (status === 'SUBSCRIBED') {
-        console.log('[Realtime] ✅ 实时推送已连接');
-        if (__fallbackTimer) { clearInterval(__fallbackTimer); __fallbackTimer = null; }
-      }
-      if (status === 'CLOSED' || status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-        console.warn('[Realtime] ⚠ 连接断开，启动兜底轮询 (30s)');
-        startFallbackPolling();
-        // 10s 后尝试重连
-        setTimeout(function() {
-          if (__realtimeChannel) {
-            __realtimeChannel.unsubscribe();
-            __realtimeChannel = null;
-          }
-          if (cloudReady && __cloudLoadDone) startRealtimeSync();
-        }, 10000);
-      }
-    });
-}
-
-/** 启动兜底轮询（30s 拉一次 changes 表） */
-function startFallbackPolling() {
-  if (__fallbackTimer) return;
-  __fallbackTimer = setInterval(async function() {
-    if (!cloudReady || !__cloudLoadDone || _isEditing() || cloudDirty) return;
+function startCloudPolling() {
+  if (__cloudPollTimer) return;
+  __cloudPollTimer = setInterval(async () => {
+    if (!cloudReady || !__cloudLoadDone) return;
+    if (_isEditing()) return;
     try {
-      var refetch = await sb.from('changes').select('updated_at').eq('id', 1).maybeSingle();
-      if (refetch.data?.updated_at) await __handleRemoteChange(refetch.data.updated_at);
-    } catch (_) {}
-  }, 30000);
+      // 只查 changes 表一行（~200字节），不拉全量数据
+      const { data } = await sb.from('changes').select('updated_at').eq('id', 1).maybeSingle();
+      const remoteTime = data?.updated_at;
+      if (remoteTime) {
+        // 首次启动记下时间戳，不触发加载
+        if (!__lastChangeTime) {
+          __lastChangeTime = remoteTime;
+          return;
+        }
+        // 时间戳变了 = 有人上传过 → 拉取最新数据
+        if (remoteTime !== __lastChangeTime) {
+          console.log('[Cloud] 🔔 检测到远端变更，拉取最新数据...');
+          __lastChangeTime = remoteTime;
+          await cloudLoadAll();
+          filteredPeople = [...people];
+          renderCards();
+        }
+      }
+    } catch (_) { /* 静默 */ }
+  }, 2000);
 }
-
-/** 停止 Realtime 订阅 */
-function stopRealtimeSync() {
-  if (__realtimeChannel) {
-    __realtimeChannel.unsubscribe();
-    __realtimeChannel = null;
-    console.log('[Realtime] ⏹ 已断开实时推送');
-  }
-  if (__fallbackTimer) {
-    clearInterval(__fallbackTimer);
-    __fallbackTimer = null;
-  }
+function stopCloudPolling() {
+  if (__cloudPollTimer) { clearInterval(__cloudPollTimer); __cloudPollTimer = null; }
 }
 
 // ================================================================
@@ -4208,13 +3979,10 @@ async function initCloud() {
     renderCards();
     showCloudUserUI();
     __cloudLoadDone = true;
-    startRealtimeSync(); // 启动 Realtime 实时推送（替代轮询）
+    startCloudPolling(); // 启动轻量轮询（2秒检查 changes 时间戳）
     console.log('[Cloud] 🚀 云端已加载 (人员:' + people.length + ', 订单:' + Object.keys(personOrders).length + ', 考生:' + examCandidates.length + ')');
   } catch (e) {
     console.warn('[Cloud] ❌ 云端不可用:', e.message);
-		loadLocalData();
-		filteredPeople = [...people];
-		renderCards();
     showCloudUserUI();
     showToast('云端连接失败，请检查网络后刷新', false);
   }
@@ -4226,7 +3994,7 @@ console.log('◈ 分区 11z — Supabase 云端同步引擎 — 已就绪');
 // 共享工具函数
 // ================================================================
 
-/** Lehmer 确定性伪随机数生成器 — 返回 0..1 之间的浮点数 */
+/** Lehmer 确定性伪随机数生成器 — 返回 [0,1) 浮点 */
 function seededRNG(seed) {
   let s = seed;
   return function() { s = (s * 16807 + 0) % 2147483647; return (s - 1) / 2147483646; };
@@ -4257,7 +4025,6 @@ function $(id) {
 
 const avColors = ['#5b7ec2','#c47b74','#5a9e9e','#7b6fc0','#b08060','#c08090','#6090b0','#70a080'];
 function avColor(name) {
-  if (!name || typeof name !== 'string') return avColors[0]; // 防止 null/undefined 崩溃
   let h = 0; for (let c of name) h = c.charCodeAt(0) + ((h << 5) - h);
   return avColors[Math.abs(h) % avColors.length];
 }
@@ -4521,7 +4288,8 @@ let detailIsClosing = false;
 
 /* ---- 卡片点击（事件委托） ---- */
 document.getElementById('personGrid').addEventListener('click', function(e) {
-  if (detailIsOpen) return; // 已展开时不允许新卡片点击（关闭动画期间允许中断）
+  if (detailIsOpen || detailIsClosing) return;
+  // 忽略按钮点击（编辑/删除）
   if (e.target.closest('button')) return;
   const card = e.target.closest('.person-card');
   if (!card) return;
@@ -4530,37 +4298,13 @@ document.getElementById('personGrid').addEventListener('click', function(e) {
   openDetail(id, card);
 });
 
-	// 悬停动态 will-change（离开后移除，降低 GPU 内存占用）
-	var pgEl = document.getElementById('personGrid');
-	if (pgEl && !pgEl._hoverPatched) {
-		pgEl._hoverPatched = true;
-		pgEl.addEventListener('mouseenter', function(e) {
-			var c = e.target.closest('.person-card');
-			if (c) c.style.willChange = 'transform';
-		}, true);
-		pgEl.addEventListener('mouseleave', function(e) {
-			var c = e.target.closest('.person-card');
-			if (c) c.addEventListener('transitionend', function h() {
-				c.style.willChange = 'auto';
-				c.removeEventListener('transitionend', h);
-			}, {once: true});
-		}, true);
-	}
-
-
 function openDetail(id, cardEl) {
-  // 如果正在关闭动画中，立即结束关闭状态
-  if (detailIsClosing) {
-    var ov = document.getElementById('detailOverlay');
-    ov.classList.add('hidden');
-    ov.classList.remove('closing');
-    detailIsClosing = false;
-  }
-  // 如果已展开，先隐藏再打开新的
+  // 如果正在关闭中，强制中断关闭动画
   if (detailIsOpen) {
-    var ov2 = document.getElementById('detailOverlay');
-    ov2.classList.add('hidden');
-    ov2.classList.remove('closing');
+    // 已经在打开状态 — 先关闭再打开新的
+    const overlay = document.getElementById('detailOverlay');
+    overlay.classList.add('hidden');
+    overlay.classList.remove('closing');
   }
 
   const p = people.find(x => x.id === id);
@@ -4570,67 +4314,47 @@ function openDetail(id, cardEl) {
 
   const overlay = document.getElementById('detailOverlay');
   const sheet   = document.getElementById('detailSheet');
+  const inner   = document.getElementById('detailInner');
 
   // 先清空上次残留的内联样式（避免从旧位置开始过渡）
   sheet.style.cssText = '';
 
-  // ① 批量读取所有布局值（在任何写入之前一次性完成）
-  var cardRect = cardEl.getBoundingClientRect();
-  var vw = window.innerWidth;
-  var vh = window.innerHeight;
-  // 目标尺寸：80vw × 80vh 居中
-  var tw = vw * 0.8;
-  var th = vh * 0.8;
-  var tl = vw * 0.1;
-  var tt = vh * 0.1;
-  var scaleX = cardRect.width / tw;
-  var scaleY = cardRect.height / th;
-  // 以中心点为基准计算位移（配合 transform-origin: center center）
-  var tx = (cardRect.left + cardRect.width / 2) - (tl + tw / 2);
-  var ty = (cardRect.top + cardRect.height / 2) - (tt + th / 2);
-
-  // 锁定背后页面滚动
+  // 锁定背后页面滚动（必须在 getBoundingClientRect 之前，避免滚动条消失导致布局偏移）
   document.body.style.overflow = 'hidden';
 
-  // ② 填充内容
+  detailCardRect = cardEl.getBoundingClientRect();
+
+  // 1) 填充内容
   buildDetailContent(p);
 
-  // ③ 初始定位：sheet 已是最终尺寸，但通过 transform 缩放到卡片位置
-  sheet.style.position = 'fixed';
-  sheet.style.top    = tt + 'px';
-  sheet.style.left   = tl + 'px';
-  sheet.style.width  = tw + 'px';
-  sheet.style.height = th + 'px';
+  // 2) 初始定位：精确匹配卡片位置
+  const r = detailCardRect;
+  sheet.style.top    = r.top + 'px';
+  sheet.style.left   = r.left + 'px';
+  sheet.style.width  = r.width + 'px';
+  sheet.style.height = r.height + 'px';
   sheet.style.borderRadius = '14px';
-  sheet.style.transform = 'translate(' + tx + 'px, ' + ty + 'px) scale(' + scaleX + ', ' + scaleY + ')';
-  sheet.style.transformOrigin = 'center center';
-  sheet.style.transition = 'none'; // 初始定位无过渡
-
   sheet.classList.remove('expanded');
 
-  // ④ 显示覆盖层
+  // 3) 显示覆盖层
   overlay.classList.remove('hidden', 'closing');
 
-  // ⑤ 下一帧：启用过渡，展开到全尺寸（GPU 合成 — 仅 transform + border-radius）
-  requestAnimationFrame(function() {
-    sheet.style.transition = '';
-    sheet.classList.add('expanded');
-    sheet.style.transform = 'translate(0, 0) scale(1, 1)';
-    sheet.style.borderRadius = '24px';
+  // 4) 下一帧展开到 ~80% 屏幕
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      sheet.classList.add('expanded');
+      // 显式覆盖内联样式 — 展开到 80vw × 80vh 居中
+      sheet.style.top = '10vh';
+      sheet.style.left = '10vw';
+      sheet.style.width = '80vw';
+      sheet.style.height = '80vh';
+      sheet.style.borderRadius = '24px';
+    });
   });
 
-  // ⑥ 动画完成后清理 will-change / 过渡
-  setTimeout(function() {
-    sheet.style.transform = '';
-    sheet.style.transformOrigin = '';
-    sheet.style.transition = '';
-    sheet.style.overflow = 'auto';
-    sheet.classList.remove('expanded');
-  }, 600);
-
-  // ⑦ 内容滚动到顶部
-  setTimeout(function() {
-    var detailInner = document.getElementById('detailInner');
+  // 5) 内容滚动到顶部
+  setTimeout(() => {
+    const detailInner = document.getElementById('detailInner');
     if (detailInner) detailInner.scrollTop = 0;
   }, 650);
 }
@@ -4644,20 +4368,19 @@ function closeDetail() {
   const overlay = document.getElementById('detailOverlay');
   const sheet   = document.getElementById('detailSheet');
 
-  // 收回动画：opacity + scale（GPU 合成，由 .detail-overlay.closing .detail-sheet CSS 驱动）
+  // 收回动画
   overlay.classList.add('closing');
   sheet.classList.remove('expanded');
 
   // 动画结束后清理
-  setTimeout(function() {
+  setTimeout(() => {
     overlay.classList.add('hidden');
     overlay.classList.remove('closing');
     sheet.style.cssText = '';  // 清理内联样式，避免下次打开闪现
-    sheet.classList.remove('expanded');
     detailPersonId = null;
     detailCardRect = null;
     detailIsClosing = false;
-  }, 450);
+  }, 660);
 }
 
 /* ---- 点击背景关闭 ---- */
@@ -4675,12 +4398,12 @@ function buildDetailContent(p) {
   inner.innerHTML = `
     <button class="detail-close-btn" id="detailCloseBtn" title="关闭">✕</button>
     <div class="detail-hero">
-      <div class="detail-hero-avatar" style="background:${avColor(p.name)}">${escHtml((p.name || '?')[0])}</div>
+      <div class="detail-hero-avatar" style="background:${avColor(p.name)}">${escHtml(p.name[0] || '?')}</div>
       <div class="detail-hero-info">
         <div class="detail-hero-name">${escHtml(p.name)}</div>
         <div class="detail-hero-code">${escHtml(p.code)}</div>
         <div class="detail-hero-meta">
-          <span class="status-tag ${escHtml(p.status)}">${stLabel}</span>
+          <span class="status-tag ${p.status}">${stLabel}</span>
           <span class="detail-hero-dept">${escHtml(p.dept)} · ${escHtml(p.title)}</span>
         </div>
       </div>
@@ -4926,7 +4649,7 @@ function switchPage(targetPage) {
   if (slider && navEl && targetNavItem) {
     const navRect = navEl.getBoundingClientRect();
     const itemRect = targetNavItem.getBoundingClientRect();
-    slider.style.transform = "translateY(" + (itemRect.top - navRect.top + navEl.scrollTop) + "px)";
+    slider.style.top = (itemRect.top - navRect.top + navEl.scrollTop) + 'px';
   }
 
   // 更新标题
@@ -4997,12 +4720,12 @@ document.addEventListener('keydown', function(e) {
   if (slider && activeItem && nav) {
     const navRect = nav.getBoundingClientRect();
     const itemRect = activeItem.getBoundingClientRect();
-    slider.style.transform = "translateY(" + (itemRect.top - navRect.top + nav.scrollTop) + "px)";
+    slider.style.top = (itemRect.top - navRect.top + nav.scrollTop) + 'px';
   }
 })();
 
 /* ================================================================
-   分区 11k: Canvas 天气引擎 v2.1 — 真实细雨 + 柔雾
+   分区 11k: Canvas 天气引擎 — 清晨毛毛雨 + 雾霭
    ================================================================ */
 (function initWeather() {
   var canvas = document.getElementById('weatherCanvas');
@@ -5012,15 +4735,17 @@ document.addEventListener('keydown', function(e) {
   var W, H;
   var raindrops = [];
   var fogLayers = [];
-  var RAIN_COUNT = 200;
-  var FOG_COUNT = 5;
+  var RAIN_COUNT = 150;
+  var FOG_COUNT = 6;           // 10→6
   var animRAF = null;
   var lastFrameTime = 0;
-  var FRAME_INTERVAL = 22;
+  var FRAME_INTERVAL = 25;     // ~40 FPS
 
+  /* 离屏 canvas — 缓存静态底图（3 层渐变），仅 resize 时重建 */
   var bgCache = null;
   var bgCtx = null;
 
+  /* 预计算雨丝颜色数组，避免每帧字符串拼接 */
   var rainColorsNear = [];
   var rainColorsFar = [];
 
@@ -5029,8 +4754,8 @@ document.addEventListener('keydown', function(e) {
     rainColorsFar = [];
     for (var o = 0; o <= 100; o++) {
       var alpha = (o / 100).toFixed(2);
-      rainColorsNear.push('rgba(50,68,98,' + alpha + ')');
-      rainColorsFar.push('rgba(82,108,140,' + alpha + ')');
+      rainColorsNear.push('rgba(55,75,105,' + alpha + ')');
+      rainColorsFar.push('rgba(90,115,145,' + alpha + ')');
     }
   }
 
@@ -5049,26 +4774,29 @@ document.addEventListener('keydown', function(e) {
     bgCache.width = W;
     bgCache.height = H;
 
+    /* 亮灰底 */
     var baseGrad = bgCtx.createLinearGradient(0, 0, 0, H);
-    baseGrad.addColorStop(0, '#d2d9e3');
-    baseGrad.addColorStop(0.35, '#dae1eb');
-    baseGrad.addColorStop(0.65, '#d6dde6');
-    baseGrad.addColorStop(1, '#cdd4df');
+    baseGrad.addColorStop(0, '#d5dbe6');
+    baseGrad.addColorStop(0.4, '#dde3ed');
+    baseGrad.addColorStop(0.7, '#d8dfe8');
+    baseGrad.addColorStop(1, '#d0d7e2');
     bgCtx.fillStyle = baseGrad;
     bgCtx.fillRect(0, 0, W, H);
 
-    var glow1 = bgCtx.createRadialGradient(W * 0.06, H * 0.02, 0, W * 0.06, H * 0.02, W * 0.65);
-    glow1.addColorStop(0, 'rgba(248,238,215,0.30)');
-    glow1.addColorStop(0.18, 'rgba(230,224,202,0.18)');
-    glow1.addColorStop(0.45, 'rgba(212,217,222,0.06)');
-    glow1.addColorStop(1, 'rgba(198,208,220,0)');
+    /* 左上晨光 */
+    var glow1 = bgCtx.createRadialGradient(W * 0.08, H * 0.03, 0, W * 0.08, H * 0.03, W * 0.70);
+    glow1.addColorStop(0, 'rgba(245,235,210,0.28)');
+    glow1.addColorStop(0.2, 'rgba(228,222,200,0.16)');
+    glow1.addColorStop(0.5, 'rgba(210,215,220,0.05)');
+    glow1.addColorStop(1, 'rgba(195,205,218,0)');
     bgCtx.fillStyle = glow1;
     bgCtx.fillRect(0, 0, W, H);
 
-    var glow2 = bgCtx.createRadialGradient(W * 0.90, H * 0.88, 0, W * 0.90, H * 0.88, W * 0.70);
-    glow2.addColorStop(0, 'rgba(125,140,165,0.22)');
-    glow2.addColorStop(0.32, 'rgba(140,152,175,0.10)');
-    glow2.addColorStop(1, 'rgba(175,190,210,0)');
+    /* 右下冷暗 */
+    var glow2 = bgCtx.createRadialGradient(W * 0.92, H * 0.90, 0, W * 0.92, H * 0.90, W * 0.72);
+    glow2.addColorStop(0, 'rgba(130,145,170,0.20)');
+    glow2.addColorStop(0.35, 'rgba(145,158,180,0.09)');
+    glow2.addColorStop(1, 'rgba(180,195,215,0)');
     bgCtx.fillStyle = glow2;
     bgCtx.fillRect(0, 0, W, H);
   }
@@ -5077,22 +4805,19 @@ document.addEventListener('keydown', function(e) {
     W = canvas.width  = window.innerWidth;
     H = canvas.height = window.innerHeight;
     initParticles();
-    buildBgCache();
+    buildBgCache();      // resize 时重建底图缓存
   }
 
   function initParticles() {
     raindrops = [];
     for (var i = 0; i < RAIN_COUNT; i++) {
-      var depth = Math.random();
       raindrops.push({
-        x: Math.random() * W * 1.2 - W * 0.1,
-        y: Math.random() * H * 1.2 - H * 0.1,
-        len: 8 + depth * 45,
-        speed: 3 + depth * 15,
-        opacity: 0.22 + depth * 0.58,
-        wind: 0.3 + depth * 1.6,
-        width: 0.6 + depth * 1.6,
-        depth: depth
+        x: Math.random() * W,
+        y: Math.random() * H,
+        len: 12 + Math.random() * 40,
+        speed: 4 + Math.random() * 14,
+        opacity: 0.35 + Math.random() * 0.55,
+        wind: 0.5 + Math.random() * 1.5
       });
     }
 
@@ -5100,11 +4825,11 @@ document.addEventListener('keydown', function(e) {
     for (var i = 0; i < FOG_COUNT; i++) {
       fogLayers.push({
         x: Math.random() * W,
-        y: Math.random() * H * 0.7,
-        r: 220 + Math.random() * 480,
-        dx: (Math.random() - 0.5) * 0.45,
-        dy: -0.08 - Math.random() * 0.38,
-        opacity: 0.08 + Math.random() * 0.22
+        y: Math.random() * H,
+        r: 250 + Math.random() * 500,
+        dx: (Math.random() - 0.5) * 0.55,
+        dy: -0.10 - Math.random() * 0.45,
+        opacity: 0.10 + Math.random() * 0.25
       });
     }
   }
@@ -5113,9 +4838,9 @@ document.addEventListener('keydown', function(e) {
     for (var i = 0; i < fogLayers.length; i++) {
       var f = fogLayers[i];
       var gradient = ctx.createRadialGradient(f.x, f.y, 0, f.x, f.y, f.r);
-      gradient.addColorStop(0, 'rgba(150,166,190,' + f.opacity + ')');
-      gradient.addColorStop(0.28, 'rgba(164,178,200,' + (f.opacity * 0.60) + ')');
-      gradient.addColorStop(1, 'rgba(182,195,212,0)');
+      gradient.addColorStop(0, 'rgba(155,170,195,' + f.opacity + ')');
+      gradient.addColorStop(0.3, 'rgba(168,182,205,' + (f.opacity * 0.65) + ')');
+      gradient.addColorStop(1, 'rgba(185,198,215,0)');
       ctx.fillStyle = gradient;
       ctx.beginPath();
       ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2);
@@ -5132,20 +4857,20 @@ document.addEventListener('keydown', function(e) {
   function drawRain() {
     for (var i = 0; i < raindrops.length; i++) {
       var d = raindrops[i];
-      var isNear = d.depth > 0.55;
       ctx.beginPath();
       ctx.moveTo(d.x, d.y);
-      ctx.lineTo(d.x + d.wind * 1.1, d.y + d.len);
+      ctx.lineTo(d.x + d.wind, d.y + d.len);
+      var isNear = d.opacity > 0.60;
       ctx.strokeStyle = getRainColor(isNear, d.opacity);
-      ctx.lineWidth = d.width;
+      ctx.lineWidth = isNear ? 2.0 : 1.2;
       ctx.lineCap = 'round';
       ctx.stroke();
 
       d.y += d.speed;
-      d.x -= d.wind * 0.55;
-      if (d.y > H + 80) { d.y = -80; d.x = Math.random() * W * 1.2 - W * 0.1; }
-      if (d.x < -80) d.x = W + 80;
-      if (d.x > W + 80) d.x = -80;
+      d.x -= d.wind * 0.6;
+      if (d.y > H + 60) { d.y = -60; d.x = Math.random() * W; }
+      if (d.x < -60) d.x = W + 60;
+      if (d.x > W + 60) d.x = -60;
     }
   }
 
@@ -5155,10 +4880,14 @@ document.addEventListener('keydown', function(e) {
       return;
     }
     lastFrameTime = timestamp;
+
+    /* 仅 clear + 贴底图（bgCache 含 3 层渐变），不逐帧创渐变 */
     ctx.clearRect(0, 0, W, H);
     ctx.drawImage(bgCache, 0, 0);
+
     drawFog();
     drawRain();
+
     animRAF = requestAnimationFrame(animate);
   }
 
@@ -5172,6 +4901,7 @@ document.addEventListener('keydown', function(e) {
     if (animRAF) { cancelAnimationFrame(animRAF); animRAF = null; }
   }
 
+  // 页面不可见时暂停动画（省电 + 降温）
   document.addEventListener('visibilitychange', function() {
     if (document.hidden) stopAnim();
     else startAnim();
@@ -5179,147 +4909,98 @@ document.addEventListener('keydown', function(e) {
 
   window.addEventListener('resize', resize);
 
-  buildRainColors();
-  resize();
+  buildRainColors();   // 预计算颜色查表
+  resize();            // 初始化尺寸 → 调 buildBgCache
   startAnim();
-  console.log('◈ 天气引擎 v2.1 — 真实细雨 + 柔雾 — 已启动');
+  console.log('◈ 天气引擎 — 离屏缓存 + 预计算 + ~40fps — 已启动');
 })();
 
-/* ---- 玻璃水珠覆盖层 v2.1 — 水滴折射 + 滑落效果 ---- */
+/* ---- 雨丝覆盖层 — 玻璃上方渲染，确保雨丝始终可见（已节流 + 预计算） ---- */
 (function initRainOverlay() {
   var canvas = document.getElementById('rainOverlay');
   if (!canvas) return;
   var ctx = canvas.getContext('2d');
 
   var OW, OH;
-  var droplets = [];
-  var DROPLET_COUNT = 45;
+  var drops = [];
+  var DROP_COUNT = 80;        // 100→80
   var overlayRAF = null;
   var lastFrameTime = 0;
-  var FRAME_INTERVAL = 30;
-  var slideCooldown = 0;
+  var FRAME_INTERVAL = 25;    // ~40 FPS
+
+  /* 预计算雨滴颜色数组，避免每帧字符串拼接 */
+  var dropColors = [];
+
+  function buildDropColors() {
+    dropColors = [];
+    for (var o = 0; o <= 100; o++) {
+      var alpha = (o / 100).toFixed(2);
+      dropColors.push('rgba(70,95,130,' + alpha + ')');
+    }
+  }
+
+  function getDropColor(opacity) {
+    var idx = Math.round(opacity * 100);
+    if (idx < 0) idx = 0;
+    if (idx > 100) idx = 100;
+    return dropColors[idx];
+  }
 
   function resizeOverlay() {
     OW = canvas.width  = window.innerWidth;
     OH = canvas.height = window.innerHeight;
-    droplets.length = 0;
-    for (var i = 0; i < DROPLET_COUNT; i++) {
-      droplets.push(createDroplet());
+    drops.length = 0;
+    for (var i = 0; i < DROP_COUNT; i++) {
+      drops.push({
+        x: Math.random() * OW,
+        y: Math.random() * OH,
+        len: 15 + Math.random() * 50,
+        speed: 5 + Math.random() * 16,
+        opacity: 0.18 + Math.random() * 0.45,
+        wind: 0.6 + Math.random() * 1.8,
+        width: 0.8 + Math.random() * 1.4
+      });
     }
   }
 
-  function createDroplet() {
-    var rx = 2.5 + Math.random() * 7;
-    var ry = rx * (0.45 + Math.random() * 0.35);
-    return {
-      x: Math.random() * OW,
-      y: Math.random() * OH,
-      rx: rx, ry: ry,
-      opacity: 0.06 + Math.random() * 0.12,
-      slideSpeed: 0,
-      slideAngle: 0,
-      growing: true,
-      growRate: 0.0004 + Math.random() * 0.0009,
-      maxRx: rx + Math.random() * 6
-    };
-  }
-
-  function drawDroplets(timestamp) {
+  function drawOverlay(timestamp) {
     if (timestamp - lastFrameTime < FRAME_INTERVAL) {
-      overlayRAF = requestAnimationFrame(drawDroplets);
+      overlayRAF = requestAnimationFrame(drawOverlay);
       return;
     }
-    var dt = timestamp - lastFrameTime;
     lastFrameTime = timestamp;
-    slideCooldown += dt;
 
     ctx.clearRect(0, 0, OW, OH);
-
-    for (var i = 0; i < droplets.length; i++) {
-      var d = droplets[i];
-
-      // Growth/shrink cycle
-      if (d.growing) {
-        d.rx += d.growRate;
-        if (d.rx >= d.maxRx) d.growing = false;
-      } else {
-        d.rx -= d.growRate * 0.5;
-        if (d.rx <= 2.5) { d.growing = true; d.maxRx = 2.5 + Math.random() * 7; }
-      }
-      d.ry = d.rx * (0.48 + 0.02 * Math.sin(d.rx));
-
-      // Occasional slide down
-      if (d.slideSpeed > 0.03) {
-        d.x += Math.cos(d.slideAngle) * d.slideSpeed;
-        d.y += Math.sin(d.slideAngle) * d.slideSpeed;
-        d.slideSpeed *= 0.965;
-        if (d.slideSpeed < 0.03) d.slideSpeed = 0;
-      }
-
-      if (slideCooldown > 600 && Math.random() < 0.008 && d.rx > 5 && d.slideSpeed === 0) {
-        d.slideSpeed = 1.2 + Math.random() * 3.5;
-        d.slideAngle = (Math.PI / 2) + (Math.random() - 0.5) * 0.55;
-        d.rx *= 0.65;
-        d.growing = true;
-        slideCooldown = 0;
-      }
-
-      // Wrap
-      if (d.y > OH + 20) {
-        var nd = createDroplet();
-        d.x = nd.x; d.y = -10; d.rx = nd.rx; d.ry = nd.ry;
-        d.opacity = nd.opacity; d.slideSpeed = 0;
-      }
-      if (d.x < -20) d.x = OW + 20;
-      if (d.x > OW + 20) d.x = -20;
-
-      // Draw droplet
-      ctx.save();
-      ctx.globalAlpha = d.opacity;
-
-      // Drop shadow
-      ctx.fillStyle = 'rgba(0,0,0,0.07)';
+    for (var i = 0; i < drops.length; i++) {
+      var d = drops[i];
       ctx.beginPath();
-      ctx.ellipse(d.x + 1, d.y + 1.5, d.rx, d.ry, 0, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Body
-      ctx.fillStyle = 'rgba(200,215,235,0.48)';
-      ctx.beginPath();
-      ctx.ellipse(d.x, d.y, d.rx, d.ry, 0, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Highlight
-      var hx = d.x - d.rx * 0.25;
-      var hy = d.y - d.ry * 0.3;
-      ctx.fillStyle = 'rgba(255,255,255,0.58)';
-      ctx.beginPath();
-      ctx.ellipse(hx, hy, d.rx * 0.42, d.ry * 0.38, -0.2, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Edge
-      ctx.strokeStyle = 'rgba(255,255,255,0.16)';
-      ctx.lineWidth = 0.5;
-      ctx.beginPath();
-      ctx.ellipse(d.x, d.y, d.rx, d.ry, 0, 0, Math.PI * 2);
+      ctx.moveTo(d.x, d.y);
+      ctx.lineTo(d.x + d.wind, d.y + d.len);
+      ctx.strokeStyle = getDropColor(d.opacity);
+      ctx.lineWidth = d.width;
+      ctx.lineCap = 'round';
       ctx.stroke();
 
-      ctx.restore();
+      d.y += d.speed;
+      d.x -= d.wind * 0.5;
+      if (d.y > OH + 80) { d.y = -80; d.x = Math.random() * OW; }
+      if (d.x < -80) d.x = OW + 80;
+      if (d.x > OW + 80) d.x = -80;
     }
-
-    overlayRAF = requestAnimationFrame(drawDroplets);
+    overlayRAF = requestAnimationFrame(drawOverlay);
   }
 
   function startOverlay() {
     if (overlayRAF) return;
     lastFrameTime = 0;
-    overlayRAF = requestAnimationFrame(drawDroplets);
+    overlayRAF = requestAnimationFrame(drawOverlay);
   }
 
   function stopOverlay() {
     if (overlayRAF) { cancelAnimationFrame(overlayRAF); overlayRAF = null; }
   }
 
+  // 页面不可见时暂停
   document.addEventListener('visibilitychange', function() {
     if (document.hidden) stopOverlay();
     else startOverlay();
@@ -5327,17 +5008,17 @@ document.addEventListener('keydown', function(e) {
 
   window.addEventListener('resize', resizeOverlay);
 
+  buildDropColors();  // 预计算颜色查表
   resizeOverlay();
   startOverlay();
-  console.log('◈ 玻璃水珠覆盖层 v2.1 — 水滴折射 + 滑落 — 已启动');
 })();
 
-console.log('◈ 人员管理系统 v2.1.0 — iOS 液态玻璃 — 加载完成');
-console.log('  ✓ iOS 液态玻璃设计系统 · 超通透水光折射');
-console.log('  ✓ Canvas 真实细雨 + 柔雾天气引擎');
-console.log('  ✓ 玻璃水珠覆盖层 · 水滴折射 + 滑落效果');
-console.log('  ✓ 侧边栏/顶栏 固定布局 · 弹簧动画');
-console.log('  ✓ 6 页全玻璃卡片 · 自适应缩放');
+console.log('◈ 人员管理系统 — 阶段1 · 子阶段A — 加载完成');
+console.log('  ✓ iOS 19 液态玻璃 · 活力玻璃设计系统');
+console.log('  ✓ Canvas 动态天气背景（晨雨+雾）');
+console.log('  ✓ 侧边栏浅色玻璃 0.7s 滑入淡出动画');
+console.log('  ✓ 侧边栏高亮滑块滑动动画');
+console.log('  ✓ 人员卡片网格 (4列玻璃方块)');
 
 
 /* ================================================================
@@ -5483,15 +5164,14 @@ function openProfile(personId) {
   if (!listView || !profileView) return;
 
   /* 填充内容 */
-  var avEl = document.getElementById('profileAvatar');
-  if (avEl) { avEl.style.background = avColor(person.name); avEl.textContent = (person.name || '?')[0]; }
-  var pnEl = document.getElementById('profileName'); if (pnEl) pnEl.textContent = person.name;
-  var ptEl = document.getElementById('profileTitle'); if (ptEl) ptEl.textContent = person.title;
-  var pdEl = document.getElementById('profileDept'); if (pdEl) pdEl.textContent = person.dept;
+  document.getElementById('profileAvatar').style.background = avColor(person.name);
+  document.getElementById('profileAvatar').textContent = (person.name || '?')[0];
+  document.getElementById('profileName').textContent = person.name;
+  document.getElementById('profileTitle').textContent = person.title;
+  document.getElementById('profileDept').textContent = person.dept;
 
   const statusLabels = { active: '在岗', leave: '请假', inactive: '离职' };
-  var pbEl = document.getElementById('profileBasic');
-  if (pbEl) pbEl.innerHTML = [
+  document.getElementById('profileBasic').innerHTML = [
     { l:'姓名', v:escHtml(person.name) }, { l:'代号', v:escHtml(person.code) },
     { l:'部门', v:escHtml(person.dept) }, { l:'职位', v:escHtml(person.title) },
     { l:'状态', v:statusLabels[person.status] || escHtml(person.status) }, { l:'入职日期', v:escHtml(person.date || '--') }
@@ -5506,7 +5186,7 @@ function openProfile(personId) {
   const total = personnelFiltered.length;
   document.getElementById('profileNavInfo').textContent = (idx >= 0 ? (idx + 1) : '—') + ' / ' + total;
 
-  /* ---- Hero 展开：transform 动画（GPU 合成，不触发 layout） ---- */
+  /* ---- Hero 展开：档案视图自身从卡片位置放大到全屏 ---- */
   const card = document.querySelector('.personnel-item[data-pid="' + personId + '"]');
 
   /* 清理旧状态和未完成的关闭计时器 */
@@ -5515,22 +5195,18 @@ function openProfile(personId) {
   profileView.style.cssText = '';
 
   if (card) {
-    // ① 批量读取 — 一次性取完所有布局值，避免读写交替触发 layout thrashing
-    var rect = card.getBoundingClientRect();
-    var vw = window.innerWidth;
-    var vh = window.innerHeight;
-    var scaleX = rect.width / vw;
-    var scaleY = rect.height / vh;
-    var tx = rect.left;
-    var ty = rect.top;
+    const rect = card.getBoundingClientRect();
 
-    /* ② 设置初始状态：固定全屏定位 + transform 缩放到卡片位置 */
-    profileView.style.cssText = ''
-      + 'position:fixed;z-index:100;'
-      + 'top:0;left:0;width:100%;height:100%;'
-      + 'display:flex;overflow:hidden;border-radius:16px;'
-      + 'transform:translate(' + tx + 'px,' + ty + 'px) scale(' + scaleX + ',' + scaleY + ');'
-      + 'transform-origin:0 0;';
+    /* ① 设置初始：固定定位在卡片位置，毛玻璃 */
+    profileView.style.position = 'fixed';
+    profileView.style.zIndex = '100';
+    profileView.style.top = rect.top + 'px';
+    profileView.style.left = rect.left + 'px';
+    profileView.style.width = rect.width + 'px';
+    profileView.style.height = rect.height + 'px';
+    profileView.style.borderRadius = '16px';
+    profileView.style.display = 'flex';
+    profileView.style.overflow = 'hidden';
     profileView.classList.add('hero-start');
 
     /* 隐藏列表 */
@@ -5538,21 +5214,29 @@ function openProfile(personId) {
     listView.style.pointerEvents = 'none';
     listView.style.transition = 'opacity 0.3s ease';
 
-    /* ③ 下一帧：添加过渡并展开到全屏 */
-    requestAnimationFrame(function() {
+    /* ② 下一帧：添加过渡并展开到全屏 */
+    requestAnimationFrame(() => {
       profileView.classList.add('hero-expanding');
-      profileView.style.transform = 'translate(0,0) scale(1,1)';
+      profileView.style.top = '0';
+      profileView.style.left = '0';
+      profileView.style.width = '100%';
+      profileView.style.height = '100%';
       profileView.style.borderRadius = '0';
       profileView.classList.remove('hero-start');
     });
 
-    /* ④ 展开完成后：去除毛玻璃 + will-change，显示内容 */
-    setTimeout(function() {
+    /* ③ 展开完成后：去除毛玻璃，显示内容（保持内联样式防止跳变） */
+    setTimeout(() => {
       profileView.classList.remove('hero-expanding');
       profileView.classList.add('hero-done', 'anim-ready');
-      profileView.style.transform = '';
-      profileView.style.transformOrigin = '';
       profileView.style.overflow = 'auto';
+      profileView.style.position = 'fixed';
+      profileView.style.zIndex = '100';
+      profileView.style.top = '0';
+      profileView.style.left = '0';
+      profileView.style.width = '100%';
+      profileView.style.height = '100%';
+      profileView.style.borderRadius = '0';
     }, 520);
   } else {
     /* 降级：无动画直接显示 */
@@ -5788,19 +5472,12 @@ async function deleteOrderCard(orderId, personId) {
   const order = getOrders(personId).find(o => o.id === orderId);
   if (!order) return;
   if (!confirm('确定要删除订单「' + order.orderName + '」吗？此操作不可撤销。')) return;
-  // 先删云端，成功后再更新本地状态
-  try {
-    const { error } = await sb.from('orders').delete().eq('id', orderId).eq('user_id', getUserId());
-    if (error) throw new Error(error.message);
-    notifyChange();
-    personOrders[personId] = getOrders(personId).filter(o => o.id !== orderId);
-    if (orderTimers[orderId]) { clearInterval(orderTimers[orderId]); delete orderTimers[orderId]; }
-    renderOrderCards(personId);
-    showToast('订单「' + order.orderName + '」已删除', true);
-  } catch (e) {
-    console.warn('[Cloud] 删除订单失败:', e);
-    showToast('⚠️ 删除失败，请检查网络后重试', false);
-  }
+  personOrders[personId] = getOrders(personId).filter(o => o.id !== orderId);
+  if (orderTimers[orderId]) { clearInterval(orderTimers[orderId]); delete orderTimers[orderId]; }
+  // 直接删除云端订单
+  try { await sb.from('orders').delete().eq('id', orderId).eq('user_id', getUserId()); notifyChange(); } catch(_){}
+  renderOrderCards(personId);
+  showToast('订单「' + order.orderName + '」已删除', true);
 }
 
 /* ---- 倒计时定时器 ---- */
@@ -6402,17 +6079,9 @@ function renderSalaryOverview(year, month) {
   }).join('');
 
   // 行点击 → 单人详情
-  // 行点击 -> 单人详情（事件委托）
-  var salBody = document.getElementById('salTableBody');
-  if (salBody && !salBody._salDelegated) {
-    salBody._salDelegated = true;
-    salBody.addEventListener('click', function(e) {
-      var row = e.target.closest('.sal-row');
-      if (!row) return;
-      showSalaryDetail(Number(row.dataset.sid), _salYear, _salMonth);
-    });
-  }
-
+  document.querySelectorAll('#salTableBody .sal-row').forEach(row => {
+    row.addEventListener('click', () => showSalaryDetail(Number(row.dataset.sid), year, month));
+  });
 
   // 月份切换
   document.getElementById('salPrevMonth').onclick = () => {
@@ -6680,8 +6349,8 @@ function submitExamCandidate() {
     examCandidates.push(candidate);
     hideExamAddForm();
     renderExamCards();
-    	showToast('考生「' + name + '」已添加', true);
   });
+  showToast('考生「' + name + '」已添加', true);
 }
 
 /* ---- 事件绑定 ---- */
@@ -6770,7 +6439,6 @@ function getTrainStatus(courseId) {
    ================================================================ */
 
 function renderTrainOverview() {
-	trainEnrollCache.clear(); // 清空缓存确保数据最新
   generateTrainData();
 
   let ongoing = 0, done = 0, upcoming = 0, totalRate = 0;
@@ -6875,13 +6543,6 @@ function resetTrainView() {
   const updateStatusEl = document.getElementById('updateStatus');
   const btnCheck = document.getElementById('btnCheckUpdate');
 
-  /** 带超时的 fetch，避免网络不通时无限挂起 */
-  function fetchWithTimeout(url, timeoutMs) {
-    var ctrl = new AbortController();
-    var timer = setTimeout(function() { ctrl.abort(); }, timeoutMs);
-    return fetch(url, { signal: ctrl.signal }).finally(function() { clearTimeout(timer); });
-  }
-
   if (btnCheck) btnCheck.addEventListener('click', async function() {
     if (__updateChecking) return;
     __updateChecking = true;
@@ -6889,31 +6550,28 @@ function resetTrainView() {
     btnCheck.textContent = '⏳ 正在检查...';
     if (updateStatusEl) { updateStatusEl.style.display = 'block'; updateStatusEl.textContent = '正在连接更新服务器...'; }
 
-    var latestVersion = null;
-    var lastError = '';
-    var CHECK_TIMEOUT = 8000; // 8 秒超时
+    let latestVersion = null;
+    let lastError = '';
 
     // 策略1: 优先拉 version.json（仅 ~30 字节，速度快）
     try {
-      if (updateStatusEl) updateStatusEl.textContent = '正在获取版本信息...';
-      var resp = await fetchWithTimeout(VERSION_JSON_URL + '?t=' + Date.now(), CHECK_TIMEOUT);
+      const resp = await fetch(VERSION_JSON_URL + '?t=' + Date.now());
       if (resp.ok) {
-        var json = await resp.json();
+        const json = await resp.json();
         latestVersion = json.v;
         console.log('[Update] version.json → v' + latestVersion);
       }
     } catch (e) {
-      lastError = e.name === 'AbortError' ? '连接超时（version.json）' : e.message;
+      lastError = e.message;
     }
 
     // 策略2: 降级拉完整 HTML 解析版本号
     if (!latestVersion) {
       try {
-        if (updateStatusEl) updateStatusEl.textContent = '正在下载版本文件...';
-        var resp2 = await fetchWithTimeout(UPDATE_URL + '?t=' + Date.now(), CHECK_TIMEOUT);
-        if (!resp2.ok) throw new Error('HTTP ' + resp2.status);
-        var html = await resp2.text();
-        var match = html.match(/const\s+APP_VERSION\s*=\s*['"]([\d.]+)['"]/);
+        const resp = await fetch(UPDATE_URL + '?t=' + Date.now());
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+        const html = await resp.text();
+        const match = html.match(/const\s+APP_VERSION\s*=\s*['"]([\d.]+)['"]/);
         if (match) {
           latestVersion = match[1];
           console.log('[Update] HTML 解析 → v' + latestVersion);
@@ -6921,14 +6579,13 @@ function resetTrainView() {
           throw new Error('无法解析版本号');
         }
       } catch (e) {
-        lastError = lastError ? lastError + ' / ' + (e.name === 'AbortError' ? '连接超时（HTML）' : e.message) : (e.name === 'AbortError' ? '连接超时（HTML）' : e.message);
+        lastError = lastError ? lastError + ' / ' + e.message : e.message;
       }
     }
 
     if (!latestVersion) {
       if (updateStatusEl) {
-        updateStatusEl.innerHTML = '<span style="color:#a82020;">✕ 检查失败：' + escHtml(lastError || '无法连接更新服务器') + '</span>';
-        setTimeout(function() { if (updateStatusEl) updateStatusEl.style.display = 'none'; }, 5000);
+        updateStatusEl.innerHTML = '<span style="color:#a82020;">✕ 检查失败：无法连接更新服务器</span>';
       }
       console.warn('[Update] 检查失败:', lastError || 'fetch 被阻止（可能是 file:// 协议限制）');
     } else {
@@ -6949,7 +6606,7 @@ function resetTrainView() {
         if (updateStatusEl) {
           updateStatusEl.innerHTML = '<span style="color:#34c759;">✓ 已是最新版本 v' + APP_VERSION + '</span>';
         }
-        setTimeout(function() { if (updateStatusEl) updateStatusEl.style.display = 'none'; }, 3000);
+        setTimeout(() => { if (updateStatusEl) updateStatusEl.style.display = 'none'; }, 3000);
       }
     }
     __updateChecking = false;
@@ -6979,134 +6636,14 @@ function resetTrainView() {
   }
 
   async function doUpdate() {
-    // 保存数据
+    // 强制保存当前数据到本地
     saveLocalData();
+    // 如果云端同步定时器在等待，立即触发并等待完成
     if (cloudSaveTimer) { clearTimeout(cloudSaveTimer); cloudSaveTimer = null; cloudDirty = false; }
-    try { await cloudSaveAll(); } catch(e) { console.warn('[Update] 云端保存失败:', e.message); }
-
-    var body = document.getElementById('updateConfirmBody');
-    var footer = document.querySelector('#updateConfirmOverlay .cd-footer');
-    var updateUrl = 'https://pzxpzx-123.github.io/clubapp/APAA.html';
-
-    // 显示进度条
-    if (body) {
-      body.innerHTML = '<p style="margin-bottom:12px;">正在下载 v' + __updateVersion + '...</p>'
-        + '<div style="background:var(--sidebar-slider);border-radius:8px;height:10px;overflow:hidden;">'
-        + '<div id="updateProgressBar" style="background:var(--accent-blue);height:100%;width:0%;border-radius:8px;transition:width 0.3s ease;"></div></div>'
-        + '<p style="font-size:11px;color:var(--text-3);margin-top:8px;" id="updateProgressText">连接中...</p>';
-    }
-    if (footer) footer.style.display = 'none';
-
-    try {
-      var resp = await fetchWithTimeout(updateUrl + '?t=' + Date.now(), 30000);
-      if (!resp.ok) throw new Error('HTTP ' + resp.status);
-
-      var total = parseInt(resp.headers.get('content-length') || '0', 10);
-      var loaded = 0;
-      var reader = resp.body.getReader();
-      var chunks = [];
-
-      while (true) {
-        var chunk = await reader.read();
-        if (chunk.done) break;
-        chunks.push(chunk.value);
-        loaded += chunk.value.length;
-        if (total > 0) {
-          var pct = Math.round(loaded / total * 100);
-          var bar = document.getElementById('updateProgressBar');
-          var txt = document.getElementById('updateProgressText');
-          if (bar) bar.style.width = pct + '%';
-          if (txt) txt.textContent = '已下载 ' + Math.round(loaded/1024) + ' / ' + Math.round(total/1024) + ' KB (' + pct + '%)';
-        }
-      }
-
-      // 合并 chunks
-      var totalLen = 0;
-      for (var i = 0; i < chunks.length; i++) totalLen += chunks[i].length;
-      var merged = new Uint8Array(totalLen);
-      var pos = 0;
-      for (var i = 0; i < chunks.length; i++) {
-        merged.set(chunks[i], pos);
-        pos += chunks[i].length;
-      }
-
-      if (body) body.innerHTML = '<p>✅ 下载完成，正在安装...</p>';
-
-      // 写入 Service Worker 缓存
-      if ('caches' in window) {
-        try {
-          var cache = await caches.open('clubapp-v' + __updateVersion);
-          await cache.put(updateUrl, new Response(merged, {
-            headers: { 'Content-Type': 'text/html; charset=utf-8' }
-          }));
-        } catch(ce) { console.warn('[Update] 缓存写入失败:', ce); }
-      }
-
-      showToast('更新完成，即将刷新', true);
-      setTimeout(function() { location.reload(); }, 600);
-
-    } catch (e) {
-      console.warn('[Update] 下载失败:', e.message);
-      if (body) body.innerHTML = '<p style="color:#a82020;">✕ 更新失败: ' + e.message + '</p>'
-        + '<p style="font-size:12px;color:var(--text-2);margin-top:8px;">请手动打开<br><b>' + updateUrl + '</b></p>';
-      if (footer) footer.style.display = '';
-    }
-  }
-
-  /* 同步暗色模式 CSS 变量到 documentElement（与玻璃/模糊同级，确保暗色始终覆盖） */
-  function syncDarkModeVars(enable) {
-    var r = document.documentElement;
-    if (enable) {
-      r.style.setProperty('--bg', 'rgba(18, 20, 26, 0.92)');
-      r.style.setProperty('--glass-heavy', 'rgba(255,255,255,0.06)');
-      r.style.setProperty('--glass-medium', 'rgba(255,255,255,0.04)');
-      r.style.setProperty('--glass-light', 'rgba(255,255,255,0.025)');
-      r.style.setProperty('--glass-subtle', 'rgba(255,255,255,0.015)');
-      r.style.setProperty('--glass-card', 'rgba(255,255,255,0.07)');
-      r.style.setProperty('--blur-xl', 'blur(14px) saturate(130%)');
-      r.style.setProperty('--blur-lg', 'blur(10px) saturate(125%)');
-      r.style.setProperty('--blur-md', 'blur(7px) saturate(120%)');
-      r.style.setProperty('--blur-sm', 'blur(5px) saturate(115%)');
-      r.style.setProperty('--sidebar-bg', 'rgba(255,255,255,0.07)');
-      r.style.setProperty('--sidebar-blur', 'blur(16px) saturate(130%)');
-      r.style.setProperty('--sidebar-text', '#e4e6ec');
-      r.style.setProperty('--sidebar-text-2', '#9a9da8');
-      r.style.setProperty('--sidebar-text-3', 'rgba(255,255,255,0.16)');
-      r.style.setProperty('--sidebar-hover', 'rgba(255,255,255,0.05)');
-      r.style.setProperty('--sidebar-active', 'rgba(255,255,255,0.08)');
-      r.style.setProperty('--sidebar-slider', 'rgba(255,255,255,0.06)');
-      r.style.setProperty('--sidebar-border', 'rgba(255,255,255,0.10)');
-      r.style.setProperty('--sidebar-divider', 'rgba(255,255,255,0.04)');
-      r.style.setProperty('--text-1', '#e4e6ec');
-      r.style.setProperty('--text-2', '#9a9da8');
-      r.style.setProperty('--text-3', '#6a6d78');
-      r.style.setProperty('--border-glass', 'rgba(255,255,255,0.10)');
-      r.style.setProperty('--border-subtle', 'rgba(255,255,255,0.06)');
-      r.style.setProperty('--border-dark', 'rgba(255,255,255,0.04)');
-      r.style.setProperty('--glass-edge', 'inset 0 1px 0 rgba(255,255,255,0.18),inset 0 -1px 0 rgba(0,0,0,0.30),inset 1px 0 0 rgba(255,255,255,0.08),inset -1px 0 0 rgba(255,255,255,0.06)');
-      r.style.setProperty('--accent-blue', '#8aaddb');
-      r.style.setProperty('--accent-purple', '#a89ad4');
-      r.style.setProperty('--accent-teal', '#8ec8c8');
-      r.style.setProperty('--accent-coral', '#d4a89c');
-      r.style.setProperty('--shadow-sm', '0 2px 12px rgba(0,0,0,0.18)');
-      r.style.setProperty('--shadow-md', '0 8px 32px rgba(0,0,0,0.24)');
-      r.style.setProperty('--shadow-lg', '0 20px 60px rgba(0,0,0,0.36)');
-    } else {
-      var vars = ['--bg','--glass-heavy','--glass-medium','--glass-light','--glass-subtle','--glass-card',
-        '--blur-xl','--blur-lg','--blur-md','--blur-sm',
-        '--sidebar-bg','--sidebar-blur','--sidebar-text','--sidebar-text-2','--sidebar-text-3',
-        '--sidebar-hover','--sidebar-active','--sidebar-slider','--sidebar-border','--sidebar-divider',
-        '--text-1','--text-2','--text-3',
-        '--border-glass','--border-subtle','--border-dark',
-        '--glass-edge',
-        '--accent-blue','--accent-purple','--accent-teal','--accent-coral',
-        '--shadow-sm','--shadow-md','--shadow-lg'];
-      vars.forEach(function(v){ r.style.removeProperty(v); });
-    }
-  }
-  /* 其他设置变更后重新施加暗色（暗色始终最外层） */
-  function reApplyDarkMode() {
-    if (document.getElementById('setDarkBg')?.checked) syncDarkModeVars(true);
+    try { await cloudSaveAll(); } catch (e) { /* 尽力保存 */ }
+    showToast('正在跳转最新版本...', true);
+    // 跳转到远程部署的最新版本（保留查询参数以便追踪）
+    location.replace(UPDATE_URL);
   }
 
   // 页面加载时设置初始值
@@ -7136,7 +6673,28 @@ function resetTrainView() {
         root.style.setProperty('--glass-heavy', 'rgba(255,255,255,0.72)');
         root.style.setProperty('--glass-subtle', 'rgba(255,255,255,0.60)');
       }
-      reApplyDarkMode();
+      cloudAutoSave();
+    });
+
+    /* ---- 侧边栏风格 ---- */
+    const sidebarEl = document.getElementById('setSidebar');
+    if (sidebarEl) sidebarEl.addEventListener('change', function() {
+      const root = document.documentElement;
+      if (this.value === 'dark') {
+        root.style.setProperty('--sidebar-bg', 'rgba(20,22,28,0.78)');
+        root.style.setProperty('--sidebar-text', '#e8eaef');
+        root.style.setProperty('--sidebar-text-2', '#a8aab4');
+        root.style.setProperty('--sidebar-hover', 'rgba(255,255,255,0.06)');
+        root.style.setProperty('--sidebar-active', 'rgba(255,255,255,0.10)');
+        root.style.setProperty('--sidebar-slider', 'rgba(255,255,255,0.06)');
+        root.style.setProperty('--sidebar-border', 'rgba(255,255,255,0.14)');
+        root.style.setProperty('--sidebar-divider', 'rgba(255,255,255,0.05)');
+      } else {
+        root.style.removeProperty('--sidebar-bg'); root.style.removeProperty('--sidebar-text');
+        root.style.removeProperty('--sidebar-text-2'); root.style.removeProperty('--sidebar-hover');
+        root.style.removeProperty('--sidebar-active'); root.style.removeProperty('--sidebar-slider');
+        root.style.removeProperty('--sidebar-border'); root.style.removeProperty('--sidebar-divider');
+      }
       cloudAutoSave();
     });
 
@@ -7179,7 +6737,6 @@ function resetTrainView() {
           root.style.removeProperty('--blur-md'); root.style.removeProperty('--blur-sm');
           root.style.removeProperty('--sidebar-blur'); root.style.removeProperty('--sidebar-bg');
       }
-      reApplyDarkMode();
       cloudAutoSave();
     });
 
@@ -7204,7 +6761,6 @@ function resetTrainView() {
           root.style.removeProperty('--accent-blue'); root.style.removeProperty('--accent-purple');
           root.style.removeProperty('--accent-teal'); root.style.removeProperty('--accent-coral');
       }
-      reApplyDarkMode();
       cloudAutoSave();
     });
 
@@ -7246,11 +6802,11 @@ function resetTrainView() {
 
     if (darkEl) darkEl.addEventListener('change', function() {
       if (this.checked) {
-        document.body.classList.add('dark-mode');
-        syncDarkModeVars(true);
+        document.body.style.background = '#1a1c22';
+        document.getElementById('weatherCanvas').style.opacity = '0.35';
       } else {
-        document.body.classList.remove('dark-mode');
-        syncDarkModeVars(false);
+        document.body.style.background = '';
+        document.getElementById('weatherCanvas').style.opacity = '1';
       }
       cloudAutoSave();
     });
@@ -7267,13 +6823,6 @@ function resetTrainView() {
       cloudAutoSave();
     });
   }, 100);
-
-  /* 立即应用深色模式（消除加载闪烁） */
-  if (document.getElementById('setDarkBg')?.checked) {
-    document.body.classList.add('dark-mode');
-    syncDarkModeVars(true);
-  }
-
 })();
 
 /* ---- 阶段5 switchPage 集成 ---- */
@@ -7488,50 +7037,41 @@ document.addEventListener('click', function(e) {
    ================================================================ */
 
 (function patchAttendanceEdit() {
-  // 事件委托：在 #attCalendar 上挂一个监听器，不随 render 重复绑定
-  var attCalendar = document.getElementById('attCalendar');
-  if (attCalendar && !attCalendar._editPatched) {
-    attCalendar._editPatched = true;
-    attCalendar.addEventListener('click', function(e) {
-      if (appMode !== 'edit') return;
-      var day = e.target.closest('.cal-day:not(.empty)');
-      if (!day) return;
-      e.stopPropagation();
-
-      var statusCycle = ['normal','late','early','absent','leave'];
-      var clsPrefix = 'cal-status-';
-      var curCls = Array.from(day.classList).find(function(c) { return c.indexOf(clsPrefix) === 0; });
-      var curStatus = curCls ? curCls.replace(clsPrefix,'') : 'normal';
-      var idx = statusCycle.indexOf(curStatus);
-      idx = (idx + 1) % statusCycle.length;
-      var newStatus = statusCycle[idx];
-      day.className = day.className.replace(new RegExp(clsPrefix + '\\S+','g'), '');
-      day.classList.add(clsPrefix + newStatus);
-
-      var dayNum = parseInt(day.querySelector('.cal-num')?.textContent, 10);
-      if (dayNum && attDetailPersonId) {
-        var allData = generateAttendanceData(attCurrentYear, attCurrentMonth);
-        for (var i = 0; i < allData.length; i++) {
-          if (allData[i].personId === attDetailPersonId) {
-            var days = allData[i].days;
-            for (var j = 0; j < days.length; j++) {
-              if (days[j].day === dayNum) {
-                days[j].status = newStatus;
-                if (newStatus === 'absent') { days[j].checkIn = ''; days[j].checkOut = ''; days[j].hours = 0; }
-                break;
-              }
-            }
-            break;
-          }
-        }
-      }
-    });
-  }
-
-  var origRenderAttDetail = renderAttDetail;
+  const origRenderAttDetail = renderAttDetail;
   renderAttDetail = function(year, month) {
     origRenderAttDetail(year, month);
-    // 事件委托不需要重新绑定，clean pass
+    if (appMode !== 'edit') return;
+    /* 日历格子点击切换状态 */
+    setTimeout(() => {
+      document.querySelectorAll('#attCalendar .cal-day:not(.empty)').forEach(day => {
+        day.addEventListener('click', function(e) {
+          e.stopPropagation();
+          const statusCycle = ['normal','late','early','absent','leave'];
+          const clsPrefix = 'cal-status-';
+          const curCls = Array.from(this.classList).find(c => c.startsWith(clsPrefix));
+          let curStatus = curCls ? curCls.replace(clsPrefix,'') : 'normal';
+          let idx = statusCycle.indexOf(curStatus);
+          idx = (idx + 1) % statusCycle.length;
+          const newStatus = statusCycle[idx];
+          this.className = this.className.replace(new RegExp(clsPrefix + '\\S+','g'), '');
+          this.classList.add(clsPrefix + newStatus);
+
+          /* 更新数据 */
+          const dayNum = parseInt(this.querySelector('.cal-num')?.textContent, 10);
+          if (dayNum && attDetailPersonId) {
+            const allData = generateAttendanceData(attCurrentYear, attCurrentMonth);
+            const entry = allData.find(e => e.personId === attDetailPersonId);
+            if (entry) {
+              const dayData = entry.days.find(d => d.day === dayNum);
+              if (dayData) {
+                dayData.status = newStatus;
+                if (newStatus === 'absent') { dayData.checkIn = ''; dayData.checkOut = ''; dayData.hours = 0; }
+              }
+            }
+          }
+        });
+      });
+    }, 50);
   };
 })();
 
@@ -7540,74 +7080,55 @@ document.addEventListener('click', function(e) {
    ================================================================ */
 
 (function patchSalaryEdit() {
-  // 事件委托：在 #salHistoryBox tbody 上挂一个监听器
-  // 事件委托挂在 #salHistoryBox（稳定父元素），因为 tbody 会被 innerHTML 替换
-  var salBox = document.getElementById('salHistoryBox');
-  if (salBox && !salBox._editPatched) {
-    salBox._editPatched = true;
-    salBox.addEventListener('click', function(e) {
-      if (appMode !== 'edit') return;
-      var cell = e.target.closest('td.editable-val');
-      if (!cell) return;
-      e.stopPropagation();
-
-      var row = cell.parentElement;
-      var cells = row.querySelectorAll('td');
-      var monthCell = cells[0];
-      var baseCell  = cells[1];
-      var bonusCell = cells[2];
-      var otCell    = cells[3];
-      var dedCell   = cells[4];
-
-      // 从 data 属性中获取 personId
-      var pv = document.getElementById('profileView');
-      var personId = pv ? parseInt(pv.dataset.personId, 10) : NaN;
-      if (isNaN(personId)) return;
-
-      var person = people.find(function(x) { return x.id === personId; });
-      if (!person) return;
-      var monthText = monthCell.textContent.trim();
-      var parts = monthText.split('-').map(Number);
-      var data = generateSalaryData(parts[0], parts[1]);
-      var d = data.find(function(x) { return x.personId === personId; });
-      if (!d) return;
-
-      var fieldLabel, fieldKey;
-      if (cell === baseCell) { fieldLabel = '基本工资'; fieldKey = 'baseSalary'; }
-      else if (cell === bonusCell) { fieldLabel = '绩效奖金'; fieldKey = 'bonus'; }
-      else if (cell === otCell) { fieldLabel = '加班费'; fieldKey = 'overtime'; }
-      else { fieldLabel = '扣款'; fieldKey = 'deduction'; }
-      var rawVal = cell.textContent.replace(/[¥,]/g,'').replace(/^-/,'');
-
-      openEditPopover('编辑 ' + person.name + ' — ' + monthText, [
-        { label: fieldLabel, key: 'value', value: rawVal, type: 'number' }
-      ], cell, function(result) {
-        var newVal = parseInt(result.value, 10) || 0;
-        d[fieldKey] = newVal;
-        d.total = d.baseSalary + d.bonus + d.overtime - d.deduction;
-        var fmt = function(n) { return '¥' + n.toLocaleString('zh-CN'); };
-        if (cell === dedCell) cell.textContent = '-¥' + newVal.toLocaleString('zh-CN');
-        else cell.textContent = fmt(newVal);
-        var totalCell = row.querySelector('td:last-child');
-        if (totalCell) totalCell.textContent = fmt(d.total);
-        showToast('已保存', true);
-      });
-    });
-  }
-
-  var origShowSalaryDetail = showSalaryDetail;
+  /* 在详情历史表中添加编辑按钮 */
+  const origShowSalaryDetail = showSalaryDetail;
   showSalaryDetail = function(personId, year, month) {
     origShowSalaryDetail(personId, year, month);
-    // 事件委托不需要重新绑定，只需标记可编辑
     if (appMode !== 'edit') return;
-    setTimeout(function() {
-      var rows = document.querySelectorAll('#salHistoryBox tbody tr');
-      for (var i = 0; i < rows.length; i++) {
-        var cells = rows[i].querySelectorAll('td');
-        for (var j = 1; j <= 4 && j < cells.length; j++) {
-          cells[j].classList.add('editable-val');
-        }
-      }
+    setTimeout(() => {
+      const rows = document.querySelectorAll('#salHistoryBox tbody tr');
+      rows.forEach(row => {
+        const cells = row.querySelectorAll('td');
+        const monthCell = cells[0];
+        const baseCell  = cells[1];
+        const bonusCell = cells[2];
+        const otCell    = cells[3];
+        const dedCell   = cells[4];
+
+        /* 使单元格可编辑 */
+        [baseCell, bonusCell, otCell, dedCell].forEach(cell => {
+          cell.classList.add('editable-val');
+          cell.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const person = people.find(x => x.id === personId);
+            if (!person) return;
+            const monthText = monthCell.textContent.trim(); // "2026-01"
+            const [y, m] = monthText.split('-').map(Number);
+            const data = generateSalaryData(y, m);
+            const d = data.find(x => x.personId === personId);
+            if (!d) return;
+
+            const fieldLabel = cell === baseCell ? '基本工资' : cell === bonusCell ? '绩效奖金' : cell === otCell ? '加班费' : '扣款';
+            const fieldKey   = cell === baseCell ? 'baseSalary' : cell === bonusCell ? 'bonus' : cell === otCell ? 'overtime' : 'deduction';
+            const rawVal = cell.textContent.replace(/[¥,]/g,'').replace(/^-/,'');
+
+            openEditPopover(`编辑 ${person.name} — ${monthText}`, [
+              { label: fieldLabel, key: 'value', value: rawVal, type: 'number' }
+            ], cell, function(result) {
+              const newVal = parseInt(result.value, 10) || 0;
+              d[fieldKey] = newVal;
+              d.total = d.baseSalary + d.bonus + d.overtime - d.deduction;
+              const fmt = n => '¥' + n.toLocaleString('zh-CN');
+              if (cell === dedCell) cell.textContent = '-¥' + newVal.toLocaleString('zh-CN');
+              else cell.textContent = fmt(newVal);
+              /* 更新合计列 */
+              const totalCell = row.querySelector('td:last-child');
+              if (totalCell) totalCell.textContent = fmt(d.total);
+              showToast('已保存', true);
+            });
+          });
+        });
+      });
     }, 50);
   };
 })();
@@ -7618,61 +7139,10 @@ document.addEventListener('click', function(e) {
 
 (function patchTrainEdit() {
   const origShowTrainDetail = showTrainDetail;
-
-  // 事件委托：一次绑定在 #trainPartBody 上，避免每次渲染重复绑定导致泄漏
-  const trainPartBody = document.getElementById('trainPartBody');
-  if (trainPartBody) {
-    trainPartBody.addEventListener('click', function(e) {
-      if (appMode !== 'edit') return;
-      var cell = e.target.closest('td.editable-val');
-      if (!cell) return;
-      e.stopPropagation();
-
-      var row = cell.parentElement;
-      var cells = row.querySelectorAll('td');
-      var nameCell = cells[0];
-      var personName = nameCell.textContent.trim();
-
-      var courseId = parseInt(trainPartBody.dataset.courseId, 10);
-      if (isNaN(courseId)) return;
-
-      var enrolled = trainEnrollCache.get(courseId) || [];
-      var entry = enrolled.find(function(en) { return en.name === personName; });
-      if (!entry) return;
-
-      var cellIndex = Array.prototype.indexOf.call(cells, cell);
-      var field, label, curVal;
-      if (cellIndex === 2) {
-        field = 'progress'; label = '进度 (%)'; curVal = entry.progress;
-      } else {
-        field = 'score'; label = '成绩 (分)'; curVal = (entry.score || 0);
-      }
-
-      openEditPopover('编辑 ' + personName, [
-        { label: label, key: 'value', value: String(curVal), type: 'number' }
-      ], cell, function(result) {
-        var v = Math.min(100, Math.max(0, parseInt(result.value, 10) || 0));
-        if (field === 'progress') {
-          entry.progress = v;
-          entry.done = v >= 100;
-          cell.innerHTML = '<div class="train-progress-bar"><div class="tpb-fill" style="width:' + v + '%;"></div></div>' + v + '%';
-        } else {
-          entry.score = v;
-          cell.textContent = v + '分';
-        }
-        showToast('已保存', true);
-      });
-    });
-  }
-
   showTrainDetail = function(courseId) {
     origShowTrainDetail(courseId);
     if (appMode !== 'edit') return;
-    setTimeout(function() {
-      // 存储 courseId 供事件委托使用
-      var tpb = document.getElementById('trainPartBody');
-      if (tpb) tpb.dataset.courseId = courseId;
-
+    setTimeout(() => {
       const course = trainCourses.find(c => c.id === courseId);
       /* 编辑课程名/讲师 */
       const header = document.getElementById('trainCourseHeader');
@@ -7692,13 +7162,45 @@ document.addEventListener('click', function(e) {
         };
       }
 
-      /* 标记可编辑单元格（不绑定事件——由上方委托统一处理） */
-      var rows = document.querySelectorAll('#trainPartBody tr');
-      for (var i = 0; i < rows.length; i++) {
-        var cells = rows[i].querySelectorAll('td');
-        if (cells[2]) cells[2].classList.add('editable-val');
-        if (cells[4]) cells[4].classList.add('editable-val');
-      }
+      /* 编辑学员进度/成绩 */
+      const rows = document.querySelectorAll('#trainPartBody tr');
+      rows.forEach(row => {
+        const cells = row.querySelectorAll('td');
+        const nameCell = cells[0];
+        const progCell  = cells[2];
+        const scoreCell = cells[4];
+
+        progCell.classList.add('editable-val');
+        
+        scoreCell.classList.add('editable-val');
+
+        const editCellFn = function(e, field, label) {
+          e.stopPropagation();
+          const personName = nameCell.textContent.trim();
+          const enrolled = trainEnrollCache.get(courseId) || [];
+          const entry = enrolled.find(en => en.name === personName);
+          if (!entry) return;
+
+          const curVal = field === 'progress' ? entry.progress : (entry.score || 0);
+          openEditPopover(`编辑 ${personName}`, [
+            { label: label, key: 'value', value: String(curVal), type: 'number' }
+          ], e.target, function(result) {
+            const v = Math.min(100, Math.max(0, parseInt(result.value, 10) || 0));
+            if (field === 'progress') {
+              entry.progress = v;
+              entry.done = v >= 100;
+              progCell.innerHTML = `<div class="train-progress-bar"><div class="tpb-fill" style="width:${v}%;"></div></div>${v}%`;
+            } else {
+              entry.score = v;
+              scoreCell.textContent = v + '分';
+            }
+            showToast('已保存', true);
+          });
+        };
+
+        progCell.addEventListener('click', function(e) { editCellFn(e, 'progress', '进度 (%)'); });
+        scoreCell.addEventListener('click', function(e) { editCellFn(e, 'score', '成绩 (分)'); });
+      });
     }, 50);
   };
 })();
@@ -7710,7 +7212,7 @@ setTimeout(initCloud, 10);
 
 // 关闭页面/标签前强制保存本地数据（防止3秒防抖窗口内数据丢失）
 window.addEventListener('beforeunload', () => {
-  stopRealtimeSync();
+  if (__cloudPollTimer) { clearInterval(__cloudPollTimer); __cloudPollTimer = null; }
   for (var tid in orderTimers) { clearInterval(orderTimers[tid]); }
   try {
     localStorage.setItem(LS_KEYS.people, JSON.stringify(people));
