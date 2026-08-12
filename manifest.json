@@ -1,0 +1,9 @@
+{
+  "name": "人员管理系统",
+  "short_name": "ClubApp",
+  "start_url": "/clubapp/APAA.html",
+  "display": "standalone",
+  "background_color": "#f0f2f8",
+  "theme_color": "#6889b4",
+  "icons": []
+}
