@@ -2466,7 +2466,7 @@ body:not(.edit-mode) .settings-wrap .setting-select {
   .topbar-stage { display: none; }
 
   /* 内容区 */
-  .content-area { padding: 8px; }
+  .content-area { padding: 8px 8px 0 8px; }
 
   /* 模态弹窗 */
   .modal { width: 96vw; max-height: 85vh; border-radius: 18px; }
@@ -2501,7 +2501,7 @@ body:not(.edit-mode) .settings-wrap .setting-select {
   .settings-column { flex-direction: column; }
 
   /* 分页 */
-  .pagination-bar { flex-direction: column; gap: 8px; padding: 10px 14px; }
+  .pagination-bar { flex-direction: column; gap: 4px; padding: 6px 14px; margin-top: 4px; }
 
   /* 平板端禁用毛玻璃（省 GPU） */
   .sidebar { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(22,24,32,0.96); }
@@ -2518,6 +2518,8 @@ body:not(.edit-mode) .settings-wrap .setting-select {
   .att-summary { grid-template-columns: repeat(2, 1fr); }
   .sal-summary { grid-template-columns: 1fr 1fr; }
   .topbar { margin: 4px 4px 0; padding: 8px 12px; gap: 8px; }
+  .content-area { padding: 4px 4px 0 4px; }
+  .pagination-bar { padding: 4px 14px; margin-top: 2px; }
   .page-btn { width: 28px; height: 28px; font-size: 10px; }
   .detail-stats-row { grid-template-columns: repeat(3, 1fr); gap: 4px; }
   .detail-stat-val { font-size: 15px; }
@@ -2548,7 +2550,7 @@ body:not(.edit-mode) .settings-wrap .setting-select {
   .att-sum-card .asc-value { font-size: 20px; }
 
   /* 分页 */
-  .pagination-bar { padding: 8px 14px; margin-top: 8px; }
+  .pagination-bar { padding: 4px 14px; margin-top: 2px; }
 
   /* 详情面板 — 极限利用高度 */
   .detail-sheet.expanded {
