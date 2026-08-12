@@ -156,12 +156,21 @@ body.dark-mode .setting-row { border-bottom-color: rgba(255,255,255,0.048); }
 body.dark-mode .profile-field { border-bottom-color: rgba(255,255,255,0.048); }
 body.dark-mode .hamburger-btn span { background: var(--text-1); }
 
-@media (max-width: 860px) {
-  body.dark-mode .sidebar { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(26,28,34,0.97); }
-  body.dark-mode .topbar { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(26,28,34,0.97); }
-  body.dark-mode .person-card, body.dark-mode .order-card, body.dark-mode .exam-card, body.dark-mode .stat-card,
-  body.dark-mode .settings-section { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(26,28,34,0.95); }
-  body.dark-mode .detail-sheet { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(20,22,28,0.97); }
+/* 移动端保留毛玻璃效果 — 与桌面一致 */
+
+/* ================================================================
+   GPU 合成层修复 — Android 旋转后 backdrop-filter 不丢失
+   ================================================================ */
+.person-card, .order-card, .exam-card, .stat-card, .att-sum-card,
+.sal-sum-card, .sal-table-wrap, .perf-sum-card, .perf-table-wrap,
+.train-sum-card, .train-table-wrap, .settings-section, .sal-history-box,
+.perf-history-box, .sal-detail-header, .perf-detail-header, .train-course-header,
+.sidebar, .topbar, .detail-sheet, .modal, .edit-popover, .profile-view,
+.personnel-search, .sal-back-btn, .perf-back-btn, .train-back-btn, .icon-btn,
+.sal-table th, .perf-table th, .train-table th, .modal-overlay {
+  transform: translateZ(0);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
 }
 
 /* 全局重置 */
@@ -1004,14 +1013,7 @@ body {
 /* 档案响应式 */
 @media (max-width: 768px) {
   .profile-section .ps-fields { grid-template-columns: 1fr; }
-  .sidebar { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(240,243,249,0.98); }
-  .topbar { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(240,243,249,0.97); }
-  .person-card { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(255,255,255,0.94); }
-  .order-card { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(255,255,255,0.94); }
-  .exam-card { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(255,255,255,0.94); }
-  .stat-card { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(255,255,255,0.94); }
-  .detail-sheet { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(240,243,249,0.97); }
-  .modal, .modal-overlay { backdrop-filter: none; -webkit-backdrop-filter: none; }
+  .sidebar { backdrop-filter: var(--sidebar-blur); -webkit-backdrop-filter: var(--sidebar-blur); background: var(--sidebar-bg); }
   .person-card { box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
   .order-card { box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
   .modal { box-shadow: 0 8px 24px rgba(0,0,0,0.12); }
@@ -2612,12 +2614,6 @@ body:not(.edit-mode) .settings-wrap .setting-select {
   /* 分页 */
   .pagination-bar { flex-direction: column; gap: 4px; padding: 6px 14px; margin-top: 4px; }
 
-  /* 平板端禁用毛玻璃（省 GPU） */
-  .sidebar { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(22,24,32,0.96); }
-  .topbar { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(242,244,248,0.96); }
-  .person-card, .order-card, .exam-card, .stat-card { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(255,255,255,0.92); }
-  .detail-sheet { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(242,244,248,0.96); }
-  .modal, .modal-overlay { backdrop-filter: none; -webkit-backdrop-filter: none; }
 
   /* 档案详情 — 平板适配 */
   .profile-view { padding: 64px 16px 32px; }
@@ -2696,12 +2692,6 @@ body:not(.edit-mode) .settings-wrap .setting-select {
     width: 97vw !important; height: 96vh !important;
     border-radius: 16px !important;
   }
-  /* 禁用毛玻璃（省 GPU） */
-  .sidebar { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(22,24,32,0.96); }
-  .topbar { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(242,244,248,0.96); }
-  .person-card, .order-card, .exam-card, .stat-card { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(255,255,255,0.92); }
-  .detail-sheet { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(242,244,248,0.96); }
-  .modal, .modal-overlay { backdrop-filter: none; -webkit-backdrop-filter: none; }
   .detail-hero { padding: 12px 14px 8px; gap: 8px; }
   .detail-hero-avatar { width: 40px; height: 40px; font-size: 17px; }
   .detail-hero-name { font-size: 16px; }
@@ -3014,7 +3004,7 @@ body:not(.edit-mode) .settings-wrap .setting-select {
         <!-- 系统信息 -->
         <div class="settings-section">
           <div class="ss-title">系统信息</div>
-          <div class="info-row"><span class="ir-label">系统版本</span><span class="ir-value">v2.1.1</span></div>
+          <div class="info-row"><span class="ir-label">系统版本</span><span class="ir-value">v2.1.2</span></div>
           <div class="info-row"><span class="ir-label">数据总量</span><span class="ir-value">156 名员工</span></div>
           <div class="info-row"><span class="ir-label">最后更新</span><span class="ir-value">2026-08-12</span></div>
           <div class="info-row"><span class="ir-label">浏览器</span><span class="ir-value" id="sysBrowser">—</span></div>
@@ -3057,7 +3047,7 @@ body:not(.edit-mode) .settings-wrap .setting-select {
         <!-- 系统更新 -->
         <div class="settings-section">
           <div class="ss-title">系统更新</div>
-          <div class="info-row"><span class="ir-label">当前版本</span><span class="ir-value" id="sysVersion">v2.1.1</span></div>
+          <div class="info-row"><span class="ir-label">当前版本</span><span class="ir-value" id="sysVersion">v2.1.2</span></div>
           <div style="margin-top:8px;">
             <button class="btn btn-glass primary" id="btnCheckUpdate" style="width:100%;">🔍 检查更新</button>
           </div>
@@ -3345,7 +3335,7 @@ if ("serviceWorker" in navigator) {
     .catch(function(err) { console.log("[SW] 注册失败", err); });
 }
 // --- 应用版本（热更新检测用） ---
-const APP_VERSION = '2.1.1';
+const APP_VERSION = '2.1.2';
 let __updateAvailable = false;       // 是否有可用更新
 let __updateVersion = null;          // 新版本号
 let __updateChecking = false;        // 是否正在检查中
