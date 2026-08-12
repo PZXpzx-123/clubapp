@@ -6,7 +6,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://qstrmmaihqyguttnkyvt.supabase.co; img-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none';">
 <title>人员管理系统</title>
-	<link rel="manifest" href="/clubapp/manifest.json">
 <!--
   人员管理系统 — iOS 液态玻璃风格
   阶段 1 — 外观与布局：侧边栏动画 + 卡片网格
@@ -85,83 +84,6 @@
   --font-mono: "SF Mono", "Menlo", "Consolas", monospace;
 }
 
-/* ================================================================
-   统一深色模式 — body.dark-mode 覆盖所有变量
-   ================================================================ */
-body.dark-mode {
-  --bg: rgba(18, 20, 26, 0.92);
-
-  --glass-heavy:  rgba(255,255,255,0.06);
-  --glass-medium: rgba(255,255,255,0.04);
-  --glass-light:  rgba(255,255,255,0.025);
-  --glass-subtle: rgba(255,255,255,0.015);
-  --glass-card:   rgba(255,255,255,0.07);
-
-  --blur-xl: blur(14px) saturate(130%);
-  --blur-lg: blur(10px) saturate(125%);
-  --blur-md: blur(7px) saturate(120%);
-  --blur-sm: blur(5px) saturate(115%);
-
-  --sidebar-bg:    rgba(255,255,255,0.07);
-  --sidebar-blur:  blur(16px) saturate(130%);
-  --sidebar-text:    #e4e6ec;
-  --sidebar-text-2:  #9a9da8;
-  --sidebar-text-3:  rgba(255,255,255,0.16);
-  --sidebar-hover:   rgba(255,255,255,0.05);
-  --sidebar-active:  rgba(255,255,255,0.08);
-  --sidebar-slider:  rgba(255,255,255,0.06);
-  --sidebar-border:  rgba(255,255,255,0.10);
-  --sidebar-divider: rgba(255,255,255,0.04);
-
-  --text-1:   #e4e6ec;
-  --text-2:   #9a9da8;
-  --text-3:   #6a6d78;
-
-  --border-glass:  rgba(255,255,255,0.10);
-  --border-subtle: rgba(255,255,255,0.06);
-  --border-dark:   rgba(255,255,255,0.04);
-
-  --glass-edge:
-    inset 0 1px 0 rgba(255,255,255,0.18),
-    inset 0 -1px 0 rgba(0,0,0,0.30),
-    inset 1px 0 0 rgba(255,255,255,0.08),
-    inset -1px 0 0 rgba(255,255,255,0.06);
-
-  --accent-blue:   #8aaddb;
-  --accent-purple: #a89ad4;
-  --accent-teal:   #8ec8c8;
-  --accent-coral:  #d4a89c;
-
-  --shadow-sm: 0 2px 12px rgba(0,0,0,0.18);
-  --shadow-md: 0 8px 32px rgba(0,0,0,0.24);
-  --shadow-lg: 0 20px 60px rgba(0,0,0,0.36);
-
-  background: #14161c;
-}
-body.dark-mode #weatherCanvas { opacity: 0.25; }
-body.dark-mode #rainOverlay  { opacity: 0.55; }
-
-/* 暗色模式下一些硬编码颜色的覆盖 */
-body.dark-mode .sidebar { box-shadow: 2px 0 40px rgba(0,0,0,0.28); }
-body.dark-mode .sidebar::before { background: linear-gradient(90deg, transparent 8%, rgba(255,255,255,0.18) 50%, transparent 92%); }
-body.dark-mode .sidebar-logo .logo-mark { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.08); }
-body.dark-mode .topbar-stage { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.08); }
-body.dark-mode .toggle-sw .ts-slider { background: rgba(255,255,255,0.14); border-color: rgba(255,255,255,0.10); }
-body.dark-mode .toggle-sw input:checked + .ts-slider { background: #8aaddb; }
-body.dark-mode .nav-badge.now { background: rgba(255,255,255,0.08); color: var(--text-2); }
-body.dark-mode .nav-badge.later { color: var(--text-3); border-color: rgba(255,255,255,0.10); }
-body.dark-mode .setting-row { border-bottom-color: rgba(255,255,255,0.04); }
-body.dark-mode .profile-field { border-bottom-color: rgba(255,255,255,0.04); }
-body.dark-mode .hamburger-btn span { background: var(--text-1); }
-
-/* 移动端暗色模式：禁用毛玻璃时的纯色回退 */
-@media (max-width: 860px) {
-  body.dark-mode .sidebar { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(30,32,38,0.96); }
-  body.dark-mode .topbar { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(30,32,38,0.96); }
-  body.dark-mode .person-card, body.dark-mode .order-card, body.dark-mode .exam-card, body.dark-mode .stat-card,
-  body.dark-mode .settings-section { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(30,32,38,0.92); }
-  body.dark-mode .detail-sheet { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(24,26,32,0.96); }
-}
 
 /* 全局重置 */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -3011,13 +2933,10 @@ body:not(.edit-mode) .settings-wrap .setting-select {
         <!-- 系统信息 -->
         <div class="settings-section">
           <div class="ss-title">系统信息</div>
-          <div class="info-row"><span class="ir-label">系统版本</span><span class="ir-value">v2.0.6</span></div>
+          <div class="info-row"><span class="ir-label">系统版本</span><span class="ir-value">v2.0.0</span></div>
           <div class="info-row"><span class="ir-label">数据总量</span><span class="ir-value">156 名员工</span></div>
-          <div class="info-row"><span class="ir-label">最后更新</span><span class="ir-value">2026-08-12</span></div>
+          <div class="info-row"><span class="ir-label">最后更新</span><span class="ir-value">2026-08-11</span></div>
           <div class="info-row"><span class="ir-label">浏览器</span><span class="ir-value" id="sysBrowser">—</span></div>
-          <div id="installRow" style="display:none; margin-top:10px;">
-            <button class="btn btn-glass primary" id="btnInstall" style="width:100%;">📲 安装到桌面</button>
-          </div>
         </div>
         <!-- 外观设置 -->
         <div class="settings-section">
@@ -3057,7 +2976,7 @@ body:not(.edit-mode) .settings-wrap .setting-select {
         <!-- 系统更新 -->
         <div class="settings-section">
           <div class="ss-title">系统更新</div>
-          <div class="info-row"><span class="ir-label">当前版本</span><span class="ir-value" id="sysVersion">v2.0.6</span></div>
+          <div class="info-row"><span class="ir-label">当前版本</span><span class="ir-value" id="sysVersion">v2.0.0</span></div>
           <div style="margin-top:8px;">
             <button class="btn btn-glass primary" id="btnCheckUpdate" style="width:100%;">🔍 检查更新</button>
           </div>
@@ -3337,34 +3256,19 @@ body:not(.edit-mode) .settings-wrap .setting-select {
      分区 11: JavaScript — 数据层
      ================================================================ -->
 <script>
-
-// --- Service Worker （PWA 自动更新）---
-if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("/clubapp/sw.js", { scope: "/clubapp/" })
-    .then(function(reg) {
-      console.log("[SW] 已注册", reg.scope);
-      reg.addEventListener("updatefound", function() {
-        var newWorker = reg.installing;
-        newWorker.addEventListener("statechange", function() {
-          if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
-            console.log("[SW] 新版本就绪，刷新页面...");
-            alert("发现新版本，即将刷新");
-            location.reload();
-          }
-        });
-      });
-    })
-    .catch(function(err) { console.log("[SW] 注册失败", err); });
-}
 // --- 应用版本（热更新检测用） ---
-const APP_VERSION = '2.0.6';
+const APP_VERSION = '2.0.5';
 let __updateAvailable = false;       // 是否有可用更新
 let __updateVersion = null;          // 新版本号
 let __updateChecking = false;        // 是否正在检查中
 
 // 远程部署地址 — 修改为你的实际线上地址后即可启用热更新
-// GitHub Pages — 免费、HTTPS、自动部署
-const UPDATE_URL = 'https://pzxpzx-123.github.io/clubapp/APAA.html';
+// 方案1 (推荐): GitHub Pages — 免费、HTTPS、自动部署
+//   https://你的用户名.github.io/仓库名/APAA.html
+// 方案2: Supabase Storage 公开桶
+//   https://xxx.supabase.co/storage/v1/object/public/app/APAA.html
+// 方案3: 任何静态托管 (Vercel / Netlify / Cloudflare Pages)
+const UPDATE_URL = 'https://qstrmmaihqyguttnkyvt.supabase.co/storage/v1/object/public/app/APAA.html';
 
 // 版本检查 URL — 取同一个远程目录下的 version.json，比拉整个 HTML 快 ~1000 倍
 // version.json 内容格式: {"v":"2.0.6"}
@@ -6949,117 +6853,6 @@ function resetTrainView() {
     }
   }
 
-  /* ---- 暗色模式变量同步（向 documentElement 写入/清除，与玻璃强度同机制） ---- */
-  function syncDarkModeVars(enable) {
-    var r = document.documentElement;
-    if (enable) {
-      r.style.setProperty('--bg',               'rgba(18, 20, 26, 0.92)');
-      r.style.setProperty('--glass-heavy',      'rgba(255,255,255,0.06)');
-      r.style.setProperty('--glass-medium',     'rgba(255,255,255,0.04)');
-      r.style.setProperty('--glass-light',      'rgba(255,255,255,0.025)');
-      r.style.setProperty('--glass-subtle',     'rgba(255,255,255,0.015)');
-      r.style.setProperty('--glass-card',       'rgba(255,255,255,0.07)');
-      r.style.setProperty('--blur-xl',          'blur(14px) saturate(130%)');
-      r.style.setProperty('--blur-lg',          'blur(10px) saturate(125%)');
-      r.style.setProperty('--blur-md',          'blur(7px) saturate(120%)');
-      r.style.setProperty('--blur-sm',          'blur(5px) saturate(115%)');
-      r.style.setProperty('--sidebar-bg',       'rgba(255,255,255,0.07)');
-      r.style.setProperty('--sidebar-blur',     'blur(16px) saturate(130%)');
-      r.style.setProperty('--sidebar-text',     '#e4e6ec');
-      r.style.setProperty('--sidebar-text-2',   '#9a9da8');
-      r.style.setProperty('--sidebar-text-3',   'rgba(255,255,255,0.16)');
-      r.style.setProperty('--sidebar-hover',    'rgba(255,255,255,0.05)');
-      r.style.setProperty('--sidebar-active',   'rgba(255,255,255,0.08)');
-      r.style.setProperty('--sidebar-slider',   'rgba(255,255,255,0.06)');
-      r.style.setProperty('--sidebar-border',   'rgba(255,255,255,0.10)');
-      r.style.setProperty('--sidebar-divider',  'rgba(255,255,255,0.04)');
-      r.style.setProperty('--text-1',           '#e4e6ec');
-      r.style.setProperty('--text-2',           '#9a9da8');
-      r.style.setProperty('--text-3',           '#6a6d78');
-      r.style.setProperty('--border-glass',     'rgba(255,255,255,0.10)');
-      r.style.setProperty('--border-subtle',    'rgba(255,255,255,0.06)');
-      r.style.setProperty('--border-dark',      'rgba(255,255,255,0.04)');
-      r.style.setProperty('--glass-edge',       'inset 0 1px 0 rgba(255,255,255,0.18), inset 0 -1px 0 rgba(0,0,0,0.30), inset 1px 0 0 rgba(255,255,255,0.08), inset -1px 0 0 rgba(255,255,255,0.06)');
-      r.style.setProperty('--accent-blue',      '#8aaddb');
-      r.style.setProperty('--accent-purple',    '#a89ad4');
-      r.style.setProperty('--accent-teal',      '#8ec8c8');
-      r.style.setProperty('--accent-coral',     '#d4a89c');
-      r.style.setProperty('--shadow-sm',        '0 2px 12px rgba(0,0,0,0.18)');
-      r.style.setProperty('--shadow-md',        '0 8px 32px rgba(0,0,0,0.24)');
-      r.style.setProperty('--shadow-lg',        '0 20px 60px rgba(0,0,0,0.36)');
-    } else {
-      var vars = ['--bg','--glass-heavy','--glass-medium','--glass-light','--glass-subtle','--glass-card',
-        '--blur-xl','--blur-lg','--blur-md','--blur-sm',
-        '--sidebar-bg','--sidebar-blur','--sidebar-text','--sidebar-text-2','--sidebar-text-3',
-        '--sidebar-hover','--sidebar-active','--sidebar-slider','--sidebar-border','--sidebar-divider',
-        '--text-1','--text-2','--text-3',
-        '--border-glass','--border-subtle','--border-dark',
-        '--glass-edge',
-        '--accent-blue','--accent-purple','--accent-teal','--accent-coral',
-        '--shadow-sm','--shadow-md','--shadow-lg'];
-      for (var i = 0; i < vars.length; i++) r.style.removeProperty(vars[i]);
-    }
-  }
-  function reApplyDarkMode() {
-    if (document.getElementById('setDarkBg')?.checked) syncDarkModeVars(true);
-  }
-
-  /* 同步暗色模式 CSS 变量到 documentElement（内联样式，与其他设置同优先级） */
-  function syncDarkModeVars(enable) {
-    const r = document.documentElement;
-    if (enable) {
-      r.style.setProperty('--bg', 'rgba(18, 20, 26, 0.92)');
-      r.style.setProperty('--glass-heavy', 'rgba(255,255,255,0.06)');
-      r.style.setProperty('--glass-medium', 'rgba(255,255,255,0.04)');
-      r.style.setProperty('--glass-light', 'rgba(255,255,255,0.025)');
-      r.style.setProperty('--glass-subtle', 'rgba(255,255,255,0.015)');
-      r.style.setProperty('--glass-card', 'rgba(255,255,255,0.07)');
-      r.style.setProperty('--blur-xl', 'blur(14px) saturate(130%)');
-      r.style.setProperty('--blur-lg', 'blur(10px) saturate(125%)');
-      r.style.setProperty('--blur-md', 'blur(7px) saturate(120%)');
-      r.style.setProperty('--blur-sm', 'blur(5px) saturate(115%)');
-      r.style.setProperty('--sidebar-bg', 'rgba(255,255,255,0.07)');
-      r.style.setProperty('--sidebar-blur', 'blur(16px) saturate(130%)');
-      r.style.setProperty('--sidebar-text', '#e4e6ec');
-      r.style.setProperty('--sidebar-text-2', '#9a9da8');
-      r.style.setProperty('--sidebar-text-3', 'rgba(255,255,255,0.16)');
-      r.style.setProperty('--sidebar-hover', 'rgba(255,255,255,0.05)');
-      r.style.setProperty('--sidebar-active', 'rgba(255,255,255,0.08)');
-      r.style.setProperty('--sidebar-slider', 'rgba(255,255,255,0.06)');
-      r.style.setProperty('--sidebar-border', 'rgba(255,255,255,0.10)');
-      r.style.setProperty('--sidebar-divider', 'rgba(255,255,255,0.04)');
-      r.style.setProperty('--text-1', '#e4e6ec');
-      r.style.setProperty('--text-2', '#9a9da8');
-      r.style.setProperty('--text-3', '#6a6d78');
-      r.style.setProperty('--border-glass', 'rgba(255,255,255,0.10)');
-      r.style.setProperty('--border-subtle', 'rgba(255,255,255,0.06)');
-      r.style.setProperty('--border-dark', 'rgba(255,255,255,0.04)');
-      r.style.setProperty('--glass-edge', 'inset 0 1px 0 rgba(255,255,255,0.18), inset 0 -1px 0 rgba(0,0,0,0.30), inset 1px 0 0 rgba(255,255,255,0.08), inset -1px 0 0 rgba(255,255,255,0.06)');
-      r.style.setProperty('--accent-blue', '#8aaddb');
-      r.style.setProperty('--accent-purple', '#a89ad4');
-      r.style.setProperty('--accent-teal', '#8ec8c8');
-      r.style.setProperty('--accent-coral', '#d4a89c');
-      r.style.setProperty('--shadow-sm', '0 2px 12px rgba(0,0,0,0.18)');
-      r.style.setProperty('--shadow-md', '0 8px 32px rgba(0,0,0,0.24)');
-      r.style.setProperty('--shadow-lg', '0 20px 60px rgba(0,0,0,0.36)');
-    } else {
-      var vars = ['--bg','--glass-heavy','--glass-medium','--glass-light','--glass-subtle','--glass-card',
-        '--blur-xl','--blur-lg','--blur-md','--blur-sm',
-        '--sidebar-bg','--sidebar-blur','--sidebar-text','--sidebar-text-2','--sidebar-text-3',
-        '--sidebar-hover','--sidebar-active','--sidebar-slider','--sidebar-border','--sidebar-divider',
-        '--text-1','--text-2','--text-3',
-        '--border-glass','--border-subtle','--border-dark',
-        '--glass-edge',
-        '--accent-blue','--accent-purple','--accent-teal','--accent-coral',
-        '--shadow-sm','--shadow-md','--shadow-lg'];
-      vars.forEach(function(v){ r.style.removeProperty(v); });
-    }
-  }
-  /* 在其他设置变更后重新施加暗色模式（确保暗色始终是最外层覆盖） */
-  function reApplyDarkMode() {
-    if (document.getElementById('setDarkBg')?.checked) syncDarkModeVars(true);
-  }
-
   // 页面加载时设置初始值
   setTimeout(() => {
     const blurEl = document.getElementById('setBlur');
@@ -7087,7 +6880,6 @@ function resetTrainView() {
         root.style.setProperty('--glass-heavy', 'rgba(255,255,255,0.72)');
         root.style.setProperty('--glass-subtle', 'rgba(255,255,255,0.60)');
       }
-      reApplyDarkMode();
       cloudAutoSave();
     });
 
@@ -7130,7 +6922,6 @@ function resetTrainView() {
           root.style.removeProperty('--blur-md'); root.style.removeProperty('--blur-sm');
           root.style.removeProperty('--sidebar-blur'); root.style.removeProperty('--sidebar-bg');
       }
-      reApplyDarkMode();
       cloudAutoSave();
     });
 
@@ -7155,7 +6946,6 @@ function resetTrainView() {
           root.style.removeProperty('--accent-blue'); root.style.removeProperty('--accent-purple');
           root.style.removeProperty('--accent-teal'); root.style.removeProperty('--accent-coral');
       }
-      reApplyDarkMode();
       cloudAutoSave();
     });
 
@@ -7197,11 +6987,11 @@ function resetTrainView() {
 
     if (darkEl) darkEl.addEventListener('change', function() {
       if (this.checked) {
-        document.body.classList.add('dark-mode');
-        syncDarkModeVars(true);
+        document.body.style.background = '#1a1c22';
+        document.getElementById('weatherCanvas').style.opacity = '0.35';
       } else {
-        document.body.classList.remove('dark-mode');
-        syncDarkModeVars(false);
+        document.body.style.background = '';
+        document.getElementById('weatherCanvas').style.opacity = '1';
       }
       cloudAutoSave();
     });
@@ -7219,53 +7009,6 @@ function resetTrainView() {
     });
   }, 100);
 
-  /* ---- PWA 安装到桌面 ---- */
-  (function() {
-    var deferredPrompt = null;
-    var installRow = document.getElementById('installRow');
-    var btnInstall = document.getElementById('btnInstall');
-
-    // 已经是独立窗口（已安装）→ 隐藏按钮
-    if (window.matchMedia('(display-mode: standalone)').matches || navigator.standalone) {
-      if (installRow) installRow.style.display = 'none';
-      return;
-    }
-
-    // Android Chrome / Edge — beforeinstallprompt
-    window.addEventListener('beforeinstallprompt', function(e) {
-      e.preventDefault();
-      deferredPrompt = e;
-      if (installRow) installRow.style.display = 'block';
-    });
-
-    // 安装按钮点击
-    if (btnInstall) btnInstall.addEventListener('click', function() {
-      if (deferredPrompt) {
-        deferredPrompt.prompt();
-        deferredPrompt.userChoice.then(function(r) {
-          console.log('[PWA] 用户选择:', r.outcome);
-          deferredPrompt = null;
-          if (installRow) installRow.style.display = 'none';
-        });
-      } else if (/iPhone|iPad|iPod/.test(navigator.userAgent)) {
-        // iOS Safari — 弹出操作指引
-        alert('点击 Safari 底部 分享按钮 → 滑动找到「添加到主屏幕」→ 点击完成');
-      } else {
-        alert('请在浏览器菜单中选择「添加到主屏幕」或「安装应用」');
-      }
-    });
-
-    // iOS Safari — 直接显示按钮（不支持 beforeinstallprompt）
-    if (/iPhone|iPad|iPod/.test(navigator.userAgent) && installRow && !deferredPrompt) {
-      installRow.style.display = 'block';
-    }
-  })();
-
-  /* 立即应用深色模式（避免加载闪烁） */
-  if (document.getElementById('setDarkBg')?.checked) {
-    document.body.classList.add('dark-mode');
-    syncDarkModeVars(true);
-  }
 })();
 
 /* ---- 阶段5 switchPage 集成 ---- */
