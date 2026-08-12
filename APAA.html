@@ -84,6 +84,84 @@
   --font-mono: "SF Mono", "Menlo", "Consolas", monospace;
 }
 
+/* ================================================================
+   统一深色模式 — body.dark-mode 覆盖所有变量
+   ================================================================ */
+body.dark-mode {
+  --bg: rgba(18, 20, 26, 0.92);
+
+  --glass-heavy:  rgba(255,255,255,0.06);
+  --glass-medium: rgba(255,255,255,0.04);
+  --glass-light:  rgba(255,255,255,0.025);
+  --glass-subtle: rgba(255,255,255,0.015);
+  --glass-card:   rgba(255,255,255,0.07);
+
+  --blur-xl: blur(14px) saturate(130%);
+  --blur-lg: blur(10px) saturate(125%);
+  --blur-md: blur(7px) saturate(120%);
+  --blur-sm: blur(5px) saturate(115%);
+
+  --sidebar-bg:    rgba(255,255,255,0.07);
+  --sidebar-blur:  blur(16px) saturate(130%);
+  --sidebar-text:    #e4e6ec;
+  --sidebar-text-2:  #9a9da8;
+  --sidebar-text-3:  rgba(255,255,255,0.16);
+  --sidebar-hover:   rgba(255,255,255,0.05);
+  --sidebar-active:  rgba(255,255,255,0.08);
+  --sidebar-slider:  rgba(255,255,255,0.06);
+  --sidebar-border:  rgba(255,255,255,0.10);
+  --sidebar-divider: rgba(255,255,255,0.04);
+
+  --text-1:   #e4e6ec;
+  --text-2:   #9a9da8;
+  --text-3:   #6a6d78;
+
+  --border-glass:  rgba(255,255,255,0.10);
+  --border-subtle: rgba(255,255,255,0.06);
+  --border-dark:   rgba(255,255,255,0.04);
+
+  --glass-edge:
+    inset 0 1px 0 rgba(255,255,255,0.18),
+    inset 0 -1px 0 rgba(0,0,0,0.30),
+    inset 1px 0 0 rgba(255,255,255,0.08),
+    inset -1px 0 0 rgba(255,255,255,0.06);
+
+  --accent-blue:   #8aaddb;
+  --accent-purple: #a89ad4;
+  --accent-teal:   #8ec8c8;
+  --accent-coral:  #d4a89c;
+
+  --shadow-sm: 0 2px 12px rgba(0,0,0,0.18);
+  --shadow-md: 0 8px 32px rgba(0,0,0,0.24);
+  --shadow-lg: 0 20px 60px rgba(0,0,0,0.36);
+
+  background: #14161c;
+}
+body.dark-mode #weatherCanvas { opacity: 0.25; }
+body.dark-mode #rainOverlay  { opacity: 0.55; }
+
+/* 暗色模式下一些硬编码颜色的覆盖 */
+body.dark-mode .sidebar { box-shadow: 2px 0 40px rgba(0,0,0,0.28); }
+body.dark-mode .sidebar::before { background: linear-gradient(90deg, transparent 8%, rgba(255,255,255,0.18) 50%, transparent 92%); }
+body.dark-mode .sidebar-logo .logo-mark { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.08); }
+body.dark-mode .topbar-stage { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.08); }
+body.dark-mode .toggle-sw .ts-slider { background: rgba(255,255,255,0.14); border-color: rgba(255,255,255,0.10); }
+body.dark-mode .toggle-sw input:checked + .ts-slider { background: #8aaddb; }
+body.dark-mode .nav-badge.now { background: rgba(255,255,255,0.08); color: var(--text-2); }
+body.dark-mode .nav-badge.later { color: var(--text-3); border-color: rgba(255,255,255,0.10); }
+body.dark-mode .setting-row { border-bottom-color: rgba(255,255,255,0.04); }
+body.dark-mode .profile-field { border-bottom-color: rgba(255,255,255,0.04); }
+body.dark-mode .hamburger-btn span { background: var(--text-1); }
+
+/* 移动端暗色模式：禁用毛玻璃时的纯色回退 */
+@media (max-width: 860px) {
+  body.dark-mode .sidebar { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(30,32,38,0.96); }
+  body.dark-mode .topbar { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(30,32,38,0.96); }
+  body.dark-mode .person-card, body.dark-mode .order-card, body.dark-mode .exam-card, body.dark-mode .stat-card,
+  body.dark-mode .settings-section { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(30,32,38,0.92); }
+  body.dark-mode .detail-sheet { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(24,26,32,0.96); }
+}
+
 /* 全局重置 */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -218,8 +296,16 @@ body {
 }
 
 .nav-item .nav-dot {
-  font-size: 15px; width: 20px; text-align: center; flex-shrink: 0;
+  width: 10px; height: 10px; border-radius: 50%;
+  background: currentColor; opacity: 0.45;
+  flex-shrink: 0; margin: 0 5px;
+  transition: opacity 0.25s ease, box-shadow 0.25s ease;
 }
+.nav-item.active .nav-dot {
+  opacity: 1;
+  box-shadow: 0 0 8px currentColor;
+}
+.nav-item:hover .nav-dot { opacity: 0.80; }
 
 .nav-badge {
   margin-left: auto;
@@ -434,6 +520,7 @@ body {
 .content-area {
   padding: 16px 18px; flex: 1;
   position: relative;
+  display: flex; flex-direction: column;
 }
 
 /* ================================================================
@@ -632,15 +719,23 @@ body {
    分区 5c: 人员档案页面 — 列表 + 详情
    ================================================================ */
 
+/* 人员档案页 — flex 撑满内容区 */
+#page-personnel {
+  flex: 1; min-height: 0;
+  display: flex; flex-direction: column;
+}
+
 /* 档案页面容器 */
 .personnel-wrap {
   display: flex; flex-direction: column; gap: 14px;
   max-width: 960px; margin: 0 auto; width: 100%;
+  flex: 1; min-height: 0;
 }
 
 /* ---- 列表视图 ---- */
 .personnel-list-view {
   display: flex; flex-direction: column; gap: 12px;
+  flex: 1; min-height: 0;
   transition: opacity 0.3s ease, transform 0.3s var(--ease-out-expo);
 }
 
@@ -674,19 +769,16 @@ body {
   box-shadow: var(--glass-edge);
 }
 
-/* 列表 */
+/* 列表 — flex:1 撑满剩余空间，内部滚动 */
 .personnel-list {
   display: flex; flex-direction: column; gap: 6px;
-  max-height: calc(100vh - 260px); overflow-y: auto;
+  flex: 1; min-height: 0;
+  overflow-y: auto;
   padding-right: 4px;
 }
-/* 平板：侧边栏已隐藏，减少扣除量 */
-@media (max-width: 860px) {
-  .personnel-list { max-height: calc(100vh - 140px); }
-}
-/* 手机：撑满可用空间 */
+/* 手机：收紧间距 */
 @media (max-width: 520px) {
-  .personnel-list { max-height: none; flex: 1; gap: 4px; }
+  .personnel-list { gap: 4px; }
   .personnel-wrap { gap: 8px; }
   .personnel-toolbar { gap: 6px; }
   .personnel-search { padding: 8px 10px; font-size: 12px; }
@@ -2522,6 +2614,12 @@ body:not(.edit-mode) .settings-wrap .setting-select {
   .person-card, .order-card, .exam-card, .stat-card { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(255,255,255,0.92); }
   .detail-sheet { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(242,244,248,0.96); }
   .modal, .modal-overlay { backdrop-filter: none; -webkit-backdrop-filter: none; }
+
+  /* 档案详情 — 平板适配 */
+  .profile-view { padding: 64px 16px 32px; }
+  .profile-header { padding: 16px 20px; }
+  .profile-header .ph-avatar { width: 48px; height: 48px; font-size: 20px; }
+  .profile-section .ps-fields { grid-template-columns: 1fr 1fr; }
 }
 
 /* --- 手机竖屏: ≤520px --- */
@@ -2549,6 +2647,19 @@ body:not(.edit-mode) .settings-wrap .setting-select {
   .detail-stat-label { font-size: 9px; }
   .detail-hero-name { font-size: 17px; }
   .modal { width: 98vw; border-radius: 16px; }
+
+  /* 档案详情 — 手机适配 */
+  .profile-view { padding: 56px 12px 24px; gap: 10px; }
+  .profile-header { padding: 14px 16px; gap: 12px; }
+  .profile-header .ph-avatar { width: 42px; height: 42px; font-size: 18px; }
+  .profile-header .ph-name { font-size: 17px; }
+  .profile-header .ph-title { font-size: 12px; }
+  .profile-section { padding: 12px 14px; }
+  .profile-section .ps-fields { grid-template-columns: 1fr; }
+  .profile-nav-btn { width: 30px; height: 30px; font-size: 16px; }
+  .profile-back-btn { padding: 6px 12px; font-size: 12px; }
+  .order-cards-grid { grid-template-columns: 1fr; gap: 6px; }
+  .order-card { padding: 12px 14px; gap: 6px; }
 }
 
 /* --- 横屏模式（高度受限）--- */
@@ -2626,39 +2737,39 @@ body:not(.edit-mode) .settings-wrap .setting-select {
     <div class="nav-section-label">核心功能</div>
 
     <div class="nav-item active" data-page="appearance">
-      <span class="nav-dot">◉</span>外观与布局
+      <span class="nav-dot"></span>外观与布局
       <span class="nav-badge now">阶段1</span>
     </div>
 
     <div class="nav-item" data-page="personnel">
-      <span class="nav-dot">◎</span>人员档案
+      <span class="nav-dot"></span>人员档案
       <span class="nav-badge later">已完成</span>
     </div>
 
     <div class="nav-item" data-page="performance">
-      <span class="nav-dot">◎</span>绩效考核
+      <span class="nav-dot"></span>绩效考核
       <span class="nav-badge later">已完成</span>
     </div>
 
     <div class="nav-section-label">更多</div>
 
     <div class="nav-item" data-page="salary">
-      <span class="nav-dot">◎</span>薪酬管理
+      <span class="nav-dot"></span>薪酬管理
       <span class="nav-badge later">已完成</span>
     </div>
 
     <div class="nav-item" data-page="attendance">
-      <span class="nav-dot">◎</span>考勤管理
+      <span class="nav-dot"></span>考勤管理
       <span class="nav-badge later">已完成</span>
     </div>
 
     <div class="nav-item" data-page="training">
-      <span class="nav-dot">◎</span>培训管理
+      <span class="nav-dot"></span>培训管理
       <span class="nav-badge later">已完成</span>
     </div>
 
     <div class="nav-item" data-page="settings">
-      <span class="nav-dot">◎</span>系统设置
+      <span class="nav-dot"></span>系统设置
       <span class="nav-badge later">已完成</span>
     </div>
   </nav>
@@ -2918,12 +3029,6 @@ body:not(.edit-mode) .settings-wrap .setting-select {
           <div class="setting-row">
             <div><div class="sr-label">深色背景</div><div class="sr-desc">使用深色调渐变背景</div></div>
             <label class="toggle-sw"><input type="checkbox" id="setDarkBg"><span class="ts-slider"></span></label>
-          </div>
-          <div class="setting-row">
-            <div><div class="sr-label">侧边栏风格</div><div class="sr-desc">浅色液态玻璃 / 深色液态玻璃</div></div>
-            <select class="setting-select" id="setSidebar">
-              <option value="dark">深色玻璃</option><option value="light" selected>浅色玻璃</option>
-            </select>
           </div>
           <div class="setting-row">
             <div><div class="sr-label">玻璃强度</div><div class="sr-desc">轻盈 / 均衡 / 厚重</div></div>
@@ -3438,7 +3543,6 @@ const cloudAppearance = {
       blur_enabled: document.getElementById('setBlur')?.checked ?? true,
       anim_enabled: document.getElementById('setAnim')?.checked ?? true,
       dark_bg: document.getElementById('setDarkBg')?.checked ?? false,
-      sidebar_style: document.getElementById('setSidebar')?.value ?? 'light',
       glass_intensity: document.getElementById('setGlass')?.value ?? 'balanced',
       tone: document.getElementById('setTone')?.value ?? 'cool',
       zoom_level: parseInt(document.getElementById('setZoom')?.value, 10) || 100,
@@ -3471,7 +3575,6 @@ const cloudAppearance = {
     apply('setAnim',    data.anim_enabled,    'checkbox');
     apply('setDarkBg',  data.dark_bg,         'checkbox');
     apply('setToast',   data.toast_enabled,   'checkbox');
-    apply('setSidebar', data.sidebar_style,   'select');
     apply('setGlass',   data.glass_intensity, 'select');
     apply('setTone',    data.tone,            'select');
     apply('setZoom',    data.zoom_level,      'range');
@@ -3874,6 +3977,14 @@ async function __handleRemoteChange(remoteTime) {
 /** 启动 Realtime 订阅 + 断线兜底轮询 (30s) */
 function startRealtimeSync() {
   if (__realtimeChannel) return;
+
+  /* 自定义 REST 客户端不支持 channel()，直接走兜底轮询 */
+  if (typeof sb.channel !== 'function') {
+    console.log('[Realtime] ℹ 当前为 REST 模式，启用兜底轮询 (30s)');
+    startFallbackPolling();
+    return;
+  }
+
   console.log('[Realtime] 📡 启动实时订阅...');
   __realtimeChannel = sb
     .channel('changes-watcher')
@@ -3891,15 +4002,7 @@ function startRealtimeSync() {
       }
       if (status === 'CLOSED' || status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
         console.warn('[Realtime] ⚠ 连接断开，启动兜底轮询 (30s)');
-        if (!__fallbackTimer) {
-          __fallbackTimer = setInterval(async function() {
-            if (!cloudReady || !__cloudLoadDone || _isEditing() || cloudDirty) return;
-            try {
-              var refetch = await sb.from('changes').select('updated_at').eq('id', 1).maybeSingle();
-              if (refetch.data?.updated_at) await __handleRemoteChange(refetch.data.updated_at);
-            } catch (_) {}
-          }, 30000);
-        }
+        startFallbackPolling();
         // 10s 后尝试重连
         setTimeout(function() {
           if (__realtimeChannel) {
@@ -3910,6 +4013,18 @@ function startRealtimeSync() {
         }, 10000);
       }
     });
+}
+
+/** 启动兜底轮询（30s 拉一次 changes 表） */
+function startFallbackPolling() {
+  if (__fallbackTimer) return;
+  __fallbackTimer = setInterval(async function() {
+    if (!cloudReady || !__cloudLoadDone || _isEditing() || cloudDirty) return;
+    try {
+      var refetch = await sb.from('changes').select('updated_at').eq('id', 1).maybeSingle();
+      if (refetch.data?.updated_at) await __handleRemoteChange(refetch.data.updated_at);
+    } catch (_) {}
+  }, 30000);
 }
 
 /** 停止 Realtime 订阅 */
@@ -6845,28 +6960,6 @@ function resetTrainView() {
       cloudAutoSave();
     });
 
-    /* ---- 侧边栏风格 ---- */
-    const sidebarEl = document.getElementById('setSidebar');
-    if (sidebarEl) sidebarEl.addEventListener('change', function() {
-      const root = document.documentElement;
-      if (this.value === 'dark') {
-        root.style.setProperty('--sidebar-bg', 'rgba(20,22,28,0.78)');
-        root.style.setProperty('--sidebar-text', '#e8eaef');
-        root.style.setProperty('--sidebar-text-2', '#a8aab4');
-        root.style.setProperty('--sidebar-hover', 'rgba(255,255,255,0.06)');
-        root.style.setProperty('--sidebar-active', 'rgba(255,255,255,0.10)');
-        root.style.setProperty('--sidebar-slider', 'rgba(255,255,255,0.06)');
-        root.style.setProperty('--sidebar-border', 'rgba(255,255,255,0.14)');
-        root.style.setProperty('--sidebar-divider', 'rgba(255,255,255,0.05)');
-      } else {
-        root.style.removeProperty('--sidebar-bg'); root.style.removeProperty('--sidebar-text');
-        root.style.removeProperty('--sidebar-text-2'); root.style.removeProperty('--sidebar-hover');
-        root.style.removeProperty('--sidebar-active'); root.style.removeProperty('--sidebar-slider');
-        root.style.removeProperty('--sidebar-border'); root.style.removeProperty('--sidebar-divider');
-      }
-      cloudAutoSave();
-    });
-
     /* ---- 玻璃强度 ---- */
     const glassEl = document.getElementById('setGlass');
     if (glassEl) glassEl.addEventListener('change', function() {
@@ -6971,11 +7064,9 @@ function resetTrainView() {
 
     if (darkEl) darkEl.addEventListener('change', function() {
       if (this.checked) {
-        document.body.style.background = '#1a1c22';
-        document.getElementById('weatherCanvas').style.opacity = '0.35';
+        document.body.classList.add('dark-mode');
       } else {
-        document.body.style.background = '';
-        document.getElementById('weatherCanvas').style.opacity = '1';
+        document.body.classList.remove('dark-mode');
       }
       cloudAutoSave();
     });
@@ -6992,6 +7083,11 @@ function resetTrainView() {
       cloudAutoSave();
     });
   }, 100);
+
+  /* 立即应用深色模式（避免加载闪烁） */
+  if (document.getElementById('setDarkBg')?.checked) {
+    document.body.classList.add('dark-mode');
+  }
 })();
 
 /* ---- 阶段5 switchPage 集成 ---- */
