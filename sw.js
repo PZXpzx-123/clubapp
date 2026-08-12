@@ -1,5 +1,5 @@
-// Service Worker ¡ª ClubApp v2.1.6
-const CACHE = "clubapp-v2.1.6";
-self.addEventListener("install",e=>{console.log("[SW] install v2.1.6");self.skipWaiting()});
-self.addEventListener("activate",e=>{console.log("[SW] activate v2.1.6");e.waitUntil(clients.claim());e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x!==CACHE).map(x=>caches.delete(x)))))});
+// Service Worker ¡ª ClubApp v2.1.7
+const CACHE = "clubapp-v2.1.7";
+self.addEventListener("install",e=>{console.log("[SW] install v2.1.7");self.skipWaiting()});
+self.addEventListener("activate",e=>{console.log("[SW] activate v2.1.7");e.waitUntil(clients.claim());e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x!==CACHE).map(x=>caches.delete(x)))))});
 self.addEventListener("fetch",e=>{if(e.request.method!=="GET")return;const u=new URL(e.request.url);if(u.origin!==self.location.origin)return;e.respondWith(fetch(e.request).then(r=>{caches.open(CACHE).then(c=>c.put(e.request,r.clone()));return r}).catch(()=>caches.match(e.request)))});

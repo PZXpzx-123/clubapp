@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://qstrmmaihqyguttnkyvt.supabase.co https://pzxpzx-123.github.io; img-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://qstrmmaihqyguttnkyvt.supabase.co; img-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none';">
 <title>人员管理系统</title>
 	<link rel="manifest" href="manifest.json">
 <!--
@@ -3016,7 +3016,7 @@ body:not(.edit-mode) .settings-wrap .setting-select {
         <!-- 系统信息 -->
         <div class="settings-section">
           <div class="ss-title">系统信息</div>
-          <div class="info-row"><span class="ir-label">系统版本</span><span class="ir-value">v2.1.6</span></div>
+          <div class="info-row"><span class="ir-label">系统版本</span><span class="ir-value">v2.1.7</span></div>
           <div class="info-row"><span class="ir-label">数据总量</span><span class="ir-value">156 名员工</span></div>
           <div class="info-row"><span class="ir-label">最后更新</span><span class="ir-value">2026-08-12</span></div>
           <div class="info-row"><span class="ir-label">浏览器</span><span class="ir-value" id="sysBrowser">—</span></div>
@@ -3059,7 +3059,7 @@ body:not(.edit-mode) .settings-wrap .setting-select {
         <!-- 系统更新 -->
         <div class="settings-section">
           <div class="ss-title">系统更新</div>
-          <div class="info-row"><span class="ir-label">当前版本</span><span class="ir-value" id="sysVersion">v2.1.6</span></div>
+          <div class="info-row"><span class="ir-label">当前版本</span><span class="ir-value" id="sysVersion">v2.1.7</span></div>
           <div style="margin-top:8px;">
             <button class="btn btn-glass primary" id="btnCheckUpdate" style="width:100%;">🔍 检查更新</button>
           </div>
@@ -3347,18 +3347,14 @@ if ("serviceWorker" in navigator) {
     .catch(function(err) { console.log("[SW] 注册失败", err); });
 }
 // --- 应用版本（热更新检测用） ---
-const APP_VERSION = '2.1.6';
+const APP_VERSION = '2.1.7';
 let __updateAvailable = false;       // 是否有可用更新
 let __updateVersion = null;          // 新版本号
 let __updateChecking = false;        // 是否正在检查中
 
-// 远程部署地址 — 修改为你的实际线上地址后即可启用热更新
-// 方案1 (推荐): GitHub Pages — 免费、HTTPS、自动部署
-//   https://你的用户名.github.io/仓库名/APAA.html
-// 方案2: Supabase Storage 公开桶
-//   https://xxx.supabase.co/storage/v1/object/public/app/APAA.html
-// 方案3: 任何静态托管 (Vercel / Netlify / Cloudflare Pages)
-const UPDATE_URL = 'https://pzxpzx-123.github.io/clubapp/APAA.html';
+// 远程部署地址 — Supabase Storage（公有桶 app）
+// 使用 Supabase Storage 公开桶 app 存放更新文件
+const UPDATE_URL = 'https://qstrmmaihqyguttnkyvt.supabase.co/storage/v1/object/public/app/APAA.html';
 
 // 版本检查 URL — 取同一个远程目录下的 version.json，比拉整个 HTML 快 ~1000 倍
 // version.json 内容格式: {"v":"2.0.6"}
@@ -7055,7 +7051,7 @@ function resetTrainView() {
     var overlay = document.getElementById('updateConfirmOverlay');
     var body = document.getElementById('updateConfirmBody');
     var footer = document.querySelector('#updateConfirmOverlay .cd-footer');
-    var updateUrl = 'https://pzxpzx-123.github.io/clubapp/APAA.html';
+    var updateUrl = 'https://qstrmmaihqyguttnkyvt.supabase.co/storage/v1/object/public/app/APAA.html';
 
     // Show progress bar
     if (body) {
