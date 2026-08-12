@@ -182,11 +182,10 @@ body {
   font-family: var(--font);
   color: var(--text-1);
   display: flex;
-  min-height: 100vh;
-  min-height: 100dvh;
-  overflow-x: hidden;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
   -webkit-font-smoothing: antialiased;
-  scrollbar-gutter: stable;
 
   /* 透明 — Canvas 天气穿透，bg 色由 main-content 的 ::before 伪元素承载 */
   background: var(--bg);
@@ -413,7 +412,10 @@ body {
 .main-content {
   margin-left: 248px; flex: 1;
   display: flex; flex-direction: column;
-  min-height: 100vh;
+  height: 100vh;
+  height: 100dvh;
+  overflow-y: auto;
+  overflow-x: hidden;
   position: relative; z-index: 1;
 }
 /* ================================================================
@@ -2680,9 +2682,6 @@ body:not(.edit-mode) .settings-wrap .setting-select {
   .topbar { margin: 3px 6px 0; padding: 8px 14px; }
   .topbar-title { font-size: 13px; }
 
-  /* 侧边栏可滚动 */
-  .sidebar { overflow-y: auto; }
-
   /* 卡片高度收紧 */
   .person-card { min-height: 130px; padding: 12px; gap: 6px; }
   .card-avatar { width: 32px; height: 32px; font-size: 13px; }
@@ -3016,7 +3015,7 @@ body:not(.edit-mode) .settings-wrap .setting-select {
         <!-- 系统信息 -->
         <div class="settings-section">
           <div class="ss-title">系统信息</div>
-          <div class="info-row"><span class="ir-label">系统版本</span><span class="ir-value">v2.1.7</span></div>
+          <div class="info-row"><span class="ir-label">系统版本</span><span class="ir-value">v2.1.8</span></div>
           <div class="info-row"><span class="ir-label">数据总量</span><span class="ir-value">156 名员工</span></div>
           <div class="info-row"><span class="ir-label">最后更新</span><span class="ir-value">2026-08-12</span></div>
           <div class="info-row"><span class="ir-label">浏览器</span><span class="ir-value" id="sysBrowser">—</span></div>
@@ -3059,7 +3058,7 @@ body:not(.edit-mode) .settings-wrap .setting-select {
         <!-- 系统更新 -->
         <div class="settings-section">
           <div class="ss-title">系统更新</div>
-          <div class="info-row"><span class="ir-label">当前版本</span><span class="ir-value" id="sysVersion">v2.1.7</span></div>
+          <div class="info-row"><span class="ir-label">当前版本</span><span class="ir-value" id="sysVersion">v2.1.8</span></div>
           <div style="margin-top:8px;">
             <button class="btn btn-glass primary" id="btnCheckUpdate" style="width:100%;">🔍 检查更新</button>
           </div>
@@ -3347,7 +3346,7 @@ if ("serviceWorker" in navigator) {
     .catch(function(err) { console.log("[SW] 注册失败", err); });
 }
 // --- 应用版本（热更新检测用） ---
-const APP_VERSION = '2.1.7';
+const APP_VERSION = '2.1.8';
 let __updateAvailable = false;       // 是否有可用更新
 let __updateVersion = null;          // 新版本号
 let __updateChecking = false;        // 是否正在检查中
