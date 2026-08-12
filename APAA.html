@@ -151,8 +151,11 @@ body.dark-mode .topbar-stage { background: rgba(255,255,255,0.08); border-color:
 body.dark-mode .toggle-sw .ts-slider { background: rgba(255,255,255,0.16); border-color: rgba(255,255,255,0.12); }
 body.dark-mode .toggle-sw input:checked + .ts-slider { background: linear-gradient(135deg, #3b82f6, #2563eb); border-color: #3b82f6; }
 body.dark-mode .setting-row { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.06); }
-body.dark-mode .setting-row.glass-accent { border-left-color: #60a5fa; }
 body.dark-mode .setting-select { background: rgba(59,130,246,0.08); color: #60a5fa; border-color: #60a5fa; }
+body.dark-mode .glass-highlight-box { background: linear-gradient(135deg, rgba(59,130,246,0.10), rgba(99,102,241,0.06)); border-color: rgba(96,165,250,0.35); box-shadow: 0 0 20px rgba(59,130,246,0.10), inset 0 1px 0 rgba(255,255,255,0.06); }
+body.dark-mode .glass-highlight-box .ghb-title { color: #60a5fa; border-bottom-color: rgba(96,165,250,0.20); }
+body.dark-mode .glass-highlight-box .ghb-row { border-bottom-color: rgba(96,165,250,0.10); }
+body.dark-mode .ghb-select { background: rgba(59,130,246,0.12); color: #60a5fa; border-color: rgba(96,165,250,0.40); }
 body.dark-mode .nav-badge.now { background: rgba(255,255,255,0.10); color: var(--text-2); }
 body.dark-mode .nav-badge.later { color: var(--text-3); border-color: rgba(255,255,255,0.12); }
 body.dark-mode .setting-row { border-bottom-color: rgba(255,255,255,0.048); }
@@ -1982,14 +1985,51 @@ body {
 .setting-row:last-child { margin-bottom: 0; }
 .setting-row:hover { box-shadow: var(--glass-edge), 0 2px 12px rgba(0,0,0,0.06); }
 
-/* 玻璃相关设置 — 蓝色强调条 */
-.setting-row.glass-accent {
-  border-left: 3px solid #3b82f6;
-  padding-left: 13px;
+.setting-row .sr-label { font-size: 14px; font-weight: 700; color: var(--text-1); }
+.setting-row .sr-desc  { font-size: 12px; color: var(--text-2); margin-top: 3px; }
+
+/* ========== 玻璃效果 — 独立高亮区域 ========== */
+.glass-highlight-box {
+  margin-top: 12px; margin-bottom: 8px;
+  padding: 18px 18px 10px;
+  background: linear-gradient(135deg, rgba(59,130,246,0.06), rgba(99,102,241,0.04));
+  border: 1.5px solid rgba(59,130,246,0.35);
+  border-radius: 16px;
+  box-shadow: 0 0 20px rgba(59,130,246,0.06), inset 0 1px 0 rgba(255,255,255,0.4);
 }
-.setting-row .sr-label { font-size: 14px; font-weight: 700; color: var(--text-1); display: flex; align-items: center; gap: 7px; }
-.setting-row .sr-label .sr-icon { font-size: 16px; flex-shrink: 0; }
-.setting-row .sr-desc  { font-size: 12px; color: var(--text-2); margin-top: 3px; margin-left: 23px; }
+.glass-highlight-box .ghb-title {
+  font-size: 13px; font-weight: 700;
+  color: #3b82f6;
+  text-transform: uppercase; letter-spacing: 1.5px;
+  margin-bottom: 12px; padding-bottom: 8px;
+  border-bottom: 1px solid rgba(59,130,246,0.15);
+}
+.glass-highlight-box .ghb-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 0.5px solid rgba(59,130,246,0.08);
+}
+.glass-highlight-box .ghb-row:last-child { border-bottom: none; padding-bottom: 4px; }
+.glass-highlight-box .ghb-label { font-size: 14px; font-weight: 700; color: var(--text-1); }
+.glass-highlight-box .ghb-desc  { font-size: 12px; color: var(--text-2); margin-top: 2px; }
+
+/* 玻璃区域大号开关 */
+.ghb-toggle { width: 64px !important; height: 36px !important; }
+.ghb-toggle .ts-slider { border-radius: 18px !important; }
+.ghb-toggle .ts-slider::before { width: 26px !important; height: 26px !important; left: 4px !important; top: 4px !important; }
+.ghb-toggle input:checked + .ts-slider::before { transform: translateX(28px) !important; }
+
+/* 玻璃区域大号选择 */
+.ghb-select {
+  padding: 12px 20px; border-radius: 10px;
+  border: 1.5px solid rgba(59,130,246,0.40);
+  background: rgba(59,130,246,0.06);
+  font-size: 14px; font-weight: 700; font-family: var(--font);
+  color: #3b82f6; cursor: pointer; outline: none;
+  min-width: 120px; text-align: center;
+  transition: all 0.2s ease;
+}
+.ghb-select:hover { background: rgba(59,130,246,0.12); border-color: #3b82f6; }
 
 /* Toggle 开关 — 大号渐变 */
 .toggle-sw { position: relative; width: 56px; height: 32px; flex-shrink: 0; }
@@ -2539,7 +2579,9 @@ body.edit-mode .cal-day:not(.empty):hover { filter: brightness(1.2); transform: 
 
 /* 设置页在查看模式下禁用交互 */
 body:not(.edit-mode) .settings-wrap .toggle-sw,
-body:not(.edit-mode) .settings-wrap .setting-select {
+body:not(.edit-mode) .settings-wrap .setting-select,
+body:not(.edit-mode) .settings-wrap .ghb-toggle,
+body:not(.edit-mode) .settings-wrap .ghb-select {
   pointer-events: none; opacity: 0.5;
 }
 
@@ -3024,40 +3066,24 @@ body:not(.edit-mode) .settings-wrap .setting-select {
         <!-- 系统信息 -->
         <div class="settings-section">
           <div class="ss-title">系统信息</div>
-          <div class="info-row"><span class="ir-label">系统版本</span><span class="ir-value">v2.2.1</span></div>
+          <div class="info-row"><span class="ir-label">系统版本</span><span class="ir-value">v2.2.2</span></div>
           <div class="info-row"><span class="ir-label">数据总量</span><span class="ir-value">156 名员工</span></div>
           <div class="info-row"><span class="ir-label">最后更新</span><span class="ir-value">2026-08-12</span></div>
           <div class="info-row"><span class="ir-label">浏览器</span><span class="ir-value" id="sysBrowser">—</span></div>
         </div>
         <!-- 外观设置 -->
         <div class="settings-section">
-          <div class="ss-title">🎨 外观设置</div>
-          <div class="setting-row glass-accent">
-            <div><div class="sr-label"><span class="sr-icon">🧊</span>毛玻璃效果</div><div class="sr-desc">启用半透明模糊背景</div></div>
-            <label class="toggle-sw"><input type="checkbox" id="setBlur" checked><span class="ts-slider"></span></label>
-          </div>
+          <div class="ss-title">外观设置</div>
           <div class="setting-row">
-            <div><div class="sr-label"><span class="sr-icon">🎬</span>动画效果</div><div class="sr-desc">启用页面切换动画</div></div>
+            <div><div class="sr-label">动画效果</div><div class="sr-desc">启用页面切换动画</div></div>
             <label class="toggle-sw"><input type="checkbox" id="setAnim" checked><span class="ts-slider"></span></label>
           </div>
           <div class="setting-row">
-            <div><div class="sr-label"><span class="sr-icon">🌙</span>深色背景</div><div class="sr-desc">使用深色调渐变背景</div></div>
+            <div><div class="sr-label">深色背景</div><div class="sr-desc">使用深色调渐变背景</div></div>
             <label class="toggle-sw"><input type="checkbox" id="setDarkBg"><span class="ts-slider"></span></label>
           </div>
-          <div class="setting-row glass-accent">
-            <div><div class="sr-label"><span class="sr-icon">💎</span>玻璃强度</div><div class="sr-desc">轻盈 / 均衡 / 厚重</div></div>
-            <select class="setting-select" id="setGlass">
-              <option value="airy">轻盈</option><option value="balanced" selected>均衡</option><option value="solid">厚重</option>
-            </select>
-          </div>
-          <div class="setting-row glass-accent">
-            <div><div class="sr-label"><span class="sr-icon">🎨</span>色调</div><div class="sr-desc">冷灰 / 蓝紫 / 暖灰</div></div>
-            <select class="setting-select" id="setTone">
-              <option value="cool" selected>冷灰</option><option value="bluepurple">蓝紫</option><option value="warm">暖灰</option>
-            </select>
-          </div>
           <div class="setting-row">
-            <div><div class="sr-label"><span class="sr-icon">🔍</span>UI 缩放</div><div class="sr-desc">全局界面大小</div></div>
+            <div><div class="sr-label">UI 缩放</div><div class="sr-desc">全局界面大小</div></div>
             <div class="zoom-presets" id="setZoom">
               <button class="zp-btn" data-v="80">80%</button>
               <button class="zp-btn" data-v="90">90%</button>
@@ -3067,11 +3093,32 @@ body:not(.edit-mode) .settings-wrap .setting-select {
               <button class="zp-btn" data-v="150">150%</button>
             </div>
           </div>
+
+          <!-- 玻璃效果 — 独立高亮区域 -->
+          <div class="glass-highlight-box">
+            <div class="ghb-title">玻璃效果</div>
+            <div class="ghb-row">
+              <div><div class="ghb-label">毛玻璃效果</div><div class="ghb-desc">启用半透明模糊背景</div></div>
+              <label class="toggle-sw ghb-toggle"><input type="checkbox" id="setBlur" checked><span class="ts-slider"></span></label>
+            </div>
+            <div class="ghb-row">
+              <div><div class="ghb-label">玻璃强度</div><div class="ghb-desc">轻盈 / 均衡 / 厚重</div></div>
+              <select class="ghb-select" id="setGlass">
+                <option value="airy">轻盈</option><option value="balanced" selected>均衡</option><option value="solid">厚重</option>
+              </select>
+            </div>
+            <div class="ghb-row">
+              <div><div class="ghb-label">色调</div><div class="ghb-desc">冷灰 / 蓝紫 / 暖灰</div></div>
+              <select class="ghb-select" id="setTone">
+                <option value="cool" selected>冷灰</option><option value="bluepurple">蓝紫</option><option value="warm">暖灰</option>
+              </select>
+            </div>
+          </div>
         </div>
         <!-- 系统更新 -->
         <div class="settings-section">
           <div class="ss-title">系统更新</div>
-          <div class="info-row"><span class="ir-label">当前版本</span><span class="ir-value" id="sysVersion">v2.2.1</span></div>
+          <div class="info-row"><span class="ir-label">当前版本</span><span class="ir-value" id="sysVersion">v2.2.2</span></div>
           <div style="margin-top:8px;">
             <button class="btn btn-glass primary" id="btnCheckUpdate" style="width:100%;">🔍 检查更新</button>
           </div>
@@ -3359,7 +3406,7 @@ if ("serviceWorker" in navigator) {
     .catch(function(err) { console.log("[SW] 注册失败", err); });
 }
 // --- 应用版本（热更新检测用） ---
-const APP_VERSION = '2.2.1';
+const APP_VERSION = '2.2.2';
 let __updateAvailable = false;       // 是否有可用更新
 let __updateVersion = null;          // 新版本号
 let __updateChecking = false;        // 是否正在检查中
