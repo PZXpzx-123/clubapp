@@ -680,6 +680,19 @@ body {
   max-height: calc(100vh - 260px); overflow-y: auto;
   padding-right: 4px;
 }
+/* 平板：侧边栏已隐藏，减少扣除量 */
+@media (max-width: 860px) {
+  .personnel-list { max-height: calc(100vh - 140px); }
+}
+/* 手机：撑满可用空间 */
+@media (max-width: 520px) {
+  .personnel-list { max-height: none; flex: 1; gap: 4px; }
+  .personnel-wrap { gap: 8px; }
+  .personnel-toolbar { gap: 6px; }
+  .personnel-search { padding: 8px 10px; font-size: 12px; }
+  .personnel-filter { padding: 6px 8px; font-size: 11px; }
+  .personnel-item { padding: 8px 10px; }
+}
 
 .personnel-list::-webkit-scrollbar { width: 4px; }
 .personnel-list::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.12); border-radius: 2px; }
