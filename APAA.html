@@ -9,7 +9,7 @@
 	<link rel="manifest" href="manifest.json">
 <!--
 ══════════════════════════════════════════════════════════════════
-   ClubApp 目录索引（导航地图）· v2.4.44
+   ClubApp 目录索引（导航地图）· v2.5.0
    改代码前先看这里，按行号快速定位功能 / 分区
 ══════════════════════════════════════════════════════════════════
 
@@ -2833,6 +2833,7 @@ body:not(.edit-mode) .settings-wrap .setting-select {
 .log-level.info { color: var(--accent-blue); }
 .log-level.warn { color: #e8870a; }
 .log-level.error { color: #d5534d; }
+.log-level.critical { color: #b02318; font-weight: 700; }
 .log-msg { color: var(--text-2); flex: 1; }
 .log-empty { color: var(--text-3); text-align: center; padding: 12px 0; }
 
@@ -2857,6 +2858,9 @@ body:not(.edit-mode) .settings-wrap .setting-select {
 .log-cat.security { background: rgba(224,77,93,0.16); color: #d64550; }
 .log-cat.ai { background: rgba(0,199,190,0.16); color: #0aa89f; }
 .log-cat.ai_chat { background: rgba(255,193,7,0.14); color: #b8860b; }
+.log-cat.sync { background: rgba(52,199,89,0.14); color: #1d8a3e; }
+.log-geo { font-size: 10px; color: var(--text-3); margin-left: 6px; }
+.log-detail-hint { font-size: 10px; padding: 0 5px; border-radius: 4px; background: var(--glass-subtle); color: var(--accent-blue); margin-left: 6px; }
 .log-op { flex-shrink: 0; color: var(--text-3); font-weight: 600; }
 
 /* 邀请码管理弹窗 */
@@ -3343,11 +3347,18 @@ body:not(.edit-mode) .settings-wrap .setting-select {
             <div class="log-filters" id="logFilters">
               <button class="log-filter-btn active" type="button" data-filter="all">全部</button>
               <button class="log-filter-btn" type="button" data-filter="system">系统日志</button>
-              <button class="log-filter-btn" type="button" data-filter="user">用户操作</button>
-              <button class="log-filter-btn" type="button" data-filter="warnerr">警告错误</button>
-              <button class="log-filter-btn" type="button" data-filter="security">防御日志</button>
-              <button class="log-filter-btn" type="button" data-filter="ai">AI窗口巡逻</button>
-              <button class="log-filter-btn" type="button" data-filter="ai_chat">AI历史对话</button>
+              <button class="log-filter-btn" type="button" data-filter="security">安全日志</button>
+              <button class="log-filter-btn" type="button" data-filter="user">操作日志</button>
+              <button class="log-filter-btn" type="button" data-filter="sync">同步日志</button>
+              <button class="log-filter-btn" type="button" data-filter="ai">AI巡逻</button>
+              <button class="log-filter-btn" type="button" data-filter="ai_chat">AI对话</button>
+            </div>
+            <div class="log-filters" id="logLevelFilters">
+              <button class="log-filter-btn active" type="button" data-level="all">全部级别</button>
+              <button class="log-filter-btn" type="button" data-level="critical">关键</button>
+              <button class="log-filter-btn" type="button" data-level="error">错误</button>
+              <button class="log-filter-btn" type="button" data-level="warn">警告</button>
+              <button class="log-filter-btn" type="button" data-level="info">信息</button>
             </div>
           </div>
           <div style="margin-top:8px;">
@@ -3722,10 +3733,26 @@ function auditLog(action, target, detail) {
     addAppLog('info', (target ? target + ' · ' : '') + (detail || ''), 'user', getUserName(), action);
   } catch (e) {}
 }
-function recordSecurity(eventType, source, target, detail, action, success) {
+function recordSecurity(eventType, source, target, detail, action, success, level) {
   try {
     var msg = '有人攻击[' + (target || '未指定') + '] ' + (detail || '') + ' → 防御' + (success ? '成功' : '失败') + (action ? ' · ' + action : '');
-    addAppLog('warn', msg, 'security', source || '', eventType || '攻击');
+    addAppLog(level || 'warn', msg, 'security', source || '', eventType || '攻击');
+  } catch (e) {}
+}
+// 安全审计（登录/登出/注册等成功事件 → security 通道，info 级）
+function _secLog(action, target, detail) {
+  try {
+    addAppLog('info', (target ? target + ' · ' : '') + (detail || ''), 'security', target || getUserName(), action);
+  } catch (e) {}
+}
+// 操作留痕（整条前后 JSON）：table + 动作 + 对象名 + 改前/改后整条记录
+function _logCrud(table, action, entityName, before, after) {
+  try {
+    var verb = { add: '新增了', edit: '修改了', del: '删除了', pass: '通过了', reject: '拒绝了', complete: '结单了' }[action] || '操作了';
+    addAppLog('info', verb + entityName, 'user', getUserName(), action, {
+      table: table, action: action, entity: entityName,
+      before: before || null, after: after || null
+    });
   } catch (e) {}
 }
 function _fmtLogArgs(args) {
@@ -3740,10 +3767,13 @@ function _logFilterState() {
     var searchEl = document.getElementById('logSearch');
     if (searchEl) kw = searchEl.value.toLowerCase();
     var filter = 'all';
-    var active = document.querySelector('.log-filter-btn.active');
-    if (active) filter = active.getAttribute('data-filter') || 'all';
-    return { kw: kw, filter: filter };
-  } catch (e) { return { kw: '', filter: 'all' }; }
+    var fActive = document.querySelector('#logFilters .log-filter-btn.active');
+    if (fActive) filter = fActive.getAttribute('data-filter') || 'all';
+    var level = 'all';
+    var lActive = document.querySelector('#logLevelFilters .log-filter-btn.active');
+    if (lActive) level = lActive.getAttribute('data-level') || 'all';
+    return { kw: kw, filter: filter, level: level };
+  } catch (e) { return { kw: '', filter: 'all', level: 'all' }; }
 }
 function renderAppLogs() {
   try {
@@ -3751,49 +3781,109 @@ function renderAppLogs() {
     if (!el) return;
     var logs = window.__appLogs;
     var state = _logFilterState();
-    var kw = state.kw, filter = state.filter;
+    var kw = state.kw, filter = state.filter, level = state.level;
     var indexed = logs.map(function (e, i) { return { e: e, i: i }; }).filter(function (item) {
       var e = item.e;
-      if (filter === 'system' && e.category !== 'system') return false;
-      if (filter === 'user' && e.category !== 'user') return false;
-      if (filter === 'security' && e.category !== 'security') return false;
-      if (filter === 'ai' && e.category !== 'ai') return false;
-      if (filter === 'ai_chat' && e.category !== 'ai_chat') return false;
-      if (filter === 'warnerr' && e.level !== 'warn' && e.level !== 'error') return false;
+      if (filter !== 'all' && e.category !== filter) return false;
+      if (level !== 'all' && e.level !== level) return false;
       if (kw) {
-        var hay = ((e.msg || '') + ' ' + (e.operator || '') + ' ' + (e.action || '')).toLowerCase();
+        var hay = ((e.msg || '') + ' ' + (e.operator || '') + ' ' + (e.action || '') + ' ' + (e.geo || '') + ' ' + (e.ip || '')).toLowerCase();
         if (hay.indexOf(kw) < 0) return false;
       }
       return true;
     });
     if (!indexed.length) { el.innerHTML = '<div class="log-empty">暂无匹配日志</div>'; return; }
-    var label = { info: '信息', warn: '警告', error: '错误' };
+    var label = { info: '信息', warn: '警告', error: '错误', critical: '关键' };
+    var catBadges = {
+      system: '<span class="log-cat system">系统</span>',
+      security: '<span class="log-cat security">安全</span>',
+      user: '<span class="log-cat user">操作</span>',
+      sync: '<span class="log-cat sync">同步</span>',
+      ai: '<span class="log-cat ai">棱镜</span>',
+      ai_chat: '<span class="log-cat ai_chat">对话</span>'
+    };
     el.innerHTML = indexed.map(function (item) {
       var e = item.e;
-      var catBadge = e.category === 'user'
-        ? '<span class="log-cat user">操作</span>'
-        : (e.category === 'security'
-          ? '<span class="log-cat security">攻击</span>'
-          : (e.category === 'ai'
-            ? '<span class="log-cat ai">棱镜</span>'
-            : (e.category === 'ai_chat'
-              ? '<span class="log-cat ai_chat">对话</span>'
-              : '<span class="log-cat system">系统</span>')));
+      var catBadge = catBadges[e.category] || catBadges.system;
       var opTxt = (e.operator && e.category !== 'system') ? '<span class="log-op">' + _escLogHtml(e.operator) + '</span>' : '';
+      var geoTag = (e.geo || e.ip) ? '<span class="log-geo">' + _escLogHtml([e.geo, e.ip].filter(Boolean).join(' · ')) + '</span>' : '';
+      var detailHint = e.detail ? '<span class="log-detail-hint">详情</span>' : '';
       return '<div class="log-entry" data-idx="' + item.i + '"><span class="log-ts">' + e.ts + '</span>' +
         '<span class="log-level ' + e.level + '">' + (label[e.level] || e.level) + '</span>' +
         catBadge + opTxt +
-        '<span class="log-msg">' + _escLogHtml(e.msg) + '</span></div>';
+        '<span class="log-msg">' + _escLogHtml(e.msg) + geoTag + detailHint + '</span></div>';
     }).reverse().join('');
   } catch (e) {}
 }
-function addAppLog(level, msg, category, operator, action) {
+/* ---- 日志升级 v2.5.0：设备指纹（桌面级细度）+ IP/归属地 ---- */
+function _parseBrowser(ua) {
+  try {
+    var name = '未知', ver = '';
+    if (/Edg\//.test(ua)) { name = 'Edge'; ver = (ua.match(/Edg\/([\d.]+)/) || [])[1]; }
+    else if (/MicroMessenger/.test(ua)) { name = '微信内置浏览器'; ver = (ua.match(/MicroMessenger\/([\d.]+)/) || [])[1]; }
+    else if (/QQBrowser/.test(ua)) { name = 'QQ浏览器'; ver = (ua.match(/QQBrowser\/([\d.]+)/) || [])[1]; }
+    else if (/OPR\//.test(ua)) { name = 'Opera'; ver = (ua.match(/OPR\/([\d.]+)/) || [])[1]; }
+    else if (/Chrome\//.test(ua)) { name = 'Chrome'; ver = (ua.match(/Chrome\/([\d.]+)/) || [])[1]; }
+    else if (/Safari\//.test(ua)) { name = 'Safari'; ver = (ua.match(/Version\/([\d.]+)/) || [])[1]; }
+    else if (/Firefox\//.test(ua)) { name = 'Firefox'; ver = (ua.match(/Firefox\/([\d.]+)/) || [])[1]; }
+    return name + (ver ? ' ' + ver : '');
+  } catch (e) { return '未知'; }
+}
+function _collectDeviceFingerprint() {
+  try {
+    var nav = navigator || {};
+    var ua = nav.userAgent || '';
+    var tz = ''; try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch (e) {}
+    var conn = nav.connection || nav.mozConnection || nav.webkitConnection;
+    return {
+      ua: ua,
+      browser: _parseBrowser(ua),
+      platform: nav.platform || '',
+      os: _deviceOS(),
+      language: nav.language || '',
+      languages: (nav.languages || []).join(','),
+      timezone: tz,
+      screen: (screen.width || '?') + 'x' + (screen.height || '?'),
+      colorDepth: screen.colorDepth || '',
+      pixelRatio: (window.devicePixelRatio || 1),
+      cores: nav.hardwareConcurrency || '',
+      memory: nav.deviceMemory || '',
+      touch: (nav.maxTouchPoints || 0),
+      net: conn ? ((conn.effectiveType || '') + (conn.type ? '/' + conn.type : '')) : '',
+      deviceId: _getDeviceId()
+    };
+  } catch (e) { return { ua: (navigator && navigator.userAgent) || '' }; }
+}
+window.__appDevice = _collectDeviceFingerprint();
+window.__appIp = null;
+window.__appGeo = null;
+async function _fetchIpGeo() {
+  try {
+    var tok = _getAuthToken();
+    if (!tok) return;
+    var r = await fetch(SUPABASE_URL + '/functions/v1/prism/ip', {
+      method: 'GET',
+      headers: { 'Authorization': 'Bearer ' + tok, 'apikey': SUPABASE_KEY }
+    });
+    if (!r.ok) return;
+    var d = await r.json().catch(function () { return null; });
+    if (d && d.ip) { window.__appIp = d.ip; window.__appGeo = d.geo || null; }
+  } catch (e) {}
+}
+
+function addAppLog(level, msg, category, operator, action, detail) {
   try {
     var d = new Date();
     var pad = function (n) { return String(n).padStart(2, '0'); };
     var ts = pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
     var fullTs = d.getFullYear() + '-' + ts;
-    var entry = { ts: ts, fullTs: fullTs, level: level, msg: String(msg), orient: _getOrientLabel(), online: (navigator.onLine !== false), category: category || 'system', operator: operator || '', action: action || '' };
+    var entry = {
+      ts: ts, fullTs: fullTs, level: level, msg: String(msg),
+      orient: _getOrientLabel(), online: (navigator.onLine !== false),
+      category: category || 'system', operator: operator || '', action: action || '',
+      ip: window.__appIp || null, geo: window.__appGeo || null,
+      device: window.__appDevice || null, detail: detail || null
+    };
     window.__appLogs.push(entry);
     if (window.__appLogs.length > __appLogMax) window.__appLogs.shift();
     _queueLogUpload(entry);
@@ -3813,6 +3903,25 @@ function _queueLogUpload(entry) {
     __logFlushTimer = setTimeout(flushLogUpload, 3000);
   } catch (e) {}
 }
+// 同步错误直写内存日志（不打回上传队列，避免日志上传失败→递归）
+function _logSyncErrorDirect(action, msg) {
+  try {
+    var d = new Date();
+    var pad = function (n) { return String(n).padStart(2, '0'); };
+    var ts = pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
+    var fullTs = d.getFullYear() + '-' + ts;
+    var entry = {
+      ts: ts, fullTs: fullTs, level: 'error', msg: String(msg),
+      orient: _getOrientLabel(), online: (navigator.onLine !== false),
+      category: 'sync', operator: (typeof getUserName === 'function' ? getUserName() : '') || '', action: action || '',
+      ip: window.__appIp || null, geo: window.__appGeo || null,
+      device: window.__appDevice || null, detail: { error: msg, action: action, at: fullTs }
+    };
+    window.__appLogs.push(entry);
+    if (window.__appLogs.length > __appLogMax) window.__appLogs.shift();
+    renderAppLogs();
+  } catch (e) {}
+}
 async function flushLogUpload() {
   if (__logFlushTimer) { clearTimeout(__logFlushTimer); __logFlushTimer = null; }
   if (!window.__logUploadQueue.length) return;
@@ -3820,15 +3929,17 @@ async function flushLogUpload() {
   var batch = window.__logUploadQueue.splice(0, window.__logUploadQueue.length);
   try {
     var rows = batch.map(function (e) {
-      return { category: e.category || 'system', level: e.level || 'info', operator: e.operator || null, action: e.action || null, message: e.msg || '' };
+      return { category: e.category || 'system', level: e.level || 'info', operator: e.operator || null, action: e.action || null, message: e.msg || '', ip: e.ip || null, geo: e.geo || null, device: e.device || null, detail: e.detail || null };
     });
     var res = await sb.from('app_logs').insert(rows);
     if (res && res.error) {
       _origConsole.warn('[Log] 日志上传失败:', res.error.message);
+      _logSyncErrorDirect('日志上传失败', res.error.message);
       window.__logUploadQueue = batch.concat(window.__logUploadQueue); // L10: 失败重排队，不丢日志
     }
   } catch (e) {
     _origConsole.warn('[Log] 日志上传异常:', e && e.message);
+    _logSyncErrorDirect('日志上传异常', e && e.message);
     window.__logUploadQueue = batch.concat(window.__logUploadQueue); // L10: 异常重排队，不丢日志
   }
 }
@@ -3839,7 +3950,7 @@ function _cloudLogToEntry(r) {
     var pad = function (n) { return String(n).padStart(2, '0'); };
     var ts = pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
     var fullTs = d.getFullYear() + '-' + ts;
-    return { ts: ts, fullTs: fullTs, level: r.level || 'info', msg: r.message || '', orient: '', online: true, category: r.category || 'system', operator: r.operator || '', action: r.action || '' };
+    return { ts: ts, fullTs: fullTs, level: r.level || 'info', msg: r.message || '', orient: '', online: true, category: r.category || 'system', operator: r.operator || '', action: r.action || '', ip: r.ip || null, geo: r.geo || null, device: r.device || null, detail: r.detail || null };
   } catch (e) { return null; }
 }
 async function loadCloudLogs() {
@@ -3848,7 +3959,7 @@ async function loadCloudLogs() {
   try {
     await flushLogUpload();
     if (typeof sb === 'undefined' || !sb || !cloudReady) { renderAppLogs(); return; }
-    var res = await sb.from('app_logs').select('category,level,operator,action,message,created_at').order('id', 'desc').limit(300);
+    var res = await sb.from('app_logs').select('category,level,operator,action,message,ip,geo,device,detail,created_at').order('id', 'desc').limit(300);
     if (res.error) { _origConsole.warn('[Log] 拉取日志失败:', res.error.message); }
     else {
       var rows = (res.data || []).map(_cloudLogToEntry).filter(Boolean);
@@ -3875,20 +3986,23 @@ async function loadCloudLogs() {
   var loadBtn = document.getElementById('btnLoadLogs');
   if (loadBtn) loadBtn.onclick = function () { loadCloudLogs(); };
 })();
-// --- 运行日志：搜索 + 类型筛选 ---
+// --- 运行日志：搜索 + 通道筛选 + 级别筛选 ---
 (function () {
   var search = document.getElementById('logSearch');
   if (search) search.addEventListener('input', function () { renderAppLogs(); });
-  var filterBox = document.getElementById('logFilters');
-  if (filterBox) {
-    filterBox.addEventListener('click', function (ev) {
+  function bindFilter(boxId) {
+    var box = document.getElementById(boxId);
+    if (!box) return;
+    box.addEventListener('click', function (ev) {
       var btn = ev.target && ev.target.closest ? ev.target.closest('.log-filter-btn') : null;
       if (!btn) return;
-      filterBox.querySelectorAll('.log-filter-btn').forEach(function (b) { b.classList.remove('active'); });
+      box.querySelectorAll('.log-filter-btn').forEach(function (b) { b.classList.remove('active'); });
       btn.classList.add('active');
       renderAppLogs();
     });
   }
+  bindFilter('logFilters');
+  bindFilter('logLevelFilters');
 })();
 // --- 可折叠区块（系统信息页） ---
 (function () {
@@ -3900,6 +4014,7 @@ async function loadCloudLogs() {
 // --- 日志详情弹窗 ---
 (function () {
   var levelInfo = {
+    critical: { label: '关键', desc: '影响安全或核心数据的严重事件，需立即关注' },
     info: { label: '信息', desc: '正常操作或提示，程序按预期运行' },
     warn: { label: '警告', desc: '有异常但程序仍可继续运行，需留意' },
     error: { label: '错误', desc: '出现错误，可能导致功能异常或失败' }
@@ -3940,6 +4055,40 @@ async function loadCloudLogs() {
     else { syncText = '尚未同步'; syncCls = 'warn'; }
     var lastSyncStr = __lastCloudSyncTime ? _fmtTime(__lastCloudSyncTime) : '—';
 
+    // 归属地 + IP（服务端采集，登录后附加）
+    var locHtml = '';
+    if (log.geo || log.ip) {
+      locHtml = '<div class="ld-row"><span class="ld-label">位置</span><span class="ld-value">' + _escLogHtml([log.geo, log.ip].filter(Boolean).join(' · ')) + '</span></div>';
+    }
+    // 设备指纹（登录时采集，桌面级细度）
+    var devHtml = '';
+    if (log.device && typeof log.device === 'object') {
+      var dv = log.device;
+      var dvParts = [];
+      if (dv.browser) dvParts.push(dv.browser);
+      if (dv.os) dvParts.push(dv.os);
+      if (dv.platform && dv.platform !== dv.os) dvParts.push(dv.platform);
+      if (dv.screen) dvParts.push('屏幕 ' + dv.screen);
+      if (dv.cores) dvParts.push(dv.cores + '核');
+      if (dv.memory) dvParts.push('内存 ' + dv.memory + 'GB');
+      if (dv.timezone) dvParts.push('时区 ' + dv.timezone);
+      if (dv.deviceId) dvParts.push('指纹 ' + dv.deviceId);
+      if (dvParts.length) devHtml = '<div class="ld-row"><span class="ld-label">设备指纹</span><span class="ld-value" style="font-size:11px;color:var(--text-3);">' + _escLogHtml(dvParts.join(' · ')) + '</span></div>';
+    }
+    // 结构化详情：操作留痕（改前/改后整条 JSON）或同步错误载荷
+    var detailHtml = '';
+    if (log.detail && typeof log.detail === 'object') {
+      detailHtml += '<div class="ld-sep"></div><div class="ld-section">详情数据</div>';
+      if (log.detail.before !== undefined || log.detail.after !== undefined) {
+        var bStr = log.detail.before ? JSON.stringify(log.detail.before, null, 2) : '（无 / 新建）';
+        var aStr = log.detail.after ? JSON.stringify(log.detail.after, null, 2) : '（无 / 已删除）';
+        detailHtml += '<div class="ld-row" style="align-items:flex-start;"><span class="ld-label">改前</span><span class="ld-value"><pre style="margin:0;white-space:pre-wrap;word-break:break-all;font-size:11px;line-height:1.5;color:var(--text-2);max-height:180px;overflow:auto;">' + _escLogHtml(bStr) + '</pre></span></div>' +
+                      '<div class="ld-row" style="align-items:flex-start;"><span class="ld-label">改后</span><span class="ld-value"><pre style="margin:0;white-space:pre-wrap;word-break:break-all;font-size:11px;line-height:1.5;color:var(--text-2);max-height:180px;overflow:auto;">' + _escLogHtml(aStr) + '</pre></span></div>';
+      } else {
+        detailHtml += '<div class="ld-row" style="align-items:flex-start;"><span class="ld-label">数据</span><span class="ld-value"><pre style="margin:0;white-space:pre-wrap;word-break:break-all;font-size:11px;line-height:1.5;color:var(--text-2);max-height:180px;overflow:auto;">' + _escLogHtml(JSON.stringify(log.detail, null, 2)) + '</pre></span></div>';
+      }
+    }
+
     body.innerHTML =
       '<div><span class="ld-badge ' + (log.level || 'info') + '">' + lv.label + '</span><span class="ld-desc">' + lv.desc + '</span></div>' +
       '<div class="ld-msg">' + _escLogHtml(log.msg) + '</div>' +
@@ -3950,10 +4099,12 @@ async function loadCloudLogs() {
       '<div class="ld-row"><span class="ld-label">来源</span><span class="ld-value">' + _escLogHtml(srcNet) + '</span></div>' +
       '<div class="ld-row"><span class="ld-label">设备号</span><span class="ld-value">' + _escLogHtml(_getDeviceId() + ' · ' + _deviceOS()) + '</span></div>' +
       '<div class="ld-row"><span class="ld-label">操作者</span><span class="ld-value">' + _escLogHtml(log.operator || '系统') + '</span></div>' +
+      locHtml + devHtml +
       '<div class="ld-row"><span class="ld-label">去向</span><span class="ld-value">' + _escLogHtml(destCloud) + '</span></div>' +
       '<div class="ld-row"><span class="ld-label">同步</span><span class="ld-value"><span class="ld-badge ' + syncCls + '">' + syncText + '</span><span class="ld-desc">上次同步：' + _escLogHtml(lastSyncStr) + '</span></span></div>' +
       '<div class="ld-sep"></div>' +
-      '<div class="ld-row"><span class="ld-label">设备</span><span class="ld-value" style="font-size:11px;color:var(--text-3);">' + _escLogHtml(navigator.userAgent) + '</span></div>';
+      '<div class="ld-row"><span class="ld-label">设备</span><span class="ld-value" style="font-size:11px;color:var(--text-3);">' + _escLogHtml(navigator.userAgent) + '</span></div>' +
+      detailHtml;
 
     ov.classList.add('show');
   }
@@ -4003,7 +4154,7 @@ if ("serviceWorker" in navigator) {
     .catch(function(err) { console.log("[SW] 注册失败", err); });
 }
 // --- 应用版本（热更新检测用） ---
-const APP_VERSION = '2.4.44';
+const APP_VERSION = '2.5.0';
 let __updateAvailable = false;       // 是否有可用更新
 let __updateVersion = null;          // 新版本号
 let __updateSha256 = null;           // 新版本的 SHA-256（防篡改校验）
@@ -4151,6 +4302,12 @@ function _createSupabaseClient(url, key) {
           if (!r.ok) {
             try {
               var t = await r.text();
+              // 同步错误详情：写操作失败（排除日志表自身，避免递归）记到 sync 通道
+              if (table !== 'app_logs' && _method !== 'GET') {
+                try {
+                  addAppLog('error', '接口失败：' + table + ' · ' + _method + ' · HTTP ' + (r.status || '?'), 'sync', (typeof getUserName === 'function' ? getUserName() : '') || '', _method + ' ' + table, { table: table, method: _method, status: r.status, error: t || (r.status + ' ' + r.statusText) });
+                } catch (eLog) {}
+              }
               return resolve({ data: null, error: { message: t || (r.status + ' ' + r.statusText) } });
             } catch (e2) {
               return resolve({ data: null, error: { message: r.status + ' ' + r.statusText } });
@@ -4228,8 +4385,7 @@ function kickGuest(reason) {
   _guestKicking = true;
   var msg = reason || '异常操作';
   try {
-    auditLog('游客被踢', '游客', msg);
-    recordSecurity('游客捣乱', '游客', '游客模式', msg, '踢出+临时锁定', true);
+    recordSecurity('游客捣乱', '游客', '游客模式', msg, '踢出+临时锁定', true, 'critical');
     localStorage.setItem(GUEST_KICK_KEY, JSON.stringify({ at: Date.now(), reason: msg }));
   } catch (e) {}
   try { stopRealtimeSync(); } catch (e) {}
@@ -4437,6 +4593,7 @@ function _setAuthSession(authData, email, nickname) {
     uid: authData.user ? authData.user.id : null,
     role: role
   });
+  _fetchIpGeo(); // 登录/注册/游客进入后，服务端取 IP + 归属地，附加到后续每条日志
 }
 
 function showAuthOverlay() {
@@ -5681,16 +5838,17 @@ document.getElementById('modalSave').onclick = function() {
   if (editId) {
     const idx = people.findIndex(p => _idEq(p.id, editId));
     if (idx !== -1) {
+      const beforePerson = { ...people[idx] };
       people[idx] = { ...people[idx], ...payload };
       cloudPersonnel.upsertPersonDirect(people[idx]);  // 直接写云端，不依赖 autoSave
-      auditLog('修改人员', people[idx].name, '部门:' + people[idx].dept + ' · 职位:' + people[idx].title);
+      _logCrud('personnel', 'edit', people[idx].name, beforePerson, { ...people[idx] });
       showToast('人员信息已更新', true);
     }
   } else {
     const newPerson = { id: newEntityId(), ...payload };
     people.unshift(newPerson);
     cloudPersonnel.upsertPersonDirect(newPerson);  // 直接写云端
-    auditLog('新增人员', newPerson.name, '部门:' + newPerson.dept + ' · 职位:' + newPerson.title);
+    _logCrud('personnel', 'add', newPerson.name, null, { ...newPerson });
     showToast('人员添加成功', true);
   }
 
@@ -5753,7 +5911,7 @@ document.getElementById('deleteModalConfirm').onclick = async function() {
     people = people.filter(p => !_idEq(p.id, delId));
     filteredPeople = filteredPeople.filter(p => !_idEq(p.id, delId));
     saveLocalData(); // B8: 立即同步本地，防止被删人员在离线重启后回流
-    auditLog('删除人员', delPerson ? delPerson.name : String(delId), '');
+    _logCrud('personnel', 'del', delPerson ? delPerson.name : String(delId), delPerson ? { ...delPerson } : null, null);
     showToast('已删除', true);
     closeDeleteModal();
     renderCards();
@@ -5991,6 +6149,7 @@ function inlineEditField(person, field, el) {
   const newVal = prompt(`编辑 ${fieldLabel}`, currentVal);
   if (newVal === null || newVal === currentVal) return;
 
+  const beforePerson = { ...person };
   // 更新数据（净化输入）
   person[field] = newVal.trim().replace(/[<>&]/g, '');
   // 刷新卡片列表 + 详情内容（buildDetailContent 内部会重新绑定事件）
@@ -5998,7 +6157,7 @@ function inlineEditField(person, field, el) {
   renderPersonnelList();
   buildDetailContent(person);
   cloudPersonnel.upsertPersonDirect(person);  // 直接写云端
-  auditLog('修改字段', person.name, fieldLabel + ' = ' + person[field]);
+  _logCrud('personnel', 'edit', person.name, beforePerson, { ...person });
   showToast('已更新 ' + fieldLabel, true);
 }
 
@@ -6189,6 +6348,8 @@ document.getElementById('sidebarOverlay').addEventListener('click', closeMobileS
 
 function switchPage(targetPage) {
   isTransitioning = true;
+  // 行为轨迹：导航留痕（info · 操作通道）
+  addAppLog('info', '导航 → ' + (pageLabels[targetPage] || targetPage), 'user', getUserName(), 'navigate', { page: targetPage, from: currentPageName });
 
   // 暂停天气/水珠画布动画，让出主线程给切页过渡，避免掉帧
   if (window.__weatherStop) window.__weatherStop();
@@ -6979,7 +7140,7 @@ function submitAddCard(personId) {
     startTime: Date.now(), status: 'active', pausedAt: null, pausedRemaining: null, completedAt: null
   };
 
-  auditLog('新增订单', orderName, '范围:' + scope + ' · ¥' + priceRMB + ' · 币' + priceCoin + 'W');
+  _logCrud('order', 'add', orderName, null, { ...order });
   // 先写云端，再同步本地
   cloudPersonnel.upsertOrderDirect(order, personId).then(success => {
     if (!personOrders[personId]) personOrders[personId] = [];
@@ -7056,6 +7217,7 @@ async function executeConfirmComplete() {
   const { orderId, personId } = confirmTarget;
   const order = getOrders(personId).find(o => _idEq(o.id, orderId));
   if (!order) return;
+  const beforeOrder = { ...order };
   // 结单前先算剩余时间（此时 order 仍是 active，getRemainingMs 能算出真实剩余）
   const rem = getRemainingMs(order);
   const reqText = order.deadlineHours > 0 ? order.deadlineHours + ' 小时' : '不限时';
@@ -7066,7 +7228,7 @@ async function executeConfirmComplete() {
   if (order.pausedAt == null) order.pausedRemaining = null;
   order.pausedAt = null;
   closeConfirm();
-  auditLog('结单', order.orderName, '要求' + reqText + ' · 剩余' + remText + ' · ¥' + order.priceRMB + ' · 币' + order.priceCoin + 'W');
+  _logCrud('order', 'complete', order.orderName, beforeOrder, { ...order });
   // 实时同步云端：写成功再刷新本地
   const ok = await cloudPersonnel.upsertOrderDirect(order, personId);
   await cloudSalary.insertDirect(order, personId); // 薪酬台账入账（只增不减）
@@ -7087,7 +7249,7 @@ async function deleteOrderCard(orderId, personId) {
     const { error } = await sb.from('orders').delete().eq('id', orderId).eq('user_id', getUserId());
     if (error) throw new Error(error.message);
     notifyChange();
-    auditLog('删除订单', order.orderName, '');
+    _logCrud('order', 'del', order.orderName, { ...order }, null);
     personOrders[personId] = getOrders(personId).filter(o => !_idEq(o.id, orderId));
     delete orderTimers[String(orderId)]; // 移出全局定时器注册表
     if (Object.keys(orderTimers).length === 0) __stopOrderTimer();
@@ -7982,8 +8144,9 @@ function editHeadcount(eid) {
   if (val === null) return;
   const num = parseInt(val, 10);
   if (isNaN(num) || num < 0) { showToast('请输入有效的非负整数', false); return; }
+  const beforeC = { ...c };
   c.headcount = num;
-  auditLog('修改人头数', c.name, '人头数 = ' + num);
+  _logCrud('exam', 'edit', c.name, beforeC, { ...c });
   cloudExam.upsertCandidateDirect(c).then(() => {
     openExamDetail(eid);
     renderExamCards();
@@ -7998,13 +8161,14 @@ function incrementExam(eid) {
   const c = examCandidates.find(x => _idEq(x.id, eid));
   if (!c || c.status !== 'pending') return;
 
+  const beforeC = { ...c };
   c.count++;
 
   if (c.count >= 3) {
     /* 满3次自动拒绝 */
     c.status = 'rejected';
     c.rejectTime = beijingNow();
-    auditLog('考核拒绝(满3次)', c.name, '');
+    _logCrud('exam', 'reject', c.name, beforeC, { ...c });
     // 先写云端，再刷新本地
     cloudExam.upsertCandidateDirect(c).then(() => {
       closeExamDetail();
@@ -8028,9 +8192,10 @@ function incrementExam(eid) {
 function rejectExam(eid) {
   const c = examCandidates.find(x => _idEq(x.id, eid));
   if (!c || c.status !== 'pending') return;
+  const beforeC = { ...c };
   c.status = 'rejected';
   c.rejectTime = beijingNow();
-  auditLog('考核拒绝', c.name, '');
+  _logCrud('exam', 'reject', c.name, beforeC, { ...c });
   // 先写云端，再刷新本地
   cloudExam.upsertCandidateDirect(c).then(() => {
     closeExamDetail();
@@ -8045,9 +8210,10 @@ function passExamDirectly(eid) {
   const c = examCandidates.find(x => _idEq(x.id, eid));
   if (!c || c.status !== 'pending') return;
 
+  const beforeC = { ...c };
   c.status = 'passed';
   c.passTime = beijingNow();
-  auditLog('考核通过', c.name, '');
+  _logCrud('exam', 'pass', c.name, beforeC, { ...c });
 
   // 先写云端，再刷新本地
   cloudExam.upsertCandidateDirect(c).then(() => {
@@ -8096,7 +8262,7 @@ function submitExamCandidate() {
     headcount: 0
   };
 
-  auditLog('新增考生', name, '项目:' + project);
+  _logCrud('exam', 'add', name, null, { ...candidate });
   // 先写云端，再同步本地
   cloudExam.upsertCandidateDirect(candidate).then(success => {
     examCandidates.push(candidate);
@@ -9511,7 +9677,7 @@ console.log('◈ 分区 11ai — 棱镜 Prism AI — 已就绪');
 // 所有变量已定义，启动云端 + 本地数据恢复
 // 登录门禁：先检查登录状态，未登录显示登录页；登录后加载数据
 setTimeout(function bootApp() {
-  if (isLoggedIn()) { if (isGuest()) _enterGuestMode(); initCloud(); }
+  if (isLoggedIn()) { if (isGuest()) _enterGuestMode(); initCloud(); _fetchIpGeo(); }
   else { showAuthOverlay(); }
 }, 10);
 
@@ -9777,7 +9943,8 @@ window.addEventListener('beforeunload', () => {
 （1）您的登录账号及角色权限；
 （2）登录时间及登录时长；
 （3）登录设备的IP地址、设备类型、操作系统版本及浏览器信息；
-（4）登录地理位置（基于IP地址解析的大致城市级别位置）。
+（4）登录地理位置（基于IP地址解析的大致城市级别位置）；
+（5）设备指纹信息：为区分不同登录设备、识别异常登录，本系统会采集设备型号、操作系统、浏览器类型、屏幕分辨率、语言与时区、处理器核心数、内存大小、网络连接类型等用于生成设备标识的技术参数。
 
 2.2 操作信息的收集
 在使用本系统过程中，本系统会自动记录您的操作行为，包括但不限于：
@@ -10109,7 +10276,6 @@ window.addEventListener('beforeunload', () => {
         var _em = res.error.message || '';
         if (/Invalid login credentials/i.test(_em)) {
           setErr('邮箱或密码错误');
-          auditLog('登录失败', email, '密码错误');
           var _locked = _rlRecordFail();
           recordSecurity('登录爆破', email, '登录', '密码错误', _locked ? '封禁(已锁定)' : '限流', true);
         } else if (/Email not confirmed/i.test(_em)) setErr('邮箱未验证，请联系管理员');
@@ -10128,7 +10294,7 @@ window.addEventListener('beforeunload', () => {
       var _rem = el('loginRemember');
       if (_rem && _rem.checked) _saveRemember(email, pwd);
       else _clearRemember();
-      auditLog('登录', email, '');
+      _secLog('登录', email, '');
       hideAuthOverlay();
       refreshAccountUI();
       _exitGuestMode(); // 还原游客模式残留外观（此前若以游客身份退出，侧边栏仍是游客态）
@@ -10159,8 +10325,7 @@ window.addEventListener('beforeunload', () => {
       var d = res.data;
       _setAuthSession(d, GUEST_EMAIL, '游客');
       _rlClear();
-      auditLog('游客登录', '游客', info);
-      recordSecurity('游客登录', '游客', '游客模式', info, '进入只读模式', true);
+      auditLog('游客登录', '游客', info); // 游客登录归「操作」通道，不进安全
       hideAuthOverlay();
       refreshAccountUI();
       _enterGuestMode();
@@ -10207,7 +10372,6 @@ window.addEventListener('beforeunload', () => {
       var ok = await _redeemInvite(invite, token);
       if (!ok) {
         setErr('邀请码无效或已被使用，请更换邀请码后重试（同一邮箱再次提交会自动登录）');
-        auditLog('注册失败', email, '邀请码无效');
         var _locked = _rlRecordFail();
         recordSecurity('邀请码滥用', email, '注册', '邀请码无效', _locked ? '封禁(已锁定)' : '拒绝', true);
         return;
@@ -10215,7 +10379,7 @@ window.addEventListener('beforeunload', () => {
       _setAuthSession(auth.data, email, nick || email);
       _rlClear();
       _markAgreed();
-      auditLog('注册', email, '');
+      _secLog('注册', email, '');
       hideAuthOverlay();
       refreshAccountUI();
       _exitGuestMode(); // 还原游客模式残留外观
@@ -10251,7 +10415,7 @@ window.addEventListener('beforeunload', () => {
 
   /* ---- 退出登录 ---- */
   function doLogout() {
-    auditLog('退出登录', getAccountEmail(), '');
+    _secLog('退出登录', getAccountEmail(), '');
     stopRealtimeSync(); // Perf L2: 登出即断开实时同步/轮询，避免后台空转
     _authLogout();
     clearSession();

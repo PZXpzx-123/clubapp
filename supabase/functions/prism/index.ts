@@ -13,7 +13,7 @@ const GUEST_QUOTA = 2; // 游客每台设备最多 2 次 AI 提问
 const cors = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
 };
 
 function json(obj: unknown, status = 200) {
@@ -29,8 +29,65 @@ function getMonth() {
   return `${d.getFullYear()}-${m}`; // YYYY-MM
 }
 
+// ---- 日志升级 v2.5.0：读取客户端真实 IP + 归属地（前端登录后调用一次）----
+function getClientIp(req: Request): string | null {
+  const fwd = req.headers.get("x-forwarded-for");
+  if (fwd) {
+    const first = fwd.split(",")[0].trim();
+    if (first) return first;
+  }
+  return req.headers.get("x-real-ip") || req.headers.get("cf-connecting-ip") || null;
+}
+
+const _geoCache = new Map<string, string | null>();
+
+async function geoLookup(ip: string | null): Promise<string | null> {
+  if (!ip) return null;
+  if (_geoCache.has(ip)) return _geoCache.get(ip) ?? null;
+  try {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 4000);
+    // ipapi.co 免费 HTTPS、免注册，返回 city/region_name/country_name（城市级）
+    const r = await fetch(`https://ipapi.co/${ip}/json/`, { signal: ctrl.signal });
+    clearTimeout(t);
+    if (!r.ok) { _geoCache.set(ip, null); return null; }
+    const d = await r.json();
+    if (d && !d.error) {
+      const parts = [d.country_name, d.region_name, d.city].filter(Boolean);
+      const geo = parts.length ? parts.join("·") : null;
+      _geoCache.set(ip, geo);
+      return geo;
+    }
+    _geoCache.set(ip, null);
+    return null;
+  } catch {
+    _geoCache.set(ip, null);
+    return null;
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
+
+  // 新增路由：GET /ip → { ip, geo }（轻量，仅需有效登录令牌）
+  if (req.method === "GET" && new URL(req.url).pathname.endsWith("/ip")) {
+    try {
+      const supabase = createClient(
+        Deno.env.get("SUPABASE_URL")!,
+        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+        { auth: { persistSession: false } }
+      );
+      const token = (req.headers.get("Authorization") || "").replace(/^Bearer\s+/i, "").trim();
+      if (!token) return json({ error: "未登录" }, 401);
+      const { data: userData, error: authErr } = await supabase.auth.getUser(token);
+      if (authErr || !userData || !userData.user) return json({ error: "令牌无效或已过期" }, 401);
+      const ip = getClientIp(req);
+      const geo = await geoLookup(ip);
+      return json({ ip, geo });
+    } catch {
+      return json({ ip: null, geo: null });
+    }
+  }
 
   try {
     const auth = req.headers.get("Authorization") || "";
