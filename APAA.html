@@ -3521,6 +3521,24 @@ body:not(.edit-mode) .settings-wrap .setting-select {
   </div>
 </div>
 
+<!-- 游客只读提示弹窗 -->
+<div class="confirm-overlay hidden" id="guestBlockOverlay">
+  <div class="confirm-dialog">
+    <div class="cd-header">
+      👁 只读模式
+      <button class="cd-close" id="guestBlockClose">✕</button>
+    </div>
+    <div class="cd-body" style="text-align:center; padding:24px 22px;">
+      <div style="font-size:40px; margin-bottom:10px;">🚫</div>
+      <div style="font-size:15px; font-weight:700;">游客模式无法编辑</div>
+      <div style="font-size:12px; color:var(--text-3); margin-top:6px;">当前为只读预览，仅可查看数据</div>
+    </div>
+    <div class="cd-footer" style="justify-content:center;">
+      <button class="btn btn-glass primary" id="guestBlockOk">确定</button>
+    </div>
+  </div>
+</div>
+
 <!-- 更新确认弹窗 -->
 <div class="confirm-overlay hidden" id="updateConfirmOverlay">
   <div class="confirm-dialog">
@@ -3963,7 +3981,7 @@ if ("serviceWorker" in navigator) {
     .catch(function(err) { console.log("[SW] 注册失败", err); });
 }
 // --- 应用版本（热更新检测用） ---
-const APP_VERSION = '2.4.26';
+const APP_VERSION = '2.4.27';
 let __updateAvailable = false;       // 是否有可用更新
 let __updateVersion = null;          // 新版本号
 let __updateSha256 = null;           // 新版本的 SHA-256（防篡改校验）
@@ -8969,10 +8987,20 @@ let appMode = 'view'; // 'view' | 'edit'
   }
 })();
 
-/* 编辑守卫：在查看模式下阻止编辑操作；游客尝试编辑直接踢出 */
+/* 游客只读提示：弹窗提示无法编辑（不踢出） */
+function showGuestBlock() {
+  var o = document.getElementById('guestBlockOverlay');
+  if (o) o.classList.remove('hidden');
+}
+function hideGuestBlock() {
+  var o = document.getElementById('guestBlockOverlay');
+  if (o) o.classList.add('hidden');
+}
+
+/* 编辑守卫：在查看模式下阻止编辑操作；游客尝试编辑弹窗提示（不踢出） */
 function guardEdit(actionName) {
   if (isGuest()) {
-    kickGuest('尝试' + (actionName || '编辑数据'));
+    showGuestBlock();
     return false;
   }
   if (appMode !== 'edit') {
@@ -10077,6 +10105,11 @@ window.addEventListener('beforeunload', () => {
   if (el('btnRegister')) el('btnRegister').addEventListener('click', doRegister);
   if (el('btnGuest')) el('btnGuest').addEventListener('click', doGuestLogin);
   if (el('authClose')) el('authClose').addEventListener('click', hideAuthOverlay);
+  if (el('guestBlockClose')) el('guestBlockClose').addEventListener('click', hideGuestBlock);
+  if (el('guestBlockOk')) el('guestBlockOk').addEventListener('click', hideGuestBlock);
+  if (el('guestBlockOverlay')) el('guestBlockOverlay').addEventListener('click', function (e) {
+    if (e.target.closest('#guestBlockOverlay') && !e.target.closest('.confirm-dialog')) hideGuestBlock();
+  });
   if (el('btnForgot')) el('btnForgot').addEventListener('click', doForgot);
   if (el('btnForgotReset')) el('btnForgotReset').addEventListener('click', doResetPwd);
   if (el('btnEditNickname')) el('btnEditNickname').addEventListener('click', doEditNickname);
