@@ -9,7 +9,7 @@
 	<link rel="manifest" href="manifest.json">
 <!--
 ══════════════════════════════════════════════════════════════════
-   ClubApp 目录索引（导航地图）· v2.5.0
+   ClubApp 目录索引（导航地图）· v2.5.1
    改代码前先看这里，按行号快速定位功能 / 分区
 ══════════════════════════════════════════════════════════════════
 
@@ -4154,7 +4154,7 @@ if ("serviceWorker" in navigator) {
     .catch(function(err) { console.log("[SW] 注册失败", err); });
 }
 // --- 应用版本（热更新检测用） ---
-const APP_VERSION = '2.5.0';
+const APP_VERSION = '2.5.1';
 let __updateAvailable = false;       // 是否有可用更新
 let __updateVersion = null;          // 新版本号
 let __updateSha256 = null;           // 新版本的 SHA-256（防篡改校验）
@@ -9801,7 +9801,6 @@ window.addEventListener('beforeunload', () => {
   }
 
   /* ---- 协议勾选（用户协议 / 隐私政策 / 安全承诺） ---- */
-  var AGREE_KEY = 'clubapp_agreed';
   var AGREEMENTS = {
 1:{title:'《琪琪用户协议》',text:`《琪琪用户协议》（详细完整版）
 版本号：V2.0
@@ -10181,12 +10180,6 @@ window.addEventListener('beforeunload', () => {
 
 10.2 因本确认书引起的或与本确认书有关的任何争议，双方应首先通过友好协商解决；协商不成的，任何一方均有权向运营者所在地有管辖权的人民法院提起诉讼。`}
 };
-  function _agreed() {
-    try { return localStorage.getItem(AGREE_KEY) === '1'; } catch (e) { return false; }
-  }
-  function _markAgreed() {
-    try { localStorage.setItem(AGREE_KEY, '1'); } catch (e) {}
-  }
   function _allAgreeChecked(groupId) {
     var g = el(groupId);
     if (!g) return false;
@@ -10267,7 +10260,7 @@ window.addEventListener('beforeunload', () => {
     var email = _lowerEmail(el('loginEmail').value);
     var pwd = el('loginPassword').value;
     if (!email || !pwd) { setErr('请输入邮箱和密码'); return; }
-    if (!_agreed() && !_allAgreeChecked('loginAgree')) { setErr('请先阅读并勾选全部协议'); return; }
+    if (!_allAgreeChecked('loginAgree')) { setErr('请先阅读并勾选全部协议'); return; }
     if (_rlBlocked()) return;
     var btn = el('btnLogin'); btn.disabled = true; btn.textContent = '登录中...';
     try {
@@ -10290,7 +10283,6 @@ window.addEventListener('beforeunload', () => {
       var nickname = (d.user && d.user.user_metadata && d.user.user_metadata.nickname) || '';
       _setAuthSession(d, email, nickname);
       _rlClear();
-      _markAgreed();
       var _rem = el('loginRemember');
       if (_rem && _rem.checked) _saveRemember(email, pwd);
       else _clearRemember();
@@ -10349,7 +10341,7 @@ window.addEventListener('beforeunload', () => {
     if (!invite || !email || !pwd) { setErr('请填写邀请码、邮箱和密码'); return; }
     if (pwd.length < 6) { setErr('密码至少 6 位'); return; }
     if (pwd !== pwd2) { setErr('两次输入的密码不一致'); return; }
-    if (!_agreed() && !_allAgreeChecked('regAgree')) { setErr('请先阅读并勾选全部协议'); return; }
+    if (!_allAgreeChecked('regAgree')) { setErr('请先阅读并勾选全部协议'); return; }
     if (invite.length !== 8) { setErr('邀请码应为 8 位'); return; }
     if (_rlBlocked()) return;
     var btn = el('btnRegister'); btn.disabled = true; btn.textContent = '注册中...';
@@ -10378,7 +10370,6 @@ window.addEventListener('beforeunload', () => {
       }
       _setAuthSession(auth.data, email, nick || email);
       _rlClear();
-      _markAgreed();
       _secLog('注册', email, '');
       hideAuthOverlay();
       refreshAccountUI();
