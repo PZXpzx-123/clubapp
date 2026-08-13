@@ -9,7 +9,7 @@
 	<link rel="manifest" href="manifest.json">
 <!--
 ══════════════════════════════════════════════════════════════════
-   ClubApp 目录索引（导航地图）· v2.4.42
+   ClubApp 目录索引（导航地图）· v2.4.44
    改代码前先看这里，按行号快速定位功能 / 分区
 ══════════════════════════════════════════════════════════════════
 
@@ -3749,7 +3749,6 @@ function renderAppLogs() {
   try {
     var el = document.getElementById('logList');
     if (!el) return;
-    if (isGuest()) { el.innerHTML = '<div class="log-empty">游客模式不可查看日志</div>'; return; }
     var logs = window.__appLogs;
     var state = _logFilterState();
     var kw = state.kw, filter = state.filter;
@@ -3844,7 +3843,6 @@ function _cloudLogToEntry(r) {
   } catch (e) { return null; }
 }
 async function loadCloudLogs() {
-  if (isGuest()) { window.__appLogs = []; renderAppLogs(); showToast('游客模式不可查看日志', false); return; }
   var btn = document.getElementById('btnLoadLogs');
   if (btn) { btn.disabled = true; btn.textContent = '⏳ 拉取中...'; }
   try {
@@ -4005,7 +4003,7 @@ if ("serviceWorker" in navigator) {
     .catch(function(err) { console.log("[SW] 注册失败", err); });
 }
 // --- 应用版本（热更新检测用） ---
-const APP_VERSION = '2.4.42';
+const APP_VERSION = '2.4.44';
 let __updateAvailable = false;       // 是否有可用更新
 let __updateVersion = null;          // 新版本号
 let __updateSha256 = null;           // 新版本的 SHA-256（防篡改校验）
@@ -4215,7 +4213,13 @@ function _guestLockRemainMin() { var l = _guestLockInfo(); if (!l || !l.at) retu
 
 function _guestInfo() {
   try {
-    return 'UA:' + (navigator.userAgent || '') + ' · 屏幕:' + (screen.width || '?') + 'x' + (screen.height || '?') + ' · 语言:' + (navigator.language || '') + ' · 设备号:' + _getDeviceId();
+    var entry = ''; try { entry = location.href || ''; } catch (e) {}
+    var ref = ''; try { ref = document.referrer || ''; } catch (e) {}
+    return '入口:' + (entry || '未知') + ' · 来源:' + (ref || '直接打开/书签') +
+      ' · UA:' + (navigator.userAgent || '') +
+      ' · 屏幕:' + (screen.width || '?') + 'x' + (screen.height || '?') +
+      ' · 语言:' + (navigator.language || '') +
+      ' · 设备号:' + _getDeviceId();
   } catch (e) { return 'UA:' + (navigator.userAgent || ''); }
 }
 
@@ -4246,7 +4250,6 @@ function kickGuest(reason) {
 }
 
 function _enterGuestMode() {
-  window.__appLogs = []; // 游客进入即清空内存日志，杜绝看到上一成员的日志
   appMode = 'view';
   document.body.classList.add('guest-mode');
   document.body.classList.remove('edit-mode');
@@ -10252,7 +10255,6 @@ window.addEventListener('beforeunload', () => {
     stopRealtimeSync(); // Perf L2: 登出即断开实时同步/轮询，避免后台空转
     _authLogout();
     clearSession();
-    window.__appLogs = []; // 清空本会话内存日志，避免下一个游客登录看到上一个成员的日志
     _exitGuestMode(); // 还原游客模式残留外观（此时已登出，走中性态）
     var bar = document.getElementById('cloudUserBar');
     if (bar && bar.parentNode) bar.parentNode.removeChild(bar);
@@ -10429,13 +10431,8 @@ window.addEventListener('beforeunload', () => {
     }
   })();
 
-  /* ---- 协议：渲染勾选区 + 点标题看全文 + 关闭 ---- */
+  /* ---- 协议：渲染勾选区 + 点标题看全文 + 关闭（勾选项始终显示） ---- */
   _renderAgreements();
-  if (_agreed()) {
-    var _lgA = el('loginAgree'), _rgA = el('regAgree');
-    if (_lgA) _lgA.style.display = 'none';
-    if (_rgA) _rgA.style.display = 'none';
-  }
   document.querySelectorAll('.auth-agree-link').forEach(function (lnk) {
     lnk.addEventListener('click', function (ev) { ev.preventDefault(); _openAgree(lnk.getAttribute('data-agree')); });
   });
