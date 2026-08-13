@@ -9,7 +9,7 @@
 	<link rel="manifest" href="manifest.json">
 <!--
 ══════════════════════════════════════════════════════════════════
-   ClubApp 目录索引（导航地图）· v2.4.32
+   ClubApp 目录索引（导航地图）· v2.4.33
    改代码前先看这里，按行号快速定位功能 / 分区
 ══════════════════════════════════════════════════════════════════
 
@@ -4035,7 +4035,7 @@ if ("serviceWorker" in navigator) {
     .catch(function(err) { console.log("[SW] 注册失败", err); });
 }
 // --- 应用版本（热更新检测用） ---
-const APP_VERSION = '2.4.32';
+const APP_VERSION = '2.4.33';
 let __updateAvailable = false;       // 是否有可用更新
 let __updateVersion = null;          // 新版本号
 let __updateSha256 = null;           // 新版本的 SHA-256（防篡改校验）
@@ -9433,6 +9433,7 @@ async function patrolTick() {
         aiLog('巡逻-' + (a.type || '异常'), (a.title || '异常') + (a.detail ? '：' + a.detail : ''));
       }
     }
+    renderAiInfo(); // 巡逻产生用量后立即同步系统信息页
   } catch (e) {
     /* 巡逻失败静默处理，避免网络抖动刷屏；下个周期自动重试 */
   } finally {
@@ -9510,6 +9511,7 @@ async function doPrismSearch(q) {
     if (isGuest()) _guestAiUse();
     _prismShowAnswer(res.answer || '(无回答)');
     aiLog('搜索问答', q.slice(0, 80));
+    renderAiInfo(); // 提问产生用量后立即同步系统信息页
   } catch (e) {
     if (e && e.status === 429) _prismShowAnswer('⚠️ 游客 AI 提问已达上限（2 次）。', true);
     else _prismShowAnswer('⚠️ ' + ((e && e.message) || '调用失败'), true);
@@ -9556,6 +9558,7 @@ startPatrol();
 (function () {
   var btn = document.getElementById('btnPrism');
   if (btn) btn.onclick = _openPrism;
+  onPageSwitch('sysinfo', renderAiInfo); // 打开系统信息页时立即同步 AI 信息
   setTimeout(renderAiInfo, 3000);
   setInterval(renderAiInfo, 30000);
 })();
