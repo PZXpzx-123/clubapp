@@ -1627,6 +1627,8 @@ body {
 .sal-sum-card { background: var(--glass-card); backdrop-filter: var(--blur-sm); -webkit-backdrop-filter: var(--blur-sm); border: 0.5px solid var(--border-glass); border-radius: var(--r-md); padding: 14px 16px; text-align: center; box-shadow: var(--glass-edge), var(--shadow-sm); }
 .sal-sum-card .ssc-value { font-size: 24px; font-weight: 800; color: var(--text-1); line-height: 1.1; }
 .sal-sum-card .ssc-label { font-size: 11px; color: var(--text-3); margin-top: 4px; font-weight: 500; }
+.sal-sum-card .ssc-value.ssc-two { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.sal-sum-card .ssc-sub { font-size: 13px; font-weight: 600; color: var(--text-3); line-height: 1; }
 
 .sal-table-wrap { background: var(--glass-card); backdrop-filter: var(--blur-sm); -webkit-backdrop-filter: var(--blur-sm); border: 0.5px solid var(--border-glass); border-radius: var(--r-lg); overflow: hidden; box-shadow: var(--glass-edge), var(--shadow-sm); }
 .sal-table { width: 100%; border-collapse: collapse; font-size: 13px; }
@@ -1639,7 +1641,10 @@ body {
 .sal-person { display: flex; align-items: center; gap: 10px; }
 .sal-av { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #fff; flex-shrink: 0; }
 
-.sal-detail-view { display: none; flex-direction: column; gap: 14px; }
+.sal-detail-view { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 100; flex-direction: column; gap: 14px; padding: 72px 20px 40px; background: var(--bg); backdrop-filter: blur(8px) saturate(140%); -webkit-backdrop-filter: blur(8px) saturate(140%); overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; }
+.sal-detail-view > * { max-width: 1100px; width: 100%; margin-left: auto; margin-right: auto; }
+.sal-detail-view.sal-anim-in { animation: salExpand 0.32s cubic-bezier(0.22, 1, 0.36, 1); }
+@keyframes salExpand { from { transform: scale(0.86); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 .sal-back-row { display: flex; align-items: center; gap: 12px; }
 .sal-back-btn { padding: 8px 16px; border-radius: 10px; border: 0.5px solid var(--border-glass); background: var(--glass-card); backdrop-filter: var(--blur-md); -webkit-backdrop-filter: var(--blur-md); cursor: pointer; font-size: 13px; font-family: var(--font); font-weight: 600; color: var(--text-1); transition: all 0.25s ease; box-shadow: var(--glass-edge); }
 .sal-back-btn:hover { background: rgba(255,255,255,0.22); }
@@ -1650,6 +1655,12 @@ body {
 
 .sal-history-box { background: var(--glass-card); backdrop-filter: var(--blur-sm); -webkit-backdrop-filter: var(--blur-sm); border: 0.5px solid var(--border-glass); border-radius: var(--r-lg); padding: 16px; box-shadow: var(--glass-edge), var(--shadow-sm); }
 .sal-history-box .shb-title { font-size: 13px; font-weight: 700; color: var(--text-1); margin-bottom: 10px; }
+.sal-history-box .shb-empty { color: var(--text-3); font-size: 13px; text-align: center; padding: 26px 0; }
+.sal-tag { display: inline-block; padding: 2px 9px; border-radius: 7px; font-size: 11px; font-weight: 700; line-height: 1.5; }
+.sal-tag-run { background: rgba(52,199,89,0.18); color: #34c759; }
+.sal-tag-guard { background: rgba(255,149,0,0.18); color: #ff9500; }
+.sal-st-done { color: #34c759; font-weight: 600; font-size: 12px; }
+.sal-st-active { color: #0a84ff; font-weight: 600; font-size: 12px; }
 @media (max-width: 800px) { .sal-summary { grid-template-columns: repeat(2, 1fr); } }
 
 /* ================================================================
@@ -2839,6 +2850,19 @@ body:not(.edit-mode) .settings-wrap .setting-select {
 .invite-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
 .invite-title { font-size: 15px; font-weight: 700; color: var(--text-1); }
 .invite-close { border: none; background: none; color: var(--text-3); font-size: 20px; cursor: pointer; padding: 2px 6px; line-height: 1; }
+.auth-agree { margin: 6px 0 2px; text-align: left; }
+.auth-agree-item { display: flex; align-items: flex-start; gap: 6px; font-size: 12px; color: var(--text-2); margin-bottom: 7px; line-height: 1.5; }
+.auth-agree-label { display: inline-flex; align-items: flex-start; gap: 5px; cursor: pointer; }
+.auth-agree-label input { width: auto; margin: 3px 0 0 0; flex-shrink: 0; accent-color: var(--accent-blue); }
+.auth-agree-link { color: var(--accent-blue); cursor: pointer; text-decoration: underline; }
+.auth-agree-link:hover { opacity: .8; }
+.agree-overlay { position: fixed; inset: 0; z-index: 99998; background: rgba(0,0,0,0.55); display: flex; align-items: center; justify-content: center; padding: 20px; visibility: hidden; opacity: 0; transition: opacity 0.18s ease; }
+.agree-overlay.show { visibility: visible; opacity: 1; }
+.agree-modal { background: var(--glass-card); backdrop-filter: var(--blur-md); -webkit-backdrop-filter: var(--blur-md); border: 0.5px solid var(--border-glass); border-radius: var(--r-lg); padding: 20px 22px; width: 540px; max-width: 94vw; max-height: 82vh; display: flex; flex-direction: column; box-shadow: var(--glass-edge), var(--shadow-lg); }
+.agree-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; flex-shrink: 0; }
+.agree-title { font-size: 15px; font-weight: 700; color: var(--text-1); }
+.agree-close { border: none; background: none; color: var(--text-3); font-size: 20px; cursor: pointer; padding: 2px 6px; line-height: 1; }
+.agree-body { overflow-y: auto; font-size: 13px; line-height: 1.8; color: var(--text-2); white-space: pre-wrap; word-break: break-word; padding-right: 4px; }
 .invite-item { border-bottom: 0.5px solid var(--border-subtle); }
 .invite-item:last-child { border-bottom: none; }
 .invite-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; cursor: pointer; }
@@ -3175,24 +3199,12 @@ body:not(.edit-mode) .settings-wrap .setting-select {
       <div class="salary-wrap">
         <!-- 总览卡片 -->
         <div class="sal-summary" id="salSummary"></div>
-        <!-- 月份切换 -->
-        <div id="salMonthPicker" style="display:flex;align-items:center;gap:10px;">
-          <button class="sal-back-btn" id="salPrevMonth" style="width:34px;height:34px;display:flex;align-items:center;justify-content:center;font-size:16px;">◀</button>
-          <span style="font-weight:700;font-size:15px;" id="salMonthLabel"></span>
-          <button class="sal-back-btn" id="salNextMonth" style="width:34px;height:34px;display:flex;align-items:center;justify-content:center;font-size:16px;">▶</button>
-        </div>
         <!-- 全员薪资表视图 -->
         <div class="sal-table-wrap" id="salTableView">
           <table class="sal-table">
-            <thead><tr><th>姓名</th><th>部门</th><th>基本工资</th><th>绩效奖金</th><th>加班费</th><th>扣款</th><th>合计</th></tr></thead>
+            <thead><tr><th>姓名</th><th>部门</th><th>跑刀工资</th><th>护航工资</th><th>今日工资</th><th>近7天工资</th><th>总工资</th></tr></thead>
             <tbody id="salTableBody"></tbody>
           </table>
-        </div>
-        <!-- 单人详情视图 -->
-        <div class="sal-detail-view" id="salDetailView">
-          <div class="sal-back-row"><button class="sal-back-btn" id="salBackBtn">← 返回列表</button></div>
-          <div class="sal-detail-header" id="salDetailHeader"></div>
-          <div class="sal-history-box" id="salHistoryBox"></div>
         </div>
       </div>
     </div>
@@ -3428,6 +3440,13 @@ body:not(.edit-mode) .settings-wrap .setting-select {
       <button class="btn btn-glass danger" id="deleteModalConfirm">确认删除</button>
     </div>
   </div>
+</div>
+
+<!-- ==================== 薪酬单人详情视图（根层级，不受 page-panel transform 影响） ==================== -->
+<div class="sal-detail-view" id="salDetailView">
+  <div class="sal-back-row"><button class="sal-back-btn" id="salBackBtn">← 返回列表</button></div>
+  <div class="sal-detail-header" id="salDetailHeader"></div>
+  <div class="sal-history-box" id="salHistoryBox"></div>
 </div>
 
 <!-- ==================== 人员档案详情视图（根层级，不受 page-panel transform 影响） ==================== -->
@@ -3751,17 +3770,23 @@ function _queueLogUpload(entry) {
   } catch (e) {}
 }
 async function flushLogUpload() {
+  if (__logFlushTimer) { clearTimeout(__logFlushTimer); __logFlushTimer = null; }
+  if (!window.__logUploadQueue.length) return;
+  if (typeof sb === 'undefined' || !sb || !cloudReady) return; // L10: 未就绪保留队列，不丢弃
+  var batch = window.__logUploadQueue.splice(0, window.__logUploadQueue.length);
   try {
-    if (__logFlushTimer) { clearTimeout(__logFlushTimer); __logFlushTimer = null; }
-    if (!window.__logUploadQueue.length) return;
-    if (typeof sb === 'undefined' || !sb || !cloudReady) { window.__logUploadQueue = []; return; }
-    var batch = window.__logUploadQueue.splice(0, window.__logUploadQueue.length);
     var rows = batch.map(function (e) {
       return { category: e.category || 'system', level: e.level || 'info', operator: e.operator || null, action: e.action || null, message: e.msg || '' };
     });
     var res = await sb.from('app_logs').insert(rows);
-    if (res && res.error) _origConsole.warn('[Log] 日志上传失败:', res.error.message);
-  } catch (e) { _origConsole.warn('[Log] 日志上传异常:', e && e.message); }
+    if (res && res.error) {
+      _origConsole.warn('[Log] 日志上传失败:', res.error.message);
+      window.__logUploadQueue = batch.concat(window.__logUploadQueue); // L10: 失败重排队，不丢日志
+    }
+  } catch (e) {
+    _origConsole.warn('[Log] 日志上传异常:', e && e.message);
+    window.__logUploadQueue = batch.concat(window.__logUploadQueue); // L10: 异常重排队，不丢日志
+  }
 }
 function _cloudLogToEntry(r) {
   try {
@@ -3934,7 +3959,7 @@ if ("serviceWorker" in navigator) {
     .catch(function(err) { console.log("[SW] 注册失败", err); });
 }
 // --- 应用版本（热更新检测用） ---
-const APP_VERSION = '2.4.11';
+const APP_VERSION = '2.4.24';
 let __updateAvailable = false;       // 是否有可用更新
 let __updateVersion = null;          // 新版本号
 let __updateSha256 = null;           // 新版本的 SHA-256（防篡改校验）
@@ -3977,6 +4002,16 @@ function isAppBusy() {
  * 兼容原 supabase-js 链式 API: sb.from('table').select().eq().maybeSingle() 等
  * 支持: select / insert / upsert / update / delete / eq / in / maybeSingle / order
  */
+/* 带超时的 fetch 包装：10s 无响应主动中断，避免请求永久挂起阻塞保存队列 */
+function _fetchWithTimeout(url, opts, timeoutMs) {
+  timeoutMs = timeoutMs || 10000;
+  var ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+  var timer = ctrl ? setTimeout(function() { ctrl.abort(); }, timeoutMs) : null;
+  var fetchOpts = opts || {};
+  if (ctrl) fetchOpts.signal = ctrl.signal;
+  return fetch(url, fetchOpts).finally(function() { if (timer) clearTimeout(timer); });
+}
+
 function _createSupabaseClient(url, key) {
   const REST_URL = url.replace(/\/+$/, '') + '/rest/v1';
   const BASE_HEADERS = {
@@ -3991,6 +4026,14 @@ function _createSupabaseClient(url, key) {
     let _body = null;
     let _reqHeaders = Object.assign({}, BASE_HEADERS);
     let _filters = [];
+    let _blocked = false;
+
+    function _guestGuard() {
+      if (typeof isGuest === 'function' && isGuest() && table !== 'app_logs') {
+        _blocked = true;
+        if (typeof kickGuest === 'function') kickGuest('尝试修改数据');
+      }
+    }
 
     const chain = {
       select: function(cols) {
@@ -3999,12 +4042,14 @@ function _createSupabaseClient(url, key) {
         return chain;
       },
       insert: function(rows) {
+        _guestGuard();
         _method = 'POST';
         _body = JSON.stringify(rows);
         _reqHeaders['Prefer'] = 'return=representation';
         return chain;
       },
       upsert: function(rows, opts) {
+        _guestGuard();
         _method = 'POST';
         _body = JSON.stringify(rows);
         _reqHeaders['Prefer'] = 'resolution=merge-duplicates';
@@ -4014,12 +4059,14 @@ function _createSupabaseClient(url, key) {
         return chain;
       },
       update: function(rows) {
+        _guestGuard();
         _method = 'PATCH';
         _body = JSON.stringify(rows);
         _reqHeaders['Prefer'] = 'return=representation';
         return chain;
       },
       'delete': function() {
+        _guestGuard();
         _method = 'DELETE';
         return chain;
       },
@@ -4050,6 +4097,7 @@ function _createSupabaseClient(url, key) {
       },
       // ---- thenable: 使链对象可被 await ----
       then: async function(resolve, reject) {
+        if (_blocked) return resolve({ data: null, error: { message: '游客模式为只读，禁止修改' } });
         try {
           var qurl = REST_URL + '/' + encodeURIComponent(table);
           var parts = [];
@@ -4057,14 +4105,15 @@ function _createSupabaseClient(url, key) {
           for (var i = 0; i < _filters.length; i++) { parts.push(_filters[i]); }
           if (parts.length > 0) qurl += '?' + parts.join('&');
 
-          // 每次请求取最新令牌（过期自动刷新）
+          // 每次请求取最新令牌（过期自动刷新）；无有效令牌时不带 Authorization，RLS 会 fail-closed 拒绝
           var tok = await _ensureFreshToken();
-          _reqHeaders['Authorization'] = 'Bearer ' + (tok || key);
+          if (tok) _reqHeaders['Authorization'] = 'Bearer ' + tok;
+          else delete _reqHeaders['Authorization'];
 
           var opts = { method: _method, headers: _reqHeaders };
           if (_body) opts.body = _body;
 
-          var r = await fetch(qurl, opts);
+          var r = await _fetchWithTimeout(qurl, opts);
           // DELETE / 204 No Content → success with no data
           if (_method === 'DELETE' || r.status === 204) {
             return r.ok
@@ -4125,6 +4174,76 @@ function clearSession() { try { localStorage.removeItem(AUTH_KEY); } catch (e) {
 function isLoggedIn() { return !!getSession(); }
 function getAccountEmail() { var s = getSession(); return s ? s.email : ''; }
 
+/* ---- 游客模式：只读 + 防捣乱踢人 ---- */
+const GUEST_EMAIL = 'guest@clubapp.local';
+const GUEST_PASSWORD = 'clubguest2026';
+const GUEST_KICK_KEY = 'clubapp_guest_kick';
+const GUEST_KICK_MS = 10 * 60 * 1000; // 踢出后锁定 10 分钟
+let _guestKicking = false;
+
+function isGuest() { var s = getSession(); return !!(s && s.role === 'guest'); }
+
+function _guestLockInfo() { try { var raw = localStorage.getItem(GUEST_KICK_KEY); return raw ? JSON.parse(raw) : null; } catch (e) { return null; } }
+function _guestLocked() { var l = _guestLockInfo(); return !!(l && l.at && (Date.now() - l.at) < GUEST_KICK_MS); }
+function _guestLockRemainMin() { var l = _guestLockInfo(); if (!l || !l.at) return 0; return Math.max(1, Math.ceil((l.at + GUEST_KICK_MS - Date.now()) / 60000)); }
+
+function _guestInfo() {
+  try {
+    return 'UA:' + (navigator.userAgent || '') + ' · 屏幕:' + (screen.width || '?') + 'x' + (screen.height || '?') + ' · 语言:' + (navigator.language || '') + ' · 设备号:' + _getDeviceId();
+  } catch (e) { return 'UA:' + (navigator.userAgent || ''); }
+}
+
+function kickGuest(reason) {
+  if (!isGuest() || _guestKicking) return;
+  _guestKicking = true;
+  var msg = reason || '异常操作';
+  try {
+    auditLog('游客被踢', '游客', msg);
+    recordSecurity('游客捣乱', '游客', '游客模式', msg, '踢出+临时锁定', true);
+    localStorage.setItem(GUEST_KICK_KEY, JSON.stringify({ at: Date.now(), reason: msg }));
+  } catch (e) {}
+  try { stopRealtimeSync(); } catch (e) {}
+  try { _authLogout(); } catch (e) {}
+  clearSession();
+  document.body.classList.remove('guest-mode');
+  var errEl = document.getElementById('authErr');
+  if (errEl) errEl.textContent = '你已被踢出游客模式（' + msg + '），' + _guestLockRemainMin() + ' 分钟内不可再进入。';
+  showToast('已被踢出：' + msg, false);
+  showAuthOverlay();
+  _guestKicking = false;
+}
+
+function _enterGuestMode() {
+  appMode = 'view';
+  document.body.classList.add('guest-mode');
+  document.body.classList.remove('edit-mode');
+  var editOpt = document.querySelector('.mode-option[data-mode="edit"]');
+  if (editOpt) editOpt.style.display = 'none';
+  var roleEl = document.getElementById('userRole');
+  if (roleEl) { roleEl.textContent = '游客模式（只读）'; roleEl.style.color = '#5a9e9e'; }
+  var nameEl = document.getElementById('userName');
+  if (nameEl) nameEl.textContent = '游客';
+  var avatarEl = document.getElementById('userAvatar');
+  if (avatarEl) avatarEl.textContent = '👁';
+  var addBtn = document.getElementById('btnAddPerson');
+  if (addBtn) { addBtn.style.opacity = '0.4'; addBtn.style.pointerEvents = 'none'; addBtn.title = '游客模式不可编辑'; }
+  _startGuestWatch();
+}
+
+var __dtHits = 0;
+var __guestWatchTimer = null;
+function _startGuestWatch() {
+  if (__guestWatchTimer) return;
+  __guestWatchTimer = setInterval(function () {
+    if (!isGuest()) return;
+    var t0 = performance.now();
+    debugger;
+    var dt = performance.now() - t0;
+    if (dt > 150) { __dtHits++; } else { __dtHits = 0; }
+    if (__dtHits >= 2) { __dtHits = 0; kickGuest('检测到开发者工具'); }
+  }, 3000);
+}
+
 /* ---- 官方 Auth（Supabase Auth）令牌与请求 ---- */
 const AUTH_API = SUPABASE_URL + '/auth/v1';
 
@@ -4133,6 +4252,8 @@ function _getAuthToken() {
   return (s && s.access_token) ? s.access_token : null;
 }
 
+/* 鉴权请求统一入口：JWT 仅通过 Authorization: Bearer 头携带，绝不写入 URL 或日志；
+   令牌过期由 _ensureFreshToken 静默续期，续期失败则 fail-closed（不带令牌，请求会被 RLS 拒绝）。 */
 async function _authRequest(method, path, body) {
   var headers = { 'apikey': SUPABASE_KEY, 'Content-Type': 'application/json' };
   var tok = _getAuthToken();
@@ -4140,7 +4261,7 @@ async function _authRequest(method, path, body) {
   var opts = { method: method, headers: headers };
   if (body !== undefined) opts.body = JSON.stringify(body);
   var r;
-  try { r = await fetch(AUTH_API + path, opts); }
+  try { r = await _fetchWithTimeout(AUTH_API + path, opts); }
   catch (e) { return { data: null, error: { message: e.message } }; }
   var txt = '';
   try { txt = await r.text(); } catch (e) {}
@@ -4172,13 +4293,15 @@ async function _authUpdateNickname(nick) {
   return _authRequest('PUT', '/user', { data: { nickname: nick } });
 }
 
-/* 兑换邀请码（走云端函数，别人没法绕过） */
+/* 兑换邀请码：调用 SECURITY DEFINER 的 redeem_invite RPC。
+   原子性由数据库保证——「校验邀请码有效性 + 插入 app_members + 标记邀请码已用」在单个事务内完成，
+   客户端无法绕过；多人并发兑换同一码也只会成功一次（数据库层面串行化）。 */
 async function _redeemInvite(code, token) {
   var tok = token || _getAuthToken();
   if (!tok) return false;
   var r;
   try {
-    r = await fetch(SUPABASE_URL + '/rest/v1/rpc/redeem_invite', {
+    r = await _fetchWithTimeout(SUPABASE_URL + '/rest/v1/rpc/redeem_invite', {
       method: 'POST',
       headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + tok, 'Content-Type': 'application/json' },
       body: JSON.stringify({ p_code: code })
@@ -4202,27 +4325,37 @@ async function _amIAdmin() {
 }
 
 /* 取最新令牌：未过期直接用，即将过期用 refresh_token 换新 */
+let __refreshPromise = null; // H2: 单飞锁，避免并发请求各自刷新令牌
 async function _ensureFreshToken() {
   var s = getSession();
   if (!s || !s.access_token) return null;
   var now = Math.floor(Date.now() / 1000);
   if (s.expires_at && (s.expires_at - now) > 60) return s.access_token;
-  if (!s.refresh_token) return s.access_token;
-  try {
-    var r = await _authRefresh(s.refresh_token);
-    if (r.error || !r.data || !r.data.access_token) { clearSession(); return null; }
-    s.access_token = r.data.access_token;
-    if (r.data.refresh_token) s.refresh_token = r.data.refresh_token;
-    if (r.data.expires_at) s.expires_at = r.data.expires_at;
-    setSession(s);
-    return s.access_token;
-  } catch (e) {
-    return s.access_token;
-  }
+  if (!s.refresh_token) return null; // S5: 无 refresh_token 无法续期，返回 null（fail-closed）
+  if (__refreshPromise) return __refreshPromise; // 已有刷新进行中，复用同一结果
+  __refreshPromise = (async function() {
+    try {
+      var r = await _authRefresh(s.refresh_token);
+      if (r.error || !r.data || !r.data.access_token) { clearSession(); return null; }
+      var s2 = getSession() || s; // 读取最新会话（可能已被其它写入覆盖）
+      s2.access_token = r.data.access_token;
+      if (r.data.refresh_token) s2.refresh_token = r.data.refresh_token;
+      if (r.data.expires_at) s2.expires_at = r.data.expires_at;
+      setSession(s2);
+      return s2.access_token;
+    } catch (e) {
+      return null;
+    } finally {
+      __refreshPromise = null;
+    }
+  })();
+  return __refreshPromise;
 }
 
 /* 登录/注册成功后写入会话 */
 function _setAuthSession(authData, email, nickname) {
+  var role = null;
+  try { role = (authData.user && authData.user.app_metadata && authData.user.app_metadata.role) || null; } catch (e) {}
   setSession({
     email: email,
     nickname: nickname || email,
@@ -4230,7 +4363,8 @@ function _setAuthSession(authData, email, nickname) {
     access_token: authData.access_token,
     refresh_token: authData.refresh_token,
     expires_at: authData.expires_at || 0,
-    uid: authData.user ? authData.user.id : null
+    uid: authData.user ? authData.user.id : null,
+    role: role
   });
 }
 
@@ -4311,8 +4445,10 @@ const cloudAppearance = {
     await ensureCloudUser();
     const uid = getUserId();
     const { data, error } = await sb.from('app_settings').select('*').eq('user_id', uid).maybeSingle();
-    if (error || !data) { console.log('[Cloud] 外观设置无云端数据，使用本地默认值'); return; }
+    if (error) { console.warn('[Cloud] 外观设置加载失败:', error.message); return false; }
+    if (!data) { console.log('[Cloud] 外观设置无云端数据，使用本地默认值'); return true; }
     console.log('[Cloud] ✓ 外观设置已加载');
+    __suppressAutoSave = true; // A3: 加载期间抑制自动保存，避免 change 事件触发冗余写云端
 
     // 应用设置到 DOM
     const apply = (id, val, type) => {
@@ -4337,6 +4473,8 @@ const cloudAppearance = {
       const psEl = document.getElementById('setPageSize');
       if (psEl) { psEl.value = data.page_size; setTimeout(function(){ psEl.dispatchEvent(new Event('change')); }, 200); }
     }
+    setTimeout(function(){ __suppressAutoSave = false; }, 400);
+    return true;
   }
 };
 
@@ -4386,7 +4524,7 @@ const cloudPersonnel = {
         orderRows.push({
           id: o.id,
           user_id: uid,
-          person_id: parseInt(pid, 10),
+          person_id: pid,
           order_name: o.orderName,
           scope: o.scope || '跑刀',
           price_rmb: o.priceRMB || 0,
@@ -4423,16 +4561,16 @@ const cloudPersonnel = {
 
     // 加载人员
     const { data: persData, error: persErr } = await sb.from('personnel').select('*').eq('user_id', uid);
-    if (persErr) { console.warn('[Cloud] 人员加载失败:', persErr.message); return; }
+    if (persErr) { console.warn('[Cloud] 人员加载失败:', persErr.message); return false; }
     if (!persData || persData.length === 0) {
       console.log('[Cloud] 云端无人员数据');
       // 云端确认为空 → 清空本地，防止旧数据回流（否则自动保存会把本地旧数据重新 upsert 回云端）
       people.length = 0;
       nextId = 1;
-      for (const tid of Object.keys(orderTimers)) { clearInterval(orderTimers[tid]); delete orderTimers[tid]; }
+      __clearAllOrderTimers();
       for (const k of Object.keys(personOrders)) { delete personOrders[k]; }
       orderIdCounter = 1;
-      return;
+      return true;
     }
 
     // 替换本地 people 数组
@@ -4448,21 +4586,35 @@ const cloudPersonnel = {
 
     // 加载订单
     const { data: ordData, error: ordErr } = await sb.from('orders').select('*').eq('user_id', uid);
-    if (ordErr) { console.warn('[Cloud] 订单加载失败:', ordErr.message); }
+    if (ordErr) { console.warn('[Cloud] 订单加载失败:', ordErr.message); return false; }
+
+    // 快照本地「已完成但可能尚未上云」的订单（离线结单），防止云端旧 active 状态覆盖本地 completed
+    const localCompleted = {};
+    for (const k of Object.keys(personOrders)) {
+      for (const o of personOrders[k]) {
+        if (o.status === 'completed') localCompleted[o.id] = o;
+      }
+    }
 
     // 清空旧定时器（防内存泄露）
-    for (const tid of Object.keys(orderTimers)) { clearInterval(orderTimers[tid]); delete orderTimers[tid]; }
+    __clearAllOrderTimers();
     // 清空本地订单
     for (const k of Object.keys(personOrders)) { delete personOrders[k]; }
     if (ordData) {
       for (const o of ordData) {
         if (!personOrders[o.person_id]) personOrders[o.person_id] = [];
+        // 本地优先合并：本地已结单而云端仍 active → 以本地为准，防止离线结单状态回退
+        const lc = localCompleted[o.id];
+        if (lc && (o.status || 'active') === 'active') {
+          personOrders[o.person_id].push(lc);
+          continue;
+        }
         personOrders[o.person_id].push({
           id: o.id,
           orderName: o.order_name,
           scope: o.scope || '跑刀',
-          priceRMB: o.price_rmb || 0,
-          priceCoin: o.price_coin || 0,
+          priceRMB: Number(o.price_rmb) || 0,
+          priceCoin: Number(o.price_coin) || 0,
           deadlineHours: o.deadline_hours || 0,
           status: o.status || 'active',
           startTime: o.start_time || 0,
@@ -4483,18 +4635,21 @@ const cloudPersonnel = {
     orderIdCounter = maxOrderId + 1;
 
     console.log(`[Cloud] ✓ 人员档案已加载 (${people.length}人, ${ordData ? ordData.length : 0}单)`);
+    return true;
   },
 
   /** 直接删除单个人——立即操作云端，不依赖 autoSave（解决本地删了云端还在的问题） */
   async deletePersonDirect(id) {
-    if (!cloudReady) return;
+    if (!cloudReady) return false;
     try {
       const uid = getUserId();
-      await sb.from('orders').delete().eq('person_id', id).eq('user_id', uid);
-      await sb.from('personnel').delete().eq('id', id).eq('user_id', uid);
+      const r1 = await sb.from('orders').delete().eq('person_id', id).eq('user_id', uid);
+      const r2 = await sb.from('personnel').delete().eq('id', id).eq('user_id', uid);
+      if (r1.error || r2.error) { console.warn('[Cloud] 直接删除失败:', (r1.error || r2.error).message); return false; }
       notifyChange();
       console.log('[Cloud] 🗑 直接删除人员 id=' + id + ' 及其订单');
-    } catch (e) { console.warn('[Cloud] 直接删除失败:', e); }
+      return true;
+    } catch (e) { console.warn('[Cloud] 直接删除失败:', e); return false; }
   },
 
   /** 直接 upsert 单个人——立即操作云端，返回是否成功 */
@@ -4502,11 +4657,12 @@ const cloudPersonnel = {
     if (!cloudReady) return false;
     try {
       const uid = getUserId();
-      await sb.from('personnel').upsert({
+      const { error } = await sb.from('personnel').upsert({
         id: p.id, user_id: uid, name: p.name, code: p.code,
         dept: p.dept, title: p.title, phone: p.phone || '',
         date: p.date || '', status: p.status || 'active'
       }, { onConflict: 'user_id,id' });
+      if (error) { console.warn('[Cloud] 直接保存人员失败:', error.message); return false; }
       notifyChange();
       console.log('[Cloud] ⬆ 直接保存人员 id=' + p.id);
       return true;
@@ -4518,7 +4674,7 @@ const cloudPersonnel = {
     if (!cloudReady) return false;
     try {
       const uid = getUserId();
-      await sb.from('orders').upsert({
+      const { error } = await sb.from('orders').upsert({
         id: o.id, user_id: uid, person_id: personId,
         order_name: o.orderName, scope: o.scope || '跑刀',
         price_rmb: o.priceRMB || 0, price_coin: o.priceCoin || 0,
@@ -4528,6 +4684,7 @@ const cloudPersonnel = {
         paused_remaining: o.pausedRemaining != null ? Math.round(o.pausedRemaining) : null,
         completed_at: o.completedAt != null ? Math.round(o.completedAt) : null,
       }, { onConflict: 'user_id,id' });
+      if (error) { console.warn('[Cloud] 直接保存订单失败:', error.message); return false; }
       notifyChange();
       console.log('[Cloud] ⬆ 直接保存订单 id=' + o.id);
       return true;
@@ -4572,13 +4729,13 @@ const cloudExam = {
     const uid = getUserId();
 
     const { data, error } = await sb.from('exam_candidates').select('*').eq('user_id', uid);
-    if (error) { console.warn('[Cloud] 考生加载失败:', error.message); return; }
+    if (error) { console.warn('[Cloud] 考生加载失败:', error.message); return false; }
     if (!data || data.length === 0) {
       console.log('[Cloud] 云端无考生数据');
       // 云端确认为空 → 清空本地，防止旧数据回流
       examCandidates.length = 0;
       examIdCounter = 1;
-      return;
+      return true;
     }
 
     examCandidates.length = 0;
@@ -4603,6 +4760,7 @@ const cloudExam = {
     }
 
     console.log(`[Cloud] ✓ 绩效考核已加载 (${examCandidates.length}考生)`);
+    return true;
   },
 
   /** 直接 upsert 单个考生——立即操作云端，返回是否成功 */
@@ -4610,12 +4768,13 @@ const cloudExam = {
     if (!cloudReady) return false;
     try {
       const uid = getUserId();
-      await sb.from('exam_candidates').upsert({
+      const { error } = await sb.from('exam_candidates').upsert({
         id: c.id, user_id: uid, name: c.name,
         project: c.project || '护航', count: c.count || 0, status: c.status || 'pending',
         add_time: c.addTime || '', pass_time: c.passTime || '', reject_time: c.rejectTime || '',
         head_count: c.headcount || 0,
       }, { onConflict: 'user_id,id' });
+      if (error) { console.warn('[Cloud] 直接保存考生失败:', error.message); return false; }
       notifyChange();
       console.log('[Cloud] ⬆ 直接保存考生 id=' + c.id);
       return true;
@@ -4624,12 +4783,134 @@ const cloudExam = {
 
   /** 直接删除单个考生——立即操作云端 */
   async deleteCandidateDirect(id) {
-    if (!cloudReady) return;
+    if (!cloudReady) return false;
     try {
-      await sb.from('exam_candidates').delete().eq('id', id).eq('user_id', getUserId());
+      const { error } = await sb.from('exam_candidates').delete().eq('id', id).eq('user_id', getUserId());
+      if (error) { console.warn('[Cloud] 直接删除考生失败:', error.message); return false; }
       notifyChange();
       console.log('[Cloud] 🗑 直接删除考生 id=' + id);
-    } catch (e) { console.warn('[Cloud] 直接删除考生失败:', e); }
+      return true;
+    } catch (e) { console.warn('[Cloud] 直接删除考生失败:', e); return false; }
+  }
+};
+
+// ================================================================
+// 数据同步：薪酬台账（salary_records，只增不减，脱钩于订单删除）
+// ================================================================
+const salaryRecords = []; // [{ orderId, personId, orderName, scope, priceRMB, priceCoin, startTime, completedAt }]
+
+const cloudSalary = {
+  async save() {
+    if (salaryRecords.length === 0) return;
+    await ensureCloudUser();
+    const uid = getUserId();
+    const rows = salaryRecords.map(r => ({
+      user_id: uid,
+      order_id: r.orderId,
+      person_id: r.personId,
+      order_name: r.orderName,
+      scope: r.scope || '跑刀',
+      price_rmb: r.priceRMB || 0,
+      price_coin: r.priceCoin || 0,
+      start_time: Math.round(r.startTime || 0),
+      completed_at: Math.round(r.completedAt || 0),
+    }));
+    for (let i = 0; i < rows.length; i += 200) {
+      const { error } = await sb.from('salary_records').upsert(rows.slice(i, i + 200), { onConflict: 'user_id,order_id' });
+      if (error) { console.warn('[Cloud] 薪酬台账保存失败:', error.message); return; }
+    }
+    console.log(`[Cloud] ✓ 薪酬台账已同步 (${rows.length}条)`);
+  },
+
+  async load() {
+    try {
+      await ensureCloudUser();
+      const uid = getUserId();
+      const { data, error } = await sb.from('salary_records').select('*').eq('user_id', uid).order('order_id', 'asc');
+      if (error) { console.warn('[Cloud] 薪酬台账加载失败(暂视为空):', error.message); return; }
+      salaryRecords.length = 0;
+      if (data) {
+        for (const r of data) {
+          salaryRecords.push({
+            orderId: r.order_id, personId: r.person_id, orderName: r.order_name,
+            scope: r.scope || '跑刀',
+            priceRMB: Number(r.price_rmb) || 0, priceCoin: Number(r.price_coin) || 0,
+            startTime: Number(r.start_time) || 0, completedAt: Number(r.completed_at) || 0,
+          });
+        }
+      }
+      console.log(`[Cloud] ✓ 薪酬台账已加载 (${salaryRecords.length}条)`);
+      await this.backfill();
+    } catch (e) { console.warn('[Cloud] 薪酬台账加载异常:', e.message); }
+  },
+
+  /** 幂等补录：把已结单但尚未入账的历史订单补进台账（按 order_id 去重） */
+  async backfill() {
+    if (!cloudReady) return;
+    const existing = new Set(salaryRecords.map(r => r.orderId));
+    const missing = [];
+    for (const pid of Object.keys(personOrders)) {
+      for (const o of personOrders[pid]) {
+        if (o.status === 'completed' && !existing.has(o.id)) {
+          missing.push({
+            order_id: o.id, person_id: pid, order_name: o.orderName,
+            scope: o.scope || '跑刀',
+            price_rmb: o.priceRMB || 0, price_coin: o.priceCoin || 0,
+            start_time: Math.round(o.startTime || 0),
+            completed_at: Math.round(o.completedAt || Date.now()),
+          });
+          existing.add(o.id);
+        }
+      }
+    }
+    if (missing.length === 0) return;
+    const ok = await this.insertRows(missing);
+    if (ok) {
+      for (const m of missing) {
+        salaryRecords.push({
+          orderId: m.order_id, personId: m.person_id, orderName: m.order_name,
+          scope: m.scope || '跑刀',
+          priceRMB: Number(m.price_rmb) || 0, priceCoin: Number(m.price_coin) || 0,
+          startTime: Number(m.start_time) || 0, completedAt: Number(m.completed_at) || 0,
+        });
+      }
+      saveLocalData();
+      console.log(`[Cloud] ✓ 薪酬台账补录 ${missing.length} 条历史已结单订单`);
+    }
+  },
+
+  async insertRows(rows) {
+    if (!cloudReady) return false;
+    try {
+      const uid = getUserId();
+      const full = rows.map(r => Object.assign({ user_id: uid }, r));
+      for (let i = 0; i < full.length; i += 200) {
+        const { error } = await sb.from('salary_records').upsert(full.slice(i, i + 200), { onConflict: 'user_id,order_id' });
+        if (error) { console.warn('[Cloud] 薪酬台账写入失败:', error.message); return false; }
+      }
+      return true;
+    } catch (e) { console.warn('[Cloud] 薪酬台账写入异常:', e); return false; }
+  },
+
+  /** 结单时入账：先入内存+本地（离线不丢），再尝试写云端 */
+  async insertDirect(order, personId) {
+    const rec = {
+      orderId: order.id, personId: personId, orderName: order.orderName,
+      scope: order.scope || '跑刀',
+      priceRMB: order.priceRMB || 0, priceCoin: order.priceCoin || 0,
+      startTime: order.startTime || 0, completedAt: order.completedAt || Date.now(),
+    };
+    const idx = salaryRecords.findIndex(r => r.orderId === order.id);
+    if (idx >= 0) salaryRecords[idx] = rec; else salaryRecords.push(rec);
+    saveLocalData();
+    if (!cloudReady) return false;
+    const ok = await this.insertRows([{
+      order_id: rec.orderId, person_id: rec.personId, order_name: rec.orderName,
+      scope: rec.scope, price_rmb: rec.priceRMB, price_coin: rec.priceCoin,
+      start_time: Math.round(rec.startTime), completed_at: Math.round(rec.completedAt),
+    }]);
+    if (ok) console.log('[Cloud] ⬆ 薪酬台账入账 order_id=' + rec.orderId);
+    return ok;
   }
 };
 
@@ -4637,12 +4918,15 @@ const cloudExam = {
 // 一键全量加载 / 保存
 // ================================================================
 async function cloudLoadAll() {
-  if (!cloudReady) { console.log('[Cloud] 云端未就绪，跳过加载'); return; }
+  if (!cloudReady) { console.log('[Cloud] 云端未就绪，跳过加载'); return false; }
   console.log('[Cloud] ⬇ 开始从云端加载全部数据...');
-  await cloudAppearance.load();
-  await cloudPersonnel.load();
-  await cloudExam.load();
-  console.log('[Cloud] ✅ 云端数据加载完成');
+  let ok = true;
+  ok = (await cloudAppearance.load()) && ok;
+  ok = (await cloudPersonnel.load()) && ok;
+  ok = (await cloudExam.load()) && ok;
+  await cloudSalary.load(); // 薪酬台账：尽力加载，失败不阻断主流程
+  console.log(ok ? '[Cloud] ✅ 云端数据加载完成' : '[Cloud] ⚠ 云端数据加载不完整');
+  return ok;
 }
 
 async function cloudSaveAll() {
@@ -4651,6 +4935,8 @@ async function cloudSaveAll() {
   await cloudAppearance.save();
   await cloudPersonnel.save();
   await cloudExam.save();
+  await cloudSalary.save();
+  await notifyChange();  // B4: 每次保存后广播"变更标记"，其他在线设备在 5s 内自动拉取
   console.log('[Cloud] ✅ 云端数据保存完成');
   __lastCloudSyncTime = Date.now();
 }
@@ -4670,9 +4956,15 @@ function cloudAutoSave() {
   const maxWait = Math.max(0, 2000 - (Date.now() - cloudFirstDirty));
   const delay = Math.min(500, maxWait);
   cloudSaveTimer = setTimeout(() => {
-    cloudDirty = false;
     cloudSaveTimer = null;
-    cloudSaveAll().catch(e => console.warn('[Cloud] 自动保存失败:', e));
+    // A2: 保存完成后才清 dirty，避免保存进行中时远端变更被误拉取覆盖
+    cloudSaveAll().then(function(){ cloudDirty = false; }).catch(function(e){
+      console.warn('[Cloud] 自动保存失败:', e);
+      // 失败不清 dirty：保留"有未保存更改"标记，5s 后重试，确保数据最终上传，避免误拉远端覆盖本地
+      cloudDirty = true;
+      cloudFirstDirty = Date.now();
+      cloudSaveTimer = setTimeout(function(){ cloudSaveTimer = null; cloudAutoSave(); }, 5000);
+    });
   }, delay);
 }
 
@@ -4680,14 +4972,17 @@ function cloudAutoSave() {
 // Realtime 实时推送：有人上传 → 云端即时推送给所有在线设备
 // ================================================================
 let __lastChangeTime = null;  // 上次已知的云端变更时间戳
+let __pendingReload = false;      // 是否因编辑中/未保存而挂起的远端变更（空闲后重拉，防止永久漏更）
+let __pendingReloadTime = null;   // 被挂起的云端变更时间戳（仅用于日志）
 
 /** 上传者调用：告诉所有设备"我有新数据" */
 async function notifyChange() {
   if (!cloudReady) return;
   try {
     const now = new Date().toISOString();
+    __lastChangeTime = Date.parse(now);  // A1: 先记时间戳(数值ms)，避免 await 期间自己的推送被误判为远端变更
+    saveLocalData();  // B8: 数据变更后立即同步本地缓存，防止回流
     await sb.from('changes').upsert({ id: 1, updated_at: now }, { onConflict: 'id' });
-    __lastChangeTime = now;  // 更新本地时间戳，防止自己重复拉取
     console.log('[Realtime] 🔔 已广播变更通知');
   } catch (e) { /* 静默 */ }
 }
@@ -4695,6 +4990,7 @@ async function notifyChange() {
 // --- Realtime 同步（替代轮询） ---
 let __realtimeChannel = null;
 let __fallbackTimer = null;
+let __pollDiagAt = 0;  // 诊断日志节流时间戳
 function _isEditing() {
   var pm = document.getElementById('personModalOverlay');
   var dm = document.getElementById('deleteModalOverlay');
@@ -4710,53 +5006,77 @@ function _isEditing() {
          (ea && ea.classList.contains('show')) ||
          (co && !co.classList.contains('hidden')) ||
          (ed && !ed.classList.contains('hidden')) ||
-         (ep && !ep.classList.contains('hidden'));
+         (ep && ep.classList.contains('show'));
+}
+
+/** 加载后统一刷新所有视图（卡片 + 列表 + 筛选 + 考生 + 薪酬） */
+function __refreshUIAfterLoad() {
+  filteredPeople = [...people];
+  renderCards();
+  renderPersonnelList();
+  initPersonnelFilters();
+  renderExamCards();
+  refreshSalaryIfActive();
+  console.log('[Cloud] 🖼 视图已刷新 (人员:' + people.length + ', 显示:' + filteredPeople.length + ')');
 }
 
 /** 收到远端变更时的统一处理：所有防护在此集中 */
 async function __handleRemoteChange(remoteTime) {
-  if (!remoteTime) return;
-  // 首次启动记下时间戳，不触发加载
-  if (!__lastChangeTime) {
-    __lastChangeTime = remoteTime;
-    return;
-  }
-  // 时间戳没变 = 自己触发的推送，跳过
-  if (remoteTime === __lastChangeTime) return;
-  // 本地有未保存的变更，跳过拉取（保留用户编辑中数据）
+  var t = remoteTime ? Date.parse(remoteTime) : 0;
+  if (!t) return;
+  // 时间戳没变 = 自己触发的推送，跳过（数值比较，规避 "Z" 与 "+00:00" 格式差异）
+  // 首次(基准为 null)时两者不等，会走加载，避免启动期间并发上传被首轮轮询漏掉
+  if (t === __lastChangeTime) return;
+  // 本地有未保存的变更，跳过拉取（保留用户编辑中数据），但挂起重拉，避免空闲后永久漏更
   if (cloudDirty) {
-    console.log('[Realtime] ⏸ 远端变更，本地有未保存数据，跳过拉取');
-    __lastChangeTime = remoteTime;
+    console.log('[Realtime] ⏸ 远端变更，本地有未保存数据，跳过拉取（已挂起，空闲后重拉）');
+    __lastChangeTime = t;
+    __pendingReload = true;
+    __pendingReloadTime = remoteTime;
     return;
   }
-  // 用户正在编辑中，跳过拉取
+  // 用户正在编辑中，跳过拉取，同样挂起重拉
   if (_isEditing()) {
-    console.log('[Realtime] ⏸ 远端变更，用户正在编辑中，跳过拉取');
-    __lastChangeTime = remoteTime;
+    console.log('[Realtime] ⏸ 远端变更，用户正在编辑中，跳过拉取（已挂起，空闲后重拉）');
+    __lastChangeTime = t;
+    __pendingReload = true;
+    __pendingReloadTime = remoteTime;
     return;
   }
   console.log('[Realtime] 🔔 收到实时推送，拉取最新数据...');
-  __lastChangeTime = remoteTime;
+  __lastChangeTime = t;
   try {
     await cloudLoadAll();
-    filteredPeople = [...people];
-    renderCards();
-    renderPersonnelList();
-    initPersonnelFilters();
-    renderExamCards();
+    __refreshUIAfterLoad();
     console.log('[Realtime] ✅ 数据已同步');
   } catch (e) {
     console.warn('[Realtime] 拉取失败:', e.message);
   }
 }
 
-/** 启动 Realtime 订阅 + 断线兜底轮询 (30s) */
+/** 空闲后重拉被挂起的远端变更（编辑/未保存状态挡下的那一次，避免永久漏更） */
+async function __flushPendingReload() {
+  if (!__pendingReload) return;
+  if (cloudDirty || _isEditing()) return; // 仍不空闲，继续挂起，等下次轮询再试
+  __pendingReload = false;
+  var t = __pendingReloadTime;
+  __pendingReloadTime = null;
+  console.log('[Realtime] ▶ 空闲，重拉被挂起的远端变更 (remote=' + t + ')');
+  try {
+    await cloudLoadAll();
+    __refreshUIAfterLoad();
+  } catch (e) {
+    console.warn('[Realtime] 挂起重拉失败:', e.message);
+  }
+}
+
+/** 启动 Realtime 订阅 + 断线兜底轮询 (5s) */
 function startRealtimeSync() {
   if (__realtimeChannel) return;
 
   /* 自定义 REST 客户端不支持 channel()，直接走兜底轮询 */
   if (typeof sb.channel !== 'function') {
-    console.log('[Realtime] ℹ 当前为 REST 模式，启用兜底轮询 (30s)');
+    console.log('[Realtime] ℹ 当前为 REST 模式，启用兜底轮询 (5s)');
     startFallbackPolling();
     return;
   }
@@ -4777,7 +5097,7 @@ function startRealtimeSync() {
         if (__fallbackTimer) { clearInterval(__fallbackTimer); __fallbackTimer = null; }
       }
       if (status === 'CLOSED' || status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-        console.warn('[Realtime] ⚠ 连接断开，启动兜底轮询 (30s)');
+        console.warn('[Realtime] ⚠ 连接断开，启动兜底轮询 (5s)');
         startFallbackPolling();
         // 10s 后尝试重连
         setTimeout(function() {
@@ -4791,16 +5111,40 @@ function startRealtimeSync() {
     });
 }
 
-/** 启动兜底轮询（30s 拉一次 changes 表） */
+/** 启动兜底轮询（5s 拉一次 changes 表） */
 function startFallbackPolling() {
   if (__fallbackTimer) return;
+  console.log('[Realtime][诊断] 轮询启动: ready=' + cloudReady + ' loaded=' + __cloudLoadDone + ' editing=' + _isEditing() + ' dirty=' + cloudDirty + ' lastChange=' + __lastChangeTime);
   __fallbackTimer = setInterval(async function() {
-    if (!cloudReady || !__cloudLoadDone || _isEditing() || cloudDirty) return;
+    if (!cloudReady || !__cloudLoadDone) return;
+    var _now = Date.now();
+    if (_isEditing() || cloudDirty) {
+      if (_now - __pollDiagAt > 20000) {
+        __pollDiagAt = _now;
+        console.log('[Realtime][诊断] 轮询跳过: editing=' + _isEditing() + ' dirty=' + cloudDirty);
+      }
+      return;
+    }
+    // 空闲时优先重拉被挂起的远端变更（编辑期间被挡下的那次）
+    await __flushPendingReload();
     try {
       var refetch = await sb.from('changes').select('updated_at').eq('id', 1).maybeSingle();
-      if (refetch.data?.updated_at) await __handleRemoteChange(refetch.data.updated_at);
-    } catch (_) {}
-  }, 30000);
+      if (refetch.data && refetch.data.updated_at) {
+        var rt = Date.parse(refetch.data.updated_at);
+        if (rt !== __lastChangeTime) {
+          console.log('[Realtime][诊断] 检测到变化 remote=' + refetch.data.updated_at + ' rt=' + rt + ' last=' + __lastChangeTime);
+          await __handleRemoteChange(refetch.data.updated_at);
+        }
+      } else {
+        if (_now - __pollDiagAt > 20000) {
+          __pollDiagAt = _now;
+          console.log('[Realtime][诊断] changes 读回为空 error=' + (refetch.error ? refetch.error.message : '无'));
+        }
+      }
+    } catch (e) {
+      console.warn('[Realtime][诊断] 轮询异常:', e && e.message);
+    }
+  }, 5000);
 }
 
 /** 停止 Realtime 订阅 */
@@ -4872,7 +5216,7 @@ function showCloudUserUI() {
     loadBtn.textContent = '⏳';
     loadBtn.disabled = true;
     cloudLoadAll().then(() => {
-      renderCards();
+      __refreshUIAfterLoad();
       showToast('已从云端加载 ✓', true);
       loadBtn.textContent = '⬇';
       loadBtn.disabled = false;
@@ -4892,7 +5236,73 @@ function showCloudUserUI() {
 // ================================================================
 // 本地持久化（localStorage 兜底，退出不丢数据）
 // ================================================================
-const LS_KEYS = { people: 'clubapp_people', orders: 'clubapp_orders', exam: 'clubapp_exam', settings: 'clubapp_settings' };
+const LS_KEYS = { people: 'clubapp_people', orders: 'clubapp_orders', exam: 'clubapp_exam', settings: 'clubapp_settings', salary: 'clubapp_salary' };
+
+/* ---- IndexedDB 降级存储：localStorage 配额满时兜底（容量更大，防止数据丢失） ---- */
+const IDB_NAME = 'clubapp_db';
+const IDB_STORE = 'kv';
+const IDB_SNAP_KEY = 'snapshot';
+function _idbOpen() {
+  return new Promise(function(resolve, reject) {
+    try {
+      if (typeof indexedDB === 'undefined') { reject(new Error('no-indexeddb')); return; }
+      var req = indexedDB.open(IDB_NAME, 1);
+      req.onupgradeneeded = function(e) {
+        var db = e.target.result;
+        if (!db.objectStoreNames.contains(IDB_STORE)) db.createObjectStore(IDB_STORE);
+      };
+      req.onsuccess = function(e) { resolve(e.target.result); };
+      req.onerror = function(e) { reject(e.target.error); };
+    } catch (e) { reject(e); }
+  });
+}
+function _idbSet(key, val) {
+  return _idbOpen().then(function(db) {
+    return new Promise(function(resolve, reject) {
+      try {
+        var tx = db.transaction(IDB_STORE, 'readwrite');
+        tx.objectStore(IDB_STORE).put(val, key);
+        tx.oncomplete = function() { db.close(); resolve(true); };
+        tx.onerror = function(e) { reject(e.target.error); };
+      } catch (e) { reject(e); }
+    });
+  });
+}
+function _idbGet(key) {
+  return _idbOpen().then(function(db) {
+    return new Promise(function(resolve, reject) {
+      try {
+        var tx = db.transaction(IDB_STORE, 'readonly');
+        var req = tx.objectStore(IDB_STORE).get(key);
+        req.onsuccess = function() { db.close(); resolve(req.result); };
+        req.onerror = function(e) { reject(e.target.error); };
+      } catch (e) { reject(e); }
+    });
+  });
+}
+/* 把当前内存数据整包写入 IndexedDB（配额满时的降级兜底） */
+function _idbSetSnapshot() {
+  var payload = { t: Date.now(), people: people, orders: personOrders, exam: examCandidates, salary: salaryRecords };
+  return _idbSet(IDB_SNAP_KEY, payload).catch(function(e) { console.warn('[IDB] 降级存储失败:', e && e.message); });
+}
+/* 从 IndexedDB 恢复：仅回填 localStorage 里为空的 key，避免覆盖更新的本地缓存 */
+function _idbRecover() {
+  return _idbGet(IDB_SNAP_KEY).then(function(snap) {
+    if (!snap) return;
+    var changed = false;
+    try {
+      if (!localStorage.getItem(LS_KEYS.people) && Array.isArray(snap.people)) { people.length = 0; people.push(...snap.people); changed = true; }
+      if (!localStorage.getItem(LS_KEYS.orders) && snap.orders) { for (var k of Object.keys(personOrders)) delete personOrders[k]; Object.assign(personOrders, snap.orders); changed = true; }
+      if (!localStorage.getItem(LS_KEYS.exam) && Array.isArray(snap.exam)) { examCandidates.length = 0; examCandidates.push(...snap.exam); changed = true; }
+      if (!localStorage.getItem(LS_KEYS.salary) && Array.isArray(snap.salary)) { salaryRecords.length = 0; salaryRecords.push(...snap.salary); changed = true; }
+    } catch (e) { console.warn('[IDB] 恢复时读取 localStorage 异常:', e && e.message); }
+    if (changed) {
+      filteredPeople = [...people];
+      try { renderCards(); renderPersonnelList(); renderExamCards(); } catch (e) {}
+      console.log('[IDB] ✓ 已从 IndexedDB 恢复本地数据');
+    }
+  }).catch(function(e) { console.warn('[IDB] 恢复失败:', e && e.message); });
+}
 
 let __localSavePending = false;
 function saveLocalData() {
@@ -4903,9 +5313,11 @@ function saveLocalData() {
       localStorage.setItem(LS_KEYS.people, JSON.stringify(people));
       localStorage.setItem(LS_KEYS.orders, JSON.stringify(personOrders));
       localStorage.setItem(LS_KEYS.exam, JSON.stringify(examCandidates));
+      localStorage.setItem(LS_KEYS.salary, JSON.stringify(salaryRecords));
     } catch (e) {
-      if (e.name === 'QuotaExceededError') {
-        showToast('⚠ 本地存储空间不足，请清理旧数据', false);
+      if (e && (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED' || e.code === 22 || e.code === 1014)) {
+        showToast('⚠ 本地存储空间不足，已改用浏览器数据库降级存储', false);
+        _idbSetSnapshot(); // 异步降级到 IndexedDB，防止数据丢失
       }
     }
     __localSavePending = false;
@@ -4948,16 +5360,28 @@ function loadLocalData() {
         examIdCounter = Math.max(0, ...examCandidates.map(x => x.id).filter(id => typeof id === 'number' && !isNaN(id) && isFinite(id))) + 1;
       }
     }
+    const sl = localStorage.getItem(LS_KEYS.salary);
+    if (sl) {
+      const parsed = JSON.parse(sl);
+      if (Array.isArray(parsed)) {
+        salaryRecords.length = 0;
+        salaryRecords.push(...parsed);
+      }
+    }
   } catch (e) { console.warn('[Local] 数据恢复失败:', e.message); }
+  _idbRecover(); // 若 localStorage 因配额满而空/缺，尝试从 IndexedDB 恢复
 }
 
 // ================================================================
 // cloudAutoSave 增强版：同时存本地（即时）+ 云端（防抖）
 // ================================================================
+let __suppressAutoSave = false; // A3: 外观设置加载期间抑制自动保存
 (function patchCloudAutoSave() {
   const _orig = cloudAutoSave;
   cloudAutoSave = function() {
+    if (__suppressAutoSave) return; // 启动加载外观时禁止触发保存，防止覆盖刚加载的数据
     saveLocalData();  // 立刻存本地
+    if (isGuest()) return; // 游客只读：只存本地，不写云端（避免触发踢人/RLS 报错）
     _orig();          // 3s 后同步云端
   };
 })();
@@ -4966,22 +5390,33 @@ function loadLocalData() {
 let __cloudLoadDone = false;
 async function initCloud() {
   console.log('[Cloud] ⬇ 正在从云端加载数据...');
+  // B5: 加载前先记录云端"变更标记"作为基准，确保启动期间的并发上传不被首轮轮询漏掉
   try {
-    await cloudLoadAll();
-    filteredPeople = [...people];
-    renderCards();
+    var _chg0 = await sb.from('changes').select('updated_at').eq('id', 1).maybeSingle();
+    if (_chg0.data && _chg0.data.updated_at) __lastChangeTime = Date.parse(_chg0.data.updated_at);
+  } catch (_) {}
+  let loaded = false;
+  try {
+    loaded = await cloudLoadAll();
+  } catch (e) {
+    console.warn('[Cloud] ❌ 云端加载异常:', e.message);
+    loaded = false;
+  }
+  if (loaded) {
+    // 只有全部加载成功才把云端状态写回本地，避免网络失败时清空本地缓存
+    __refreshUIAfterLoad();
     showCloudUserUI();
     __cloudLoadDone = true;
     saveLocalData(); // 把云端(含空)状态写回本地缓存，覆盖旧数据，防止回流
     startRealtimeSync(); // 启动 Realtime 实时推送（替代轮询）
     console.log('[Cloud] 🚀 云端已加载 (人员:' + people.length + ', 订单:' + Object.keys(personOrders).length + ', 考生:' + examCandidates.length + ')');
-  } catch (e) {
-    console.warn('[Cloud] ❌ 云端不可用:', e.message);
-		loadLocalData();
-		filteredPeople = [...people];
-		renderCards();
+  } else {
+    console.warn('[Cloud] ❌ 云端不可用，回退本地缓存');
+    loadLocalData();
+    filteredPeople = [...people];
+    renderCards();
     showCloudUserUI();
-    showToast('云端连接失败，请检查网络后刷新', false);
+    showToast('云端连接失败，已加载本地缓存，请检查网络', false);
   }
 }
 
@@ -5007,13 +5442,6 @@ function onPageSwitch(page, fn) {
 /** 任意页面切换后回调，参数为 targetPage */
 function onAnyPageSwitch(fn) {
   _anyPageHooks.push(fn);
-}
-
-/** 快捷 DOM 查找（带缓存） */
-const _qCache = {};
-function $(id) {
-  if (_qCache[id] === undefined) _qCache[id] = document.getElementById(id);
-  return _qCache[id];
 }
 
 /* ================================================================
@@ -5070,8 +5498,8 @@ function renderCards() {
           <div class="card-footer">
             <span class="status-tag ${escHtml(p.status)}">${stLabel}</span>
             <div class="card-actions">
-              <button class="card-btn" onclick="event.stopPropagation();openEdit(${p.id})">编辑</button>
-              <button class="card-btn del" onclick="event.stopPropagation();openDelete(${p.id})">删除</button>
+              <button class="card-btn" onclick="event.stopPropagation();openEdit('${p.id}')">编辑</button>
+              <button class="card-btn del" onclick="event.stopPropagation();openDelete('${p.id}')">删除</button>
             </div>
           </div>
         </div>
@@ -5206,7 +5634,7 @@ document.getElementById('modalSave').onclick = function() {
   const payload = { name, code, dept, title, phone: '', date, status };
 
   if (editId) {
-    const idx = people.findIndex(p => p.id === parseInt(editId, 10));
+    const idx = people.findIndex(p => _idEq(p.id, editId));
     if (idx !== -1) {
       people[idx] = { ...people[idx], ...payload };
       cloudPersonnel.upsertPersonDirect(people[idx]);  // 直接写云端，不依赖 autoSave
@@ -5214,7 +5642,7 @@ document.getElementById('modalSave').onclick = function() {
       showToast('人员信息已更新', true);
     }
   } else {
-    const newPerson = { id: nextId++, ...payload };
+    const newPerson = { id: newEntityId(), ...payload };
     people.unshift(newPerson);
     cloudPersonnel.upsertPersonDirect(newPerson);  // 直接写云端
     auditLog('新增人员', newPerson.name, '部门:' + newPerson.dept + ' · 职位:' + newPerson.title);
@@ -5229,7 +5657,7 @@ document.getElementById('modalSave').onclick = function() {
 /* 编辑 */
 function openEdit(id) {
   if (!guardEdit('编辑人员')) return;
-  const p = people.find(x => x.id === id);
+  const p = people.find(x => _idEq(x.id, id));
   if (!p) return;
   document.getElementById('formEditId').value  = p.id;
   document.getElementById('formName').value    = p.name;
@@ -5247,7 +5675,7 @@ let pendingDeleteId = null;
 function openDelete(id) {
   if (!guardEdit('删除人员')) return;
   pendingDeleteId = id;
-  const p = people.find(x => x.id === id);
+  const p = people.find(x => _idEq(x.id, id));
   if (p) document.getElementById('deleteTargetName').textContent = `${p.name} (${p.code})`;
   document.getElementById('deleteModalOverlay').classList.remove('hidden');
 }
@@ -5267,18 +5695,19 @@ document.getElementById('deleteModalConfirm').onclick = async function() {
   if (!guardEdit('删除人员')) return;
   if (pendingDeleteId) {
     const delId = pendingDeleteId;
-    // 清理该人员的订单和定时器（防止内存泄露）
-    if (personOrders[delId]) {
-      for (const o of personOrders[delId]) {
-        if (orderTimers[o.id]) { clearInterval(orderTimers[o.id]); delete orderTimers[o.id]; }
-      }
-      delete personOrders[delId];
+    const delPerson = people.find(p => _idEq(p.id, delId));
+    // 先删云端；失败则不删本地，避免"云端删不掉但本地已删"的失同步（保留弹窗供重试）
+    const ok = await cloudPersonnel.deletePersonDirect(delId);
+    if (!ok) {
+      showToast('⚠️ 删除失败，请检查网络后重试', false);
+      return;
     }
-    const delPerson = people.find(p => p.id === delId);
-    // 先直接删云端，再删本地（确保云端必删）
-    await cloudPersonnel.deletePersonDirect(delId);
-    people = people.filter(p => p.id !== delId);
-    filteredPeople = filteredPeople.filter(p => p.id !== delId);
+    // 云端删除成功 → 再清理本地订单/定时器/人员（防止内存泄露）
+    clearPersonTimers(delId);
+    delete personOrders[delId];
+    people = people.filter(p => !_idEq(p.id, delId));
+    filteredPeople = filteredPeople.filter(p => !_idEq(p.id, delId));
+    saveLocalData(); // B8: 立即同步本地，防止被删人员在离线重启后回流
     auditLog('删除人员', delPerson ? delPerson.name : String(delId), '');
     showToast('已删除', true);
     closeDeleteModal();
@@ -5303,7 +5732,7 @@ document.getElementById('personGrid').addEventListener('click', function(e) {
   if (e.target.closest('button')) return;
   const card = e.target.closest('.person-card');
   if (!card) return;
-  const id = parseInt(card.getAttribute('data-id'), 10);
+  const id = card.getAttribute('data-id');
   if (!id) return;
   openDetail(id, card);
 });
@@ -5342,7 +5771,7 @@ function openDetail(id, cardEl) {
     ov2.classList.remove('closing');
   }
 
-  const p = people.find(x => x.id === id);
+  const p = people.find(x => _idEq(x.id, id));
   if (!p) return;
   detailPersonId = id;
   detailIsOpen = true;
@@ -6156,68 +6585,6 @@ console.log('  ✓ 6 页全玻璃卡片 · 自适应缩放');
 
 
 /* ================================================================
-   分区 11m: 人员档案 — 扩展数据生成器
-   为每个人员生成：性别 · 出生日期 · 邮箱 · 学历 · 合同信息
-   ================================================================ */
-
-const profileCache = new Map(); /* 避免重复生成 */
-
-function generateProfileData(person) {
-  if (profileCache.has(person.id)) return profileCache.get(person.id);
-
-  /* 基于 person.id 的确定性随机 */
-  const rng = seededRNG(person.id * 251 + 13);
-
-  const gender = rng() > 0.45 ? '男' : '女';
-
-  /* 出生日期: 1975-2005 */
-  const by = 1975 + Math.floor(rng() * 31);
-  const bm = 1 + Math.floor(rng() * 12);
-  const bd = 1 + Math.floor(rng() * 28);
-  const birthDate = `${by}-${String(bm).padStart(2,'0')}-${String(bd).padStart(2,'0')}`;
-
-  /* 邮箱 */
-  const pinyin = person.name.replace(/[一-龥]/g, function(ch) {
-    const map = { '张':'zhang','李':'li','王':'wang','刘':'liu','陈':'chen','杨':'yang','黄':'huang','赵':'zhao','吴':'wu','周':'zhou','徐':'xu','孙':'sun','马':'ma','朱':'zhu','胡':'hu','郭':'guo','何':'he','林':'lin','罗':'luo','梁':'liang','宋':'song','唐':'tang','韩':'han','曹':'cao','邓':'deng','许':'xu','冯':'feng','彭':'peng','蒋':'jiang','沈':'shen','蔡':'cai','潘':'pan','余':'yu','谢':'xie','范':'fan','伟':'wei','芳':'fang','强':'qiang','燕':'yan','涛':'tao','琳':'lin','勇':'yong','雪':'xue','军':'jun','丽':'li','刚':'gang','敏':'min','洋':'yang','静':'jing','超':'chao','云':'yun','明':'ming','婷':'ting','杰':'jie','峰':'feng' };
-    return map[ch] || 'x';
-  });
-  const email = pinyin + person.code.toLowerCase() + '@company.cn';
-
-  /* 学历 */
-  const eduOpts = ['高中','大专','本科','本科','本科','硕士','硕士','博士'];
-  const education = eduOpts[Math.floor(rng() * eduOpts.length)];
-
-  /* 直属上级: 同部门且不是自己 */
-  const deptColleagues = people.filter(p => p.dept === person.dept && p.id !== person.id);
-  const manager = deptColleagues.length > 0
-    ? deptColleagues[Math.floor(rng() * deptColleagues.length)].name
-    : '—';
-
-  /* 合同类型 */
-  const ctOpts = ['固定期限','固定期限','固定期限','无固定期限','实习'];
-  const contractType = ctOpts[Math.floor(rng() * ctOpts.length)];
-
-  /* 合同起止: 入职日期 + 1-5年 */
-  const contractStart = person.date;
-  let contractEnd = '--';
-  if (person.date !== '--' && person.date.includes('-')) {
-    const startY = parseInt(person.date.split('-')[0], 10);
-    const contractYears = 1 + Math.floor(rng() * 5);
-    const endY = startY + contractYears;
-    const endM = person.date.split('-')[1];
-    const endD = person.date.split('-')[2];
-    contractEnd = `${endY}-${endM}-${endD}`;
-  }
-
-  const data = {
-    gender, birthDate, email, education, manager,
-    contractType, contractStart, contractEnd
-  };
-  profileCache.set(person.id, data);
-  return data;
-}
-
-/* ================================================================
    分区 11n: 人员档案 — 列表渲染 + 搜索筛选
    ================================================================ */
 
@@ -6261,8 +6628,8 @@ function renderPersonnelList() {
   listEl.onclick = function(e) {
     const item = e.target.closest('.personnel-item');
     if (!item) return;
-    const pid = parseInt(item.dataset.pid, 10);
-    if (!isNaN(pid)) openProfile(pid);
+    const pid = item.dataset.pid;
+    if (pid) openProfile(pid);
   };
 }
 
@@ -6292,7 +6659,7 @@ function openProfile(personId) {
   // 确保列表数据是最新的
   renderPersonnelList();
 
-  const person = people.find(p => p.id === personId);
+  const person = people.find(p => _idEq(p.id, personId));
   if (!person) return;
 
   const listView = document.getElementById('personnelListView');
@@ -6318,7 +6685,7 @@ function openProfile(personId) {
   profileView.dataset.personId = personId;
 
   /* 更新导航信息：当前在筛选列表中的位置 */
-  const idx = personnelFiltered.findIndex(p => p.id === personId);
+  const idx = personnelFiltered.findIndex(p => _idEq(p.id, personId));
   profileView.dataset.profileIndex = idx >= 0 ? idx : -1;
   const total = personnelFiltered.length;
   document.getElementById('profileNavInfo').textContent = (idx >= 0 ? (idx + 1) : '—') + ' / ' + total;
@@ -6382,7 +6749,8 @@ function openProfile(personId) {
 /* ---- 订单数据存储 ---- */
 const personOrders = {};
 let orderIdCounter = 1;
-const orderTimers = {};
+const orderTimers = {};   // 注册表：orderId(String) → personId（由单一定时器统一驱动，不再每个订单一个 setInterval）
+let __orderTickTimer = null; // 全局倒计时定时器句柄
 
 function getOrders(personId) {
   if (!personOrders[personId]) personOrders[personId] = [];
@@ -6456,6 +6824,23 @@ function escHtml(str) {
   return String(str).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m]);
 }
 
+/* ---- ID 工具：UUID / 旧数字 ID 混合兼容 ---- */
+/* 新增实体统一生成 UUID，避免共享 user_id + 前端自增 ID 在多人离线时碰撞覆盖 */
+function newEntityId() {
+  return (typeof crypto !== 'undefined' && crypto.randomUUID)
+    ? crypto.randomUUID()
+    : 'id-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
+}
+/* 字符串/数字 ID 相等比较（旧数据为数字、新数据为 UUID 字符串，二者都能正确匹配） */
+function _idEq(a, b) { return String(a) === String(b); }
+/* 由任意 ID 派生稳定数值种子（用于随机/配色，避免 UUID 无法参与算术；数字 ID 原样返回，行为不变） */
+function _idSeed(id) {
+  if (typeof id === 'number') return id;
+  var s = String(id), h = 0;
+  for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+  return h;
+}
+
 function renderOrderCards(personId) {
   clearPersonTimers(personId);
   const grid = document.getElementById('orderCardsGrid');
@@ -6490,8 +6875,8 @@ function renderOrderCards(personId) {
     return '<div class="order-card" data-oid="' + o.id + '">' +
       '<div class="order-card-header"><span class="oc-name">' + escHtml(o.orderName) + '</span><span class="oc-scope ' + scopeClass + '">' + escHtml(o.scope) + '</span></div>' +
       '<div class="order-card-pricing">' +
-        '<div class="oc-price-item"><span class="oc-price-label">人民币</span><span class="oc-price-value">¥' + o.priceRMB.toLocaleString() + '</span></div>' +
-        '<div class="oc-price-item"><span class="oc-price-label">保哈哈币</span><span class="oc-price-value">' + o.priceCoin.toLocaleString() + 'W</span></div>' +
+        '<div class="oc-price-item"><span class="oc-price-label">人民币</span><span class="oc-price-value">¥' + Number(o.priceRMB || 0).toLocaleString() + '</span></div>' +
+        '<div class="oc-price-item"><span class="oc-price-label">保哈哈币</span><span class="oc-price-value">' + Number(o.priceCoin || 0).toLocaleString() + 'W</span></div>' +
       '</div>' +
       '<div class="order-card-countdown ' + cdClass + '"><span class="oc-cd-icon">' + cdIcon + '</span><span class="oc-cd-time">' + cdText + '</span></div>' +
       renderCompletedTimeInfo(o) +
@@ -6505,8 +6890,8 @@ function renderOrderCards(personId) {
     if (!btn) return;
     e.stopPropagation();
     const action = btn.dataset.action;
-    const oid = parseInt(btn.dataset.oid, 10);
-    if (isNaN(oid)) return;
+    const oid = btn.dataset.oid;
+    if (!oid) return;
     if (action === 'pause') togglePauseOrder(oid, personId);
     else if (action === 'complete') openConfirmComplete(oid, personId);
     else if (action === 'delete') deleteOrderCard(oid, personId);
@@ -6547,7 +6932,7 @@ function submitAddCard(personId) {
   const deadlineHours = Math.max(0, Math.min(1000, parseInt(document.getElementById('acDeadline').value, 10) || 0));
 
   const order = {
-    id: orderIdCounter++, orderName, scope, priceRMB, priceCoin, deadlineHours,
+    id: newEntityId(), orderName, scope, priceRMB, priceCoin, deadlineHours,
     startTime: Date.now(), status: 'active', pausedAt: null, pausedRemaining: null, completedAt: null
   };
 
@@ -6556,6 +6941,7 @@ function submitAddCard(personId) {
   cloudPersonnel.upsertOrderDirect(order, personId).then(success => {
     if (!personOrders[personId]) personOrders[personId] = [];
     personOrders[personId].push(order);
+    saveLocalData(); // B8: 新订单入本地缓存
     hideAddCardForm();
     renderOrderCards(personId);
     showToast(success ? '订单「' + orderName + '」创建成功' : '订单已保存到本地，云端同步失败', success);
@@ -6566,14 +6952,12 @@ function submitAddCard(personId) {
 
 function togglePauseOrder(orderId, personId) {
   if (!guardEdit('操作订单')) return;
-  const order = getOrders(personId).find(o => o.id === orderId);
+  const order = getOrders(personId).find(o => _idEq(o.id, orderId));
   if (!order || order.status !== 'active') return;
   if (order.pausedAt != null) {
-    /* 恢复 */
+    /* 恢复：保持原始 deadlineHours（要求时间），通过回拨 startTime 恢复剩余时长 */
     const rem = order.pausedRemaining || 0;
-    order.startTime = Date.now();
-    // 已超时(rem<=0)时保持过期，避免 deadlineHours=0 被误判为「不限时」
-    order.deadlineHours = rem > 0 ? rem / 3600000 : (1 / 3600000);
+    order.startTime = Date.now() - (order.deadlineHours * 3600000 - rem);
     order.pausedAt = null;
     order.pausedRemaining = null;
     showToast('「' + order.orderName + '」倒计时已恢复', true);
@@ -6596,7 +6980,7 @@ let confirmTarget = null;
 let profileCloseTimer = null;
 
 function openConfirmComplete(orderId, personId) {
-  const order = getOrders(personId).find(o => o.id === orderId);
+  const order = getOrders(personId).find(o => _idEq(o.id, orderId));
   if (!order || order.status === 'completed') return;
   confirmTarget = { orderId, personId };
 
@@ -6609,8 +6993,8 @@ function openConfirmComplete(orderId, personId) {
   document.getElementById('confirmBody').innerHTML =
     '<div class="cd-info-row"><span class="cd-info-label">单名字</span><span class="cd-info-value">' + escHtml(order.orderName) + '</span></div>' +
     '<div class="cd-info-row"><span class="cd-info-label">范围</span><span class="cd-info-value"><span class="oc-scope ' + scopeClass + '">' + escHtml(order.scope) + '</span></span></div>' +
-    '<div class="cd-info-row"><span class="cd-info-label">人民币</span><span class="cd-info-value">¥' + order.priceRMB.toLocaleString() + '</span></div>' +
-    '<div class="cd-info-row"><span class="cd-info-label">保哈哈币</span><span class="cd-info-value">' + order.priceCoin.toLocaleString() + 'W</span></div>' +
+    '<div class="cd-info-row"><span class="cd-info-label">人民币</span><span class="cd-info-value">¥' + Number(order.priceRMB || 0).toLocaleString() + '</span></div>' +
+    '<div class="cd-info-row"><span class="cd-info-label">保哈哈币</span><span class="cd-info-value">' + Number(order.priceCoin || 0).toLocaleString() + 'W</span></div>' +
     '<div class="cd-info-row"><span class="cd-info-label">要求时间</span><span class="cd-info-value">' + reqText + '</span></div>' +
     '<div class="cd-info-row"><span class="cd-info-label">剩余时间</span><span class="cd-info-value">' + remainingText + '</span></div>' +
     '<div class="cd-highlight">确认此订单已完成？此操作不可撤销</div>';
@@ -6627,7 +7011,7 @@ async function executeConfirmComplete() {
   if (!confirmTarget) return;
   if (!guardEdit('结单操作')) return;
   const { orderId, personId } = confirmTarget;
-  const order = getOrders(personId).find(o => o.id === orderId);
+  const order = getOrders(personId).find(o => _idEq(o.id, orderId));
   if (!order) return;
   // 结单前先算剩余时间（此时 order 仍是 active，getRemainingMs 能算出真实剩余）
   const rem = getRemainingMs(order);
@@ -6642,6 +7026,8 @@ async function executeConfirmComplete() {
   auditLog('结单', order.orderName, '要求' + reqText + ' · 剩余' + remText + ' · ¥' + order.priceRMB + ' · 币' + order.priceCoin + 'W');
   // 实时同步云端：写成功再刷新本地
   const ok = await cloudPersonnel.upsertOrderDirect(order, personId);
+  await cloudSalary.insertDirect(order, personId); // 薪酬台账入账（只增不减）
+  if (!ok) cloudAutoSave(); // 订单云端写失败时挂起全量保存，联网后自动重试（防离线结单状态回退/入账丢失）
   renderOrderCards(personId);
   showToast(ok ? '「' + order.orderName + '」已结单 ✓' : '「' + order.orderName + '」已结单（云端同步失败，请检查网络）', ok);
 }
@@ -6650,7 +7036,7 @@ async function executeConfirmComplete() {
 
 async function deleteOrderCard(orderId, personId) {
   if (!guardEdit('删除订单')) return;
-  const order = getOrders(personId).find(o => o.id === orderId);
+  const order = getOrders(personId).find(o => _idEq(o.id, orderId));
   if (!order) return;
   if (!confirm('确定要删除订单「' + order.orderName + '」吗？此操作不可撤销。')) return;
   // 先删云端，成功后再更新本地状态
@@ -6659,8 +7045,10 @@ async function deleteOrderCard(orderId, personId) {
     if (error) throw new Error(error.message);
     notifyChange();
     auditLog('删除订单', order.orderName, '');
-    personOrders[personId] = getOrders(personId).filter(o => o.id !== orderId);
-    if (orderTimers[orderId]) { clearInterval(orderTimers[orderId]); delete orderTimers[orderId]; }
+    personOrders[personId] = getOrders(personId).filter(o => !_idEq(o.id, orderId));
+    delete orderTimers[String(orderId)]; // 移出全局定时器注册表
+    if (Object.keys(orderTimers).length === 0) __stopOrderTimer();
+    saveLocalData(); // B8: 立即同步本地，防止被删订单回流
     renderOrderCards(personId);
     showToast('订单「' + order.orderName + '」已删除', true);
   } catch (e) {
@@ -6671,22 +7059,57 @@ async function deleteOrderCard(orderId, personId) {
 
 /* ---- 倒计时定时器 ---- */
 
+/* ---- 单一定时器：所有订单倒计时由同一个全局 setInterval 驱动（避免每单一个定时器造成的内存泄漏） ---- */
+function __ensureOrderTimer() {
+  if (__orderTickTimer) return;
+  __orderTickTimer = setInterval(__tickOrderTimers, 1000);
+}
+
+function __stopOrderTimer() {
+  if (__orderTickTimer) { clearInterval(__orderTickTimer); __orderTickTimer = null; }
+}
+
+function __clearAllOrderTimers() {
+  __stopOrderTimer();
+  for (const tid of Object.keys(orderTimers)) delete orderTimers[tid];
+}
+
+function __tickOrderTimers() {
+  const ids = Object.keys(orderTimers);
+  if (ids.length === 0) { __stopOrderTimer(); return; }
+  for (const oid of ids) {
+    const pid = orderTimers[oid];
+    const order = (personOrders[pid] || []).find(o => _idEq(o.id, oid));
+    // 订单已删除 / 已结单 / 不限时 / 已暂停 → 移出注册表
+    if (!order || order.status !== 'active' || order.deadlineHours <= 0 || order.pausedAt != null) {
+      delete orderTimers[oid];
+      continue;
+    }
+    const remaining = getRemainingMs(order);
+    if (remaining <= 0) {
+      delete orderTimers[oid];
+      refreshSingleCard(oid, pid); // 到期 → 重渲染卡片为"已超时"
+    } else {
+      updateCountdownDisplay(oid, remaining);
+    }
+  }
+  if (Object.keys(orderTimers).length === 0) __stopOrderTimer();
+}
+
 function startPersonTimers(personId) {
   clearPersonTimers(personId);
   getOrders(personId).forEach(o => {
     if (o.status !== 'active' || o.deadlineHours <= 0 || o.pausedAt != null) return;
-    orderTimers[o.id] = setInterval(() => {
-      const remaining = getRemainingMs(o);
-      if (remaining <= 0) { clearInterval(orderTimers[o.id]); delete orderTimers[o.id]; refreshSingleCard(o.id, personId); }
-      else updateCountdownDisplay(o.id, remaining);
-    }, 1000);
+    orderTimers[String(o.id)] = personId; // 注册到全局定时器
   });
+  if (Object.keys(orderTimers).length > 0) __ensureOrderTimer();
 }
 
 function clearPersonTimers(personId) {
-  getOrders(personId).forEach(o => {
-    if (orderTimers[o.id]) { clearInterval(orderTimers[o.id]); delete orderTimers[o.id]; }
-  });
+  for (const oid of Object.keys(orderTimers)) {
+    if (_idEq(orderTimers[oid], personId)) delete orderTimers[oid];
+  }
+  if (Object.keys(orderTimers).length === 0) __stopOrderTimer();
 }
 
 function updateCountdownDisplay(orderId, remainingMs) {
@@ -6706,7 +7129,7 @@ function refreshSingleCard(orderId, personId) {
   /* 直接在 DOM 中替换对应卡片 */
   const oldCard = grid.querySelector('.order-card[data-oid="' + orderId + '"]');
   if (!oldCard) { renderOrderCards(pid); return; }
-  const o = orders.find(x => x.id === orderId);
+  const o = orders.find(x => _idEq(x.id, orderId));
   if (!o) { oldCard.remove(); return; }
   const cdState = getCountdownState(o);
   const cdClass = cdState === 'completed' ? 'expired' : cdState;
@@ -6728,8 +7151,8 @@ function refreshSingleCard(orderId, personId) {
   const newHTML = '<div class="order-card no-anim" data-oid="' + o.id + '">' +
     '<div class="order-card-header"><span class="oc-name">' + escHtml(o.orderName) + '</span><span class="oc-scope ' + scopeClass + '">' + escHtml(o.scope) + '</span></div>' +
     '<div class="order-card-pricing">' +
-      '<div class="oc-price-item"><span class="oc-price-label">人民币</span><span class="oc-price-value">¥' + o.priceRMB.toLocaleString() + '</span></div>' +
-      '<div class="oc-price-item"><span class="oc-price-label">保哈哈币</span><span class="oc-price-value">' + o.priceCoin.toLocaleString() + 'W</span></div>' +
+      '<div class="oc-price-item"><span class="oc-price-label">人民币</span><span class="oc-price-value">¥' + Number(o.priceRMB || 0).toLocaleString() + '</span></div>' +
+      '<div class="oc-price-item"><span class="oc-price-label">保哈哈币</span><span class="oc-price-value">' + Number(o.priceCoin || 0).toLocaleString() + 'W</span></div>' +
     '</div>' +
     '<div class="order-card-countdown ' + cdClass + '"><span class="oc-cd-icon">' + cdIcon + '</span><span class="oc-cd-time">' + cdText + '</span></div>' +
     renderCompletedTimeInfo(o) +
@@ -6745,15 +7168,15 @@ function refreshSingleCard(orderId, personId) {
     const addBtn = e.target.closest('#btnAddOrderCard');
     if (addBtn) {
       const pv = document.getElementById('profileView');
-      const pid = parseInt(pv && pv.dataset.personId, 10);
-      if (!isNaN(pid)) showAddCardForm();
+      const pid = pv && pv.dataset.personId;
+      if (pid) showAddCardForm();
       return;
     }
     if (e.target.closest('#btnCancelAddCard')) { hideAddCardForm(); return; }
     if (e.target.closest('#btnSubmitAddCard')) {
       const pv = document.getElementById('profileView');
-      const pid = parseInt(pv && pv.dataset.personId, 10);
-      if (!isNaN(pid)) submitAddCard(pid);
+      const pid = pv && pv.dataset.personId;
+      if (pid) submitAddCard(pid);
       return;
     }
     if (e.target.closest('#confirmClose') || e.target.closest('#confirmCancel')) { closeConfirm(); return; }
@@ -6770,8 +7193,8 @@ function closeProfile() {
   const listView = document.getElementById('personnelListView');
   const profileView = document.getElementById('profileView');
   if (profileView) {
-    const pid = parseInt(profileView.dataset.personId, 10);
-    if (!isNaN(pid)) clearPersonTimers(pid);
+    const pid = profileView.dataset.personId;
+    if (pid) clearPersonTimers(pid);
     /* 退出动画：快速淡出 */
     profileView.classList.add('anim-exit');
     profileView.classList.remove('anim-ready', 'hero-done');
@@ -6846,8 +7269,8 @@ function navigateProfile(direction) {
     ].map(f => '<div class="profile-field"><span class="pf-label">' + f.l + '</span><span class="pf-value">' + f.v + '</span></div>').join('');
 
     /* 清理旧定时器 */
-    const oldPid = parseInt(pv.dataset.personId, 10);
-    if (!isNaN(oldPid)) clearPersonTimers(oldPid);
+    const oldPid = pv.dataset.personId;
+    if (oldPid) clearPersonTimers(oldPid);
 
     pv.dataset.personId = nextPerson.id;
     pv.dataset.profileIndex = newIdx;
@@ -6886,8 +7309,8 @@ onPageSwitch('personnel', () => {
     pv.style.cssText = '';
     pv.classList.remove('anim-ready', 'anim-exit', 'hero-start', 'hero-expanding', 'hero-done');
     pv.style.display = 'none';
-    const pid = parseInt(pv.dataset.personId, 10);
-    if (!isNaN(pid)) clearPersonTimers(pid);
+    const pid = pv.dataset.personId;
+    if (pid) clearPersonTimers(pid);
   }
   if (lv) { lv.style.opacity = ''; lv.style.transition = ''; lv.style.pointerEvents = ''; }
 });
@@ -6898,8 +7321,8 @@ onAnyPageSwitch(function(targetPage) {
     if (pv) {
       pv.style.cssText = '';
       pv.classList.remove('anim-ready', 'anim-exit', 'hero-start', 'hero-expanding', 'hero-done');
-      const pid = parseInt(pv.dataset.personId, 10);
-      if (!isNaN(pid)) clearPersonTimers(pid);
+      const pid = pv.dataset.personId;
+      if (pid) clearPersonTimers(pid);
     }
     if (lv) { lv.style.opacity = ''; lv.style.transition = ''; lv.style.pointerEvents = ''; }
   }
@@ -6929,7 +7352,7 @@ function generateAttendanceData(year, month) {
 
   people.forEach(person => {
     /* seeded random per person per month */
-    const rng = seededRNG(person.id * 1000 + year * 12 + month);
+    const rng = seededRNG(_idSeed(person.id) * 1000 + year * 12 + month);
 
     const days = [];
     for (let d = 1; d <= daysInMonth; d++) {
@@ -6997,7 +7420,7 @@ function renderOverviewTable(year, month) {
 
   /* 统计每个人员的汇总 */
   const rows = allData.map(entry => {
-    const person = people.find(p => p.id === entry.personId);
+    const person = people.find(p => _idEq(p.id, entry.personId));
     if (!person) return null;
 
     let present = 0, late = 0, early = 0, absent = 0, leave = 0;
@@ -7014,26 +7437,29 @@ function renderOverviewTable(year, month) {
     return { person, present, late, early, absent, leave };
   }).filter(Boolean);
 
-  /* 今日概况 */
+  /* 今日概况（仅当前月有意义；非当前月显示占位符，避免全是 0 误导） */
   const today = new Date();
+  const isCurrentMonth = (year === today.getFullYear() && month === today.getMonth() + 1);
   const todayStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
   let todayPresent = 0, todayLate = 0, todayLeave = 0, todayAbsent = 0;
-  allData.forEach(entry => {
-    const td = entry.days.find(d => d.date === todayStr);
-    if (!td) return;
-    switch (td.status) {
-      case 'normal': todayPresent++; break;
-      case 'late': case 'early': todayLate++; break;
-      case 'leave': todayLeave++; break;
-      case 'absent': todayAbsent++; break;
-    }
-  });
+  if (isCurrentMonth) {
+    allData.forEach(entry => {
+      const td = entry.days.find(d => d.date === todayStr);
+      if (!td) return;
+      switch (td.status) {
+        case 'normal': todayPresent++; break;
+        case 'late': case 'early': todayLate++; break;
+        case 'leave': todayLeave++; break;
+        case 'absent': todayAbsent++; break;
+      }
+    });
+  }
 
-  document.getElementById('attSumTotal').textContent = people.length;
-  document.getElementById('attSumPresent').textContent = todayPresent;
-  document.getElementById('attSumLate').textContent = todayLate;
-  document.getElementById('attSumLeave').textContent = todayLeave;
-  document.getElementById('attSumAbsent').textContent = todayAbsent;
+  document.getElementById('attSumTotal').textContent = people.filter(p => p.status === 'active').length; // B7: 应到=在岗
+  document.getElementById('attSumPresent').textContent = isCurrentMonth ? todayPresent : '—';
+  document.getElementById('attSumLate').textContent = isCurrentMonth ? todayLate : '—';
+  document.getElementById('attSumLeave').textContent = isCurrentMonth ? todayLeave : '—';
+  document.getElementById('attSumAbsent').textContent = isCurrentMonth ? todayAbsent : '—';
 
   /* 表格渲染 */
   tableBody.innerHTML = rows.map(r => `
@@ -7057,8 +7483,8 @@ function renderOverviewTable(year, month) {
   tableBody.onclick = function(e) {
     const row = e.target.closest('tr[data-pid]');
     if (!row) return;
-    const pid = parseInt(row.dataset.pid, 10);
-    if (!isNaN(pid)) openAttDetail(pid, year, month);
+    const pid = row.dataset.pid;
+    if (pid) openAttDetail(pid, year, month);
   };
 
 }
@@ -7072,7 +7498,7 @@ let _savedOverviewYear = null;
 let _savedOverviewMonth = null;
 
 function openAttDetail(personId, year, month) {
-  const person = people.find(p => p.id === personId);
+  const person = people.find(p => _idEq(p.id, personId));
   if (!person) return;
 
   attDetailPersonId = personId;
@@ -7200,145 +7626,181 @@ pageStages.attendance = '阶段 4 — 考勤管理';
 console.log('◈ 阶段4 — 考勤管理 — 已就绪');
 
 /* ================================================================
-   分区 11s: 薪酬数据生成器
+   分区 11s: 薪酬台账聚合（全部累计，按订单类型/时间）
    ================================================================ */
 
-const salDataCache = new Map(); // key: "YYYY-MM"
-let salCurrentYear = 0, salCurrentMonth = 0; // 当前薪酬视图年月（供行点击使用）
+/* ---- 北京时间（UTC+8）日期 key ---- */
+function beijingDayKey(ms) {
+  if (!ms) return '';
+  const d = new Date(ms);
+  const bj = new Date(d.getTime() + (d.getTimezoneOffset() + 480) * 60000);
+  const pad = n => String(n).padStart(2, '0');
+  return bj.getFullYear() + '-' + pad(bj.getMonth() + 1) + '-' + pad(bj.getDate());
+}
 
-function generateSalaryData(year, month) {
-  const key = year + '-' + String(month).padStart(2,'0');
-  if (salDataCache.has(key)) return salDataCache.get(key);
+/* 全员一次遍历预聚合薪酬：key = String(personId) → 五项工资（总览表 N 行时把 O(N²) 降为 O(N)） */
+function buildSalaryStatsMap() {
+  const now = Date.now();
+  const todayKey = beijingDayKey(now);
+  const since7 = now - 7 * 24 * 3600 * 1000;
+  const map = new Map();
+  for (const r of salaryRecords) {
+    const pid = String(r.personId);
+    let s = map.get(pid);
+    if (!s) { s = { run: 0, guard: 0, today: 0, week7: 0, total: 0 }; map.set(pid, s); }
+    const rmb = Number(r.priceRMB) || 0;
+    if (r.scope === '护航') s.guard += rmb; else s.run += rmb;
+    const t = Number(r.completedAt) || 0;
+    if (t && beijingDayKey(t) === todayKey) s.today += rmb;
+    if (t && t >= since7) s.week7 += rmb;
+  }
+  for (const s of map.values()) s.total = s.run + s.guard;
+  return map;
+}
 
-  const seedBase = year * 12 + month;
-  const depts = ['技术部','产品部','市场部','运营部','人事部','财务部','设计部'];
+/* 单人五项工资：跑刀 / 护航 / 今日 / 近7天 / 总（从薪酬台账实时聚合） */
+/* 传入预聚合 statsMap 时直接查表；否则回退为单人遍历（兼容旧调用） */
+function salaryStatsFor(personId, statsMap) {
+  if (statsMap) {
+    return statsMap.get(String(personId)) || { run: 0, guard: 0, today: 0, week7: 0, total: 0 };
+  }
+  const now = Date.now();
+  const todayKey = beijingDayKey(now);
+  const since7 = now - 7 * 24 * 3600 * 1000;
+  let run = 0, guard = 0, today = 0, week7 = 0;
+  for (const r of salaryRecords) {
+    if (!_idEq(r.personId, personId)) continue;
+    const rmb = Number(r.priceRMB) || 0;
+    if (r.scope === '护航') guard += rmb; else run += rmb;
+    const t = Number(r.completedAt) || 0;
+    if (t && beijingDayKey(t) === todayKey) today += rmb;
+    if (t && t >= since7) week7 += rmb;
+  }
+  return { run, guard, today, week7, total: run + guard };
+}
 
-  // 基本工资按职位分档 (Set 匹配，覆盖全部 10 种职位)
-  const tierHigh = new Set(['总监','高级工程师','工程师','顾问','架构师']);
-  const tierMid  = new Set(['经理','主管','分析师','产品经理']);
-  const tierLow  = new Set(['专员','初级工程师','HR 经理','UI 设计师','前端开发','后端开发']);
+/* 全员汇总（总览卡片用） */
+function computeOrderSalaryStats() {
+  const now = Date.now();
+  const todayKey = beijingDayKey(now);
+  const since7 = now - 7 * 24 * 3600 * 1000;
+  const s = { count: 0, todayRMB: 0, todayCoin: 0, weekRMB: 0, weekCoin: 0, totalRMB: 0, totalCoin: 0 };
+  for (const r of salaryRecords) {
+    const rmb = Number(r.priceRMB) || 0;
+    const coin = Number(r.priceCoin) || 0;
+    const t = Number(r.completedAt) || 0;
+    s.count += 1;
+    s.totalRMB += rmb; s.totalCoin += coin;
+    if (t && beijingDayKey(t) === todayKey) { s.todayRMB += rmb; s.todayCoin += coin; }
+    if (t && t >= since7) { s.weekRMB += rmb; s.weekCoin += coin; }
+  }
+  return s;
+}
 
-  const data = people.map(p => {
-    const s = seededRNG(p.id * 1000 + seedBase);
-
-    let baseMin = 5000, baseMax = 8000;
-    if (tierHigh.has(p.title))      { baseMin = 15000; baseMax = 30000; }
-    else if (tierMid.has(p.title))  { baseMin = 10000; baseMax = 15000; }
-    else if (tierLow.has(p.title))  { baseMin = 7000;  baseMax = 12000; }
-    const baseSalary = Math.round(baseMin + s() * (baseMax - baseMin));
-
-    const bonus = Math.round(s() * s() * 8000);    // 绩效奖金
-    const overtime = Math.round(s() * s() * 3000); // 加班费
-    const deduction = Math.round(s() * 2000);       // 扣款
-    const total = baseSalary + bonus + overtime - deduction;
-
-    return { personId: p.id, name: p.name, dept: p.dept, title: p.title,
-      baseSalary, bonus, overtime, deduction, total };
-  });
-
-  salDataCache.set(key, data);
-  return data;
+/* 用时文本（毫秒 → 中文） */
+function salaryDurationText(a, b) {
+  if (!a) return '—';
+  const ms = Math.max(0, (b || Date.now()) - a);
+  const h = Math.floor(ms / 3600000);
+  const m = Math.floor((ms % 3600000) / 60000);
+  if (h > 0) return h + ' 小时 ' + m + ' 分';
+  if (m > 0) return m + ' 分钟';
+  return Math.max(1, Math.floor(ms / 1000)) + ' 秒';
 }
 
 /* ================================================================
    分区 11t: 薪酬总览表 + 单人详情
    ================================================================ */
 
-function renderSalaryOverview(year, month) {
-  salCurrentYear = year; salCurrentMonth = month;
-  const data = generateSalaryData(year, month);
-  const totalAll = data.reduce((s, d) => s + d.total, 0);
-  const totalBonus = data.reduce((s, d) => s + d.bonus, 0);
-  const totalDeduction = data.reduce((s, d) => s + d.deduction, 0);
-  const avgSalary = data.length ? Math.round(totalAll / data.length) : 0;
+function refreshSalaryIfActive() {
+  if (currentPageName === 'salary') renderSalaryOverview();
+}
 
-  const fmt = n => '¥' + n.toLocaleString('zh-CN');
-  document.getElementById('salMonthLabel').textContent = year + '年 ' + month + '月';
+function renderSalaryOverview() {
+  const s = computeOrderSalaryStats();
+  const fmt = n => '¥' + Math.round(n).toLocaleString('zh-CN');
+  const fmtC = n => Math.round(n).toLocaleString('zh-CN') + 'W';
   document.getElementById('salSummary').innerHTML =
-    `<div class="sal-sum-card"><div class="ssc-value">${fmt(totalAll)}</div><div class="ssc-label">本月总薪资</div></div>
-     <div class="sal-sum-card"><div class="ssc-value">${fmt(avgSalary)}</div><div class="ssc-label">平均薪资</div></div>
-     <div class="sal-sum-card"><div class="ssc-value">${fmt(totalBonus)}</div><div class="ssc-label">奖金总额</div></div>
-     <div class="sal-sum-card"><div class="ssc-value">${fmt(totalDeduction)}</div><div class="ssc-label">扣款总额</div></div>`;
+    `<div class="sal-sum-card"><div class="ssc-value">${s.count}</div><div class="ssc-label">单数</div></div>
+     <div class="sal-sum-card"><div class="ssc-value ssc-two">${fmt(s.todayRMB)}<span class="ssc-sub">${fmtC(s.todayCoin)}</span></div><div class="ssc-label">今日薪资</div></div>
+     <div class="sal-sum-card"><div class="ssc-value ssc-two">${fmt(s.weekRMB)}<span class="ssc-sub">${fmtC(s.weekCoin)}</span></div><div class="ssc-label">近7天薪资</div></div>
+     <div class="sal-sum-card"><div class="ssc-value ssc-two">${fmt(s.totalRMB)}<span class="ssc-sub">${fmtC(s.totalCoin)}</span></div><div class="ssc-label">总薪资</div></div>`;
 
-  document.getElementById('salTableBody').innerHTML = data.map(d => {
-    const av = (d.name || '?').charAt(0);
+  const statsMap = buildSalaryStatsMap(); // 一次遍历预聚合，避免每行重复遍历全台账
+  document.getElementById('salTableBody').innerHTML = people.map(p => {
+    const st = salaryStatsFor(p.id, statsMap);
+    const av = (p.name || '?').charAt(0);
     const hues = [210,190,160,220,200,340,30,260,290,170,320,40,130,280,350,100,20,310,140,50];
-    const h = hues[(d.personId * 7) % hues.length];
-    return `<tr data-sid="${d.personId}" class="sal-row">
-      <td><div class="sal-person"><div class="sal-av" style="background:hsl(${h},55%,55%);">${escHtml(av)}</div>${escHtml(d.name)}</div></td>
-      <td>${escHtml(d.dept)}</td><td>${fmt(d.baseSalary)}</td><td>${fmt(d.bonus)}</td>
-      <td>${fmt(d.overtime)}</td><td style="color:#ff3b30;">-${fmt(d.deduction)}</td>
-      <td style="font-weight:700;">${fmt(d.total)}</td></tr>`;
+    const h = hues[_idSeed(p.id) % hues.length];
+    return `<tr data-sid="${p.id}" class="sal-row">
+      <td><div class="sal-person"><div class="sal-av" style="background:hsl(${h},55%,55%);">${escHtml(av)}</div>${escHtml(p.name)}</div></td>
+      <td>${escHtml(p.dept)}</td>
+      <td>${fmt(st.run)}</td><td>${fmt(st.guard)}</td><td>${fmt(st.today)}</td><td>${fmt(st.week7)}</td>
+      <td style="font-weight:700;">${fmt(st.total)}</td></tr>`;
   }).join('');
 
-  // 行点击 → 单人详情
-  // 行点击 -> 单人详情（事件委托）
+  // 行点击 → 单人详情（事件委托，只绑定一次）
   var salBody = document.getElementById('salTableBody');
   if (salBody && !salBody._salDelegated) {
     salBody._salDelegated = true;
     salBody.addEventListener('click', function(e) {
       var row = e.target.closest('.sal-row');
       if (!row) return;
-      showSalaryDetail(Number(row.dataset.sid), salCurrentYear, salCurrentMonth);
+      showSalaryDetail(row.dataset.sid);
     });
   }
-
-
-  // 月份切换
-  document.getElementById('salPrevMonth').onclick = () => {
-    let m = month - 1, y = year;
-    if (m < 1) { m = 12; y--; }
-    renderSalaryOverview(y, m);
-  };
-  document.getElementById('salNextMonth').onclick = () => {
-    let m = month + 1, y = year;
-    if (m > 12) { m = 1; y++; }
-    renderSalaryOverview(y, m);
-  };
 }
 
-function showSalaryDetail(personId, year, month) {
+function showSalaryDetail(personId) {
   const salTableView = document.getElementById('salTableView');
   if (salTableView) salTableView.style.display = 'none';
   const salSummary = document.querySelector('#page-salary .sal-summary');
   if (salSummary) salSummary.style.display = 'none';
-  const salMonthPicker = document.getElementById('salMonthPicker');
-  if (salMonthPicker) salMonthPicker.style.display = 'none';
 
-  const p = people.find(x => x.id === personId);
+  const p = people.find(x => _idEq(x.id, personId));
   if (!p) return;
   const av = (p.name || '?').charAt(0);
   const hues = [210,190,160,220,200,340,30,260,290,170,320,40,130,280,350,100,20,310,140,50];
-  const h = hues[(personId * 7) % hues.length];
+  const h = hues[_idSeed(personId) % hues.length];
 
   const salDetailHeader = document.getElementById('salDetailHeader');
   if (salDetailHeader) salDetailHeader.innerHTML =
     `<div class="sdh-av" style="background:hsl(${h},55%,55%);">${escHtml(av)}</div>
      <div><div class="sdh-name">${escHtml(p.name)}</div><div class="sdh-meta">${escHtml(p.dept)} · ${escHtml(p.title)} · ${escHtml(p.code)}</div></div>`;
 
-  // 12个月历史
-  const rows = [];
-  for (let m = 1; m <= 12; m++) {
-    const data = generateSalaryData(year, m);
-    const d = data.find(x => x.personId === personId);
-    if (d) rows.push({ month: m, ...d });
-  }
+  // 接单明细：从 personOrders 拉该人全部订单（含进行中），按接单时间倒序
+  const orders = (personOrders[personId] || []).slice().sort((a, b) => (b.startTime || 0) - (a.startTime || 0));
+  const fmt = n => '¥' + Math.round(n).toLocaleString('zh-CN');
+  const fmtC = n => Math.round(n).toLocaleString('zh-CN') + 'W';
 
-  const fmt = n => '¥' + n.toLocaleString('zh-CN');
   const salHistoryBox = document.getElementById('salHistoryBox');
   if (salHistoryBox) salHistoryBox.innerHTML =
-    `<div class="shb-title">${year}年 薪资历史</div>
-     <div class="sal-table-wrap"><table class="sal-table"><thead><tr>
-       <th>月份</th><th>基本工资</th><th>奖金</th><th>加班费</th><th>扣款</th><th>合计</th>
-     </tr></thead><tbody>${rows.map(d => `<tr>
-       <td style="font-weight:600;">${year}-${String(d.month).padStart(2,'0')}</td>
-       <td>${fmt(d.baseSalary)}</td><td>${fmt(d.bonus)}</td><td>${fmt(d.overtime)}</td>
-       <td style="color:#ff3b30;">-${fmt(d.deduction)}</td>
-       <td style="font-weight:700;">${fmt(d.total)}</td>
-     </tr>`).join('')}</tbody></table></div>`;
+    `<div class="shb-title">接单明细（${orders.length} 单）</div>` +
+    (orders.length === 0
+      ? '<div class="shb-empty">暂无订单记录，去「人员档案」为该员工创建订单即可入账</div>'
+      : `<div class="sal-table-wrap"><table class="sal-table"><thead><tr>
+         <th>类型</th><th>人民币</th><th>哈哈币</th><th>接单时间</th><th>结单时间</th><th>用时</th><th>状态</th>
+       </tr></thead><tbody>` + orders.map(o => {
+         const done = o.status === 'completed';
+         const tag = o.scope === '护航' ? 'sal-tag-guard' : 'sal-tag-run';
+         return `<tr>
+           <td><span class="sal-tag ${tag}">${escHtml(o.scope || '跑刀')}</span></td>
+           <td style="font-weight:600;">${fmt(o.priceRMB)}</td>
+           <td>${fmtC(o.priceCoin)}</td>
+           <td>${formatBeijingTime(o.startTime)}</td>
+           <td>${done ? formatBeijingTime(o.completedAt) : '<span class="sal-st-active">进行中</span>'}</td>
+           <td>${salaryDurationText(o.startTime, done ? o.completedAt : Date.now())}</td>
+           <td>${done ? '<span class="sal-st-done">已结单</span>' : '<span class="sal-st-active">进行中</span>'}</td>
+         </tr>`;
+       }).join('') + '</tbody></table></div>');
 
   const salDetailView = document.getElementById('salDetailView');
-  if (salDetailView) salDetailView.style.display = 'flex';
+  if (salDetailView) {
+    salDetailView.style.display = 'flex';
+    salDetailView.classList.remove('sal-anim-in');
+    void salDetailView.offsetWidth; // 强制重排以重新触发动画
+    salDetailView.classList.add('sal-anim-in');
+  }
   const salBackBtn = document.getElementById('salBackBtn');
   if (salBackBtn) salBackBtn.onclick = resetSalaryView;
 }
@@ -7348,10 +7810,8 @@ function resetSalaryView() {
   if (salTableView) salTableView.style.display = '';
   const salSummary = document.querySelector('#page-salary .sal-summary');
   if (salSummary) salSummary.style.display = '';
-  const monthPicker = document.getElementById('salMonthPicker');
-  if (monthPicker) monthPicker.style.display = '';
   const salDetailView = document.getElementById('salDetailView');
-  if (salDetailView) salDetailView.style.display = 'none';
+  if (salDetailView) { salDetailView.style.display = 'none'; salDetailView.classList.remove('sal-anim-in'); }
 }
 
 /* ================================================================
@@ -7432,7 +7892,7 @@ function renderExamCards() {
  * 打开考生详情弹窗
  */
 function openExamDetail(eid) {
-  const c = examCandidates.find(x => x.id === eid);
+  const c = examCandidates.find(x => _idEq(x.id, eid));
   if (!c) return;
 
   document.getElementById('edBody').innerHTML =
@@ -7479,7 +7939,7 @@ function closeExamDetail() {
 
 /* 修改人头数（每个考生各自一个） */
 function editHeadcount(eid) {
-  const c = examCandidates.find(x => x.id === eid);
+  const c = examCandidates.find(x => _idEq(x.id, eid));
   if (!c || c.status !== 'pending') return;
   const val = prompt('修改「' + c.name + '」的人头数', c.headcount || 0);
   if (val === null) return;
@@ -7498,7 +7958,7 @@ function editHeadcount(eid) {
  * +1 次数
  */
 function incrementExam(eid) {
-  const c = examCandidates.find(x => x.id === eid);
+  const c = examCandidates.find(x => _idEq(x.id, eid));
   if (!c || c.status !== 'pending') return;
 
   c.count++;
@@ -7529,7 +7989,7 @@ function incrementExam(eid) {
  * 拒绝考生
  */
 function rejectExam(eid) {
-  const c = examCandidates.find(x => x.id === eid);
+  const c = examCandidates.find(x => _idEq(x.id, eid));
   if (!c || c.status !== 'pending') return;
   c.status = 'rejected';
   c.rejectTime = beijingNow();
@@ -7545,7 +8005,7 @@ function rejectExam(eid) {
 /* ---- 直接通过 ---- */
 
 function passExamDirectly(eid) {
-  const c = examCandidates.find(x => x.id === eid);
+  const c = examCandidates.find(x => _idEq(x.id, eid));
   if (!c || c.status !== 'pending') return;
 
   c.status = 'passed';
@@ -7590,7 +8050,7 @@ function submitExamCandidate() {
 
   const project = document.getElementById('efProject').value;
   const candidate = {
-    id: examIdCounter++,
+    id: newEntityId(),
     name: name,
     project: project,
     count: 0,
@@ -7603,6 +8063,7 @@ function submitExamCandidate() {
   // 先写云端，再同步本地
   cloudExam.upsertCandidateDirect(candidate).then(success => {
     examCandidates.push(candidate);
+    saveLocalData(); // B8: 新考生入本地缓存
     hideExamAddForm();
     renderExamCards();
     showToast(success ? '考生「' + name + '」已添加' : '考生已保存到本地，云端同步失败', success);
@@ -7621,16 +8082,16 @@ function submitExamCandidate() {
     if (e.target.id === 'examAddOverlay') { hideExamAddForm(); return; }
     /* 详情弹窗按钮 — 从 overlay dataset 取当前考生ID */
     const overlay = document.getElementById('examDetailOverlay');
-    const oeid = overlay ? parseInt(overlay.dataset.eid, 10) : NaN;
-    if (e.target.closest('#edPlusOne')) { if (!isNaN(oeid)) incrementExam(oeid); return; }
-    if (e.target.closest('#edPass')) { if (!isNaN(oeid)) passExamDirectly(oeid); return; }
-    if (e.target.closest('#edReject')) { if (!isNaN(oeid)) rejectExam(oeid); return; }
-    if (e.target.closest('#edHeadcount')) { if (!isNaN(oeid)) editHeadcount(oeid); return; }
+    const oeid = overlay ? overlay.dataset.eid : '';
+    if (e.target.closest('#edPlusOne')) { if (oeid) incrementExam(oeid); return; }
+    if (e.target.closest('#edPass')) { if (oeid) passExamDirectly(oeid); return; }
+    if (e.target.closest('#edReject')) { if (oeid) rejectExam(oeid); return; }
+    if (e.target.closest('#edHeadcount')) { if (oeid) editHeadcount(oeid); return; }
     /* 考生卡片点击 → 展开详情 */
     const card = e.target.closest('.exam-card');
     if (card) {
-      const eid = parseInt(card.dataset.eid, 10);
-      if (!isNaN(eid)) openExamDetail(eid);
+      const eid = card.dataset.eid;
+      if (eid) openExamDetail(eid);
       return;
     }
   });
@@ -7666,7 +8127,7 @@ function generateTrainData() {
     const pool = [...people].sort(() => s() - 0.5).slice(0, count);
 
     const enrolled = pool.map(p => {
-      const s2 = seededRNG(p.id * 1000 + course.id * 7);
+      const s2 = seededRNG(_idSeed(p.id) * 1000 + course.id * 7);
       const progress = Math.round(50 + s2() * 50); // 50-100%
       const done = progress >= 100;
       let doneDate = '';
@@ -7696,8 +8157,7 @@ function getTrainStatus(courseId) {
    ================================================================ */
 
 function renderTrainOverview() {
-	trainEnrollCache.clear(); // 清空缓存确保数据最新
-  generateTrainData();
+  generateTrainData(); // B9: 不清空缓存，保留编辑后的学员进度/成绩
 
   let ongoing = 0, done = 0, upcoming = 0, totalRate = 0;
   trainCourses.forEach(c => {
@@ -7752,7 +8212,7 @@ function showTrainDetail(courseId) {
   if (trainPartBody) trainPartBody.innerHTML = enrolled.map(e => {
     const av = (e.name || '?').charAt(0);
     const hues = [210,190,160,220,200,340,30,260,290,170,320,40,130,280,350,100,20,310,140,50];
-    const h = hues[(e.personId * 7) % hues.length];
+    const h = hues[_idSeed(e.personId) % hues.length];
     return `<tr>
       <td><div class="sal-person"><div class="sal-av" style="background:hsl(${h},55%,55%);">${escHtml(av)}</div>${escHtml(e.name)}</div></td>
       <td>${escHtml(e.dept)}</td>
@@ -8092,11 +8552,13 @@ function resetTrainView() {
       }
 
       // 防篡改校验：与 version.json 里的 SHA-256 比对，不一致说明文件损坏/被篡改，放弃更新
-      if (__updateSha256) {
-        var gotHash = await sha256Hex(htmlText);
-        if (gotHash && gotHash.toLowerCase() !== __updateSha256.toLowerCase()) {
-          throw new Error('校验失败：下载文件哈希不匹配，已取消更新（请重试或检查网络）');
-        }
+      // fail-closed：拿不到指纹或哈希为空都视为失败，绝不跳过校验
+      if (!__updateSha256) {
+        throw new Error('校验失败：缺少更新指纹，已取消更新（请重试或检查网络）');
+      }
+      var gotHash = await sha256Hex(htmlText);
+      if (!gotHash || gotHash.toLowerCase() !== __updateSha256.toLowerCase()) {
+        throw new Error('校验失败：下载文件哈希不匹配，已取消更新（请重试或检查网络）');
       }
 
       // Show install progress
@@ -8367,8 +8829,7 @@ function resetTrainView() {
 
 /* ---- 页面切换钩子：薪酬管理 ---- */
 onPageSwitch('salary', () => {
-  const now = new Date();
-  renderSalaryOverview(now.getFullYear(), now.getMonth() + 1);
+  renderSalaryOverview();
   resetSalaryView();
 });
 
@@ -8458,6 +8919,7 @@ let appMode = 'view'; // 'view' | 'edit'
   setAppMode('view');
 
   function setAppMode(mode) {
+    if (mode === 'edit' && isGuest()) { kickGuest('尝试切换编辑模式'); return; }
     appMode = mode;
 
     /* 全局 body 标记 */
@@ -8495,8 +8957,12 @@ let appMode = 'view'; // 'view' | 'edit'
   }
 })();
 
-/* 编辑守卫：在查看模式下阻止编辑操作 */
+/* 编辑守卫：在查看模式下阻止编辑操作；游客尝试编辑直接踢出 */
 function guardEdit(actionName) {
+  if (isGuest()) {
+    kickGuest('尝试' + (actionName || '编辑数据'));
+    return false;
+  }
   if (appMode !== 'edit') {
     showToast('当前为查看模式，请切换到编辑模式后操作', false);
     return false;
@@ -8620,82 +9086,11 @@ document.addEventListener('click', function(e) {
     origRenderAttDetail(year, month);
     // 事件委托不需要重新绑定，clean pass
   };
-})();
 
-/* ================================================================
-   分区 11z4: 编辑模式 — 薪酬管理 (行内编辑)
-   ================================================================ */
-
-(function patchSalaryEdit() {
-  // 事件委托：在 #salHistoryBox tbody 上挂一个监听器
-  // 事件委托挂在 #salHistoryBox（稳定父元素），因为 tbody 会被 innerHTML 替换
-  var salBox = document.getElementById('salHistoryBox');
-  if (salBox && !salBox._editPatched) {
-    salBox._editPatched = true;
-    salBox.addEventListener('click', function(e) {
-      if (appMode !== 'edit') return;
-      var cell = e.target.closest('td.editable-val');
-      if (!cell) return;
-      e.stopPropagation();
-
-      var row = cell.parentElement;
-      var cells = row.querySelectorAll('td');
-      var monthCell = cells[0];
-      var baseCell  = cells[1];
-      var bonusCell = cells[2];
-      var otCell    = cells[3];
-      var dedCell   = cells[4];
-
-      // 从 data 属性中获取 personId
-      var pv = document.getElementById('profileView');
-      var personId = pv ? parseInt(pv.dataset.personId, 10) : NaN;
-      if (isNaN(personId)) return;
-
-      var person = people.find(function(x) { return x.id === personId; });
-      if (!person) return;
-      var monthText = monthCell.textContent.trim();
-      var parts = monthText.split('-').map(Number);
-      var data = generateSalaryData(parts[0], parts[1]);
-      var d = data.find(function(x) { return x.personId === personId; });
-      if (!d) return;
-
-      var fieldLabel, fieldKey;
-      if (cell === baseCell) { fieldLabel = '基本工资'; fieldKey = 'baseSalary'; }
-      else if (cell === bonusCell) { fieldLabel = '绩效奖金'; fieldKey = 'bonus'; }
-      else if (cell === otCell) { fieldLabel = '加班费'; fieldKey = 'overtime'; }
-      else { fieldLabel = '扣款'; fieldKey = 'deduction'; }
-      var rawVal = cell.textContent.replace(/[¥,]/g,'').replace(/^-/,'');
-
-      openEditPopover('编辑 ' + person.name + ' — ' + monthText, [
-        { label: fieldLabel, key: 'value', value: rawVal, type: 'number' }
-      ], cell, function(result) {
-        var newVal = parseInt(result.value, 10) || 0;
-        d[fieldKey] = newVal;
-        d.total = d.baseSalary + d.bonus + d.overtime - d.deduction;
-        var fmt = function(n) { return '¥' + n.toLocaleString('zh-CN'); };
-        if (cell === dedCell) cell.textContent = '-¥' + newVal.toLocaleString('zh-CN');
-        else cell.textContent = fmt(newVal);
-        var totalCell = row.querySelector('td:last-child');
-        if (totalCell) totalCell.textContent = fmt(d.total);
-        showToast('已保存', true);
-      });
-    });
-  }
-
-  var origShowSalaryDetail = showSalaryDetail;
-  showSalaryDetail = function(personId, year, month) {
-    origShowSalaryDetail(personId, year, month);
-    // 事件委托不需要重新绑定，只需标记可编辑
-    if (appMode !== 'edit') return;
-    setTimeout(function() {
-      var rows = document.querySelectorAll('#salHistoryBox tbody tr');
-      for (var i = 0; i < rows.length; i++) {
-        var cells = rows[i].querySelectorAll('td');
-        for (var j = 1; j <= 4 && j < cells.length; j++) {
-          cells[j].classList.add('editable-val');
-        }
-      }
-    }, 50);
+  var origCloseAttDetail = closeAttDetail;
+  closeAttDetail = function() {
+    origCloseAttDetail();
+    renderOverviewTable(attCurrentYear, attCurrentMonth); // B6: 编辑后返回总览时刷新汇总数据
   };
 })();
 
@@ -8797,14 +9192,14 @@ console.log('◈ 分区 11z2-11z6 — 编辑模式引擎 — 已就绪');
 // 所有变量已定义，启动云端 + 本地数据恢复
 // 登录门禁：先检查登录状态，未登录显示登录页；登录后加载数据
 setTimeout(function bootApp() {
-  if (isLoggedIn()) { initCloud(); }
+  if (isLoggedIn()) { if (isGuest()) _enterGuestMode(); initCloud(); }
   else { showAuthOverlay(); }
 }, 10);
 
 // 关闭页面/标签前强制保存本地数据（防止3秒防抖窗口内数据丢失）
 window.addEventListener('beforeunload', () => {
   stopRealtimeSync();
-  for (var tid in orderTimers) { clearInterval(orderTimers[tid]); }
+  __clearAllOrderTimers();
   try {
     localStorage.setItem(LS_KEYS.people, JSON.stringify(people));
     localStorage.setItem(LS_KEYS.orders, JSON.stringify(personOrders));
@@ -8839,15 +9234,23 @@ window.addEventListener('beforeunload', () => {
     <div class="auth-pane active" id="pane-login">
       <div class="auth-field"><label>邮箱</label><input type="email" id="loginEmail" autocomplete="username" placeholder="you@example.com"></div>
       <div class="auth-field"><label>密码</label><input type="password" id="loginPassword" autocomplete="current-password" placeholder="请输入密码"></div>
+      <div class="auth-agree" id="loginAgree"></div>
       <button class="auth-btn" id="btnLogin" type="button">登 录</button>
+      <label class="auth-remember" style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-2);margin-top:10px;cursor:pointer;user-select:none;"><input type="checkbox" id="loginRemember" style="width:auto;margin:0;accent-color:var(--accent-blue);"> 记住密码</label>
       <span class="auth-link" data-goto="register">没有账号？去注册</span>
+      <div class="auth-guest" style="margin-top:14px;padding-top:12px;border-top:1px dashed rgba(128,128,128,0.25);">
+        <button class="auth-btn" id="btnGuest" type="button" style="background:transparent;border:1px solid var(--accent-teal);color:var(--accent-teal);font-weight:600;">👁 游客模式（只读预览）</button>
+        <div style="font-size:11px;color:var(--text-2);margin-top:6px;line-height:1.5;">游客只能查看数据、无法编辑；系统会记录你的设备信息，异常操作将被踢出并临时锁定。</div>
+      </div>
     </div>
 
     <div class="auth-pane" id="pane-register">
       <div class="auth-field"><label>邀请码</label><input type="text" id="regInvite" placeholder="请输入 8 位邀请码"></div>
       <div class="auth-field"><label>邮箱</label><input type="email" id="regEmail" autocomplete="username" placeholder="you@example.com"></div>
       <div class="auth-field"><label>密码</label><input type="password" id="regPassword" autocomplete="new-password" placeholder="至少 6 位"></div>
+      <div class="auth-field"><label>确认密码</label><input type="password" id="regPassword2" autocomplete="new-password" placeholder="再次输入密码"></div>
       <div class="auth-field"><label>昵称（可选）</label><input type="text" id="regNickname" placeholder="给自己起个名字"></div>
+      <div class="auth-agree" id="regAgree"></div>
       <button class="auth-btn" id="btnRegister" type="button">注 册</button>
       <span class="auth-link" data-goto="login">已有账号？去登录</span>
     </div>
@@ -8878,6 +9281,17 @@ window.addEventListener('beforeunload', () => {
   </div>
 </div>
 
+<!-- ==================== 协议全文弹窗 ==================== -->
+<div class="agree-overlay" id="agreeOverlay">
+  <div class="agree-modal">
+    <div class="agree-head">
+      <span class="agree-title" id="agreeTitle">协议</span>
+      <button class="agree-close" id="agreeClose" type="button">✕</button>
+    </div>
+    <div class="agree-body" id="agreeBody"></div>
+  </div>
+</div>
+
 <script>
 /* ================================================================
    登录系统 UI：表单切换 / 登录 / 注册 / 忘记密码 / 邀请码 / 管理员
@@ -8887,6 +9301,437 @@ window.addEventListener('beforeunload', () => {
   function setErr(msg) { var e = el('authErr'); if (e) e.textContent = msg || ''; }
   function setMsg(msg) { var m = el('authMsg'); if (m) m.textContent = msg || ''; }
   function clearMsgs() { setErr(''); setMsg(''); }
+
+  /* ---- 记住密码（仅存本机 localStorage，明文） ---- */
+  var REMEMBER_KEY = 'clubapp_remember';
+  function _saveRemember(email, pwd) {
+    try { localStorage.setItem(REMEMBER_KEY, JSON.stringify({ email: email, pwd: pwd })); } catch (e) {}
+  }
+  function _clearRemember() {
+    try { localStorage.removeItem(REMEMBER_KEY); } catch (e) {}
+  }
+  function _loadRemember() {
+    try { var raw = localStorage.getItem(REMEMBER_KEY); return raw ? JSON.parse(raw) : null; } catch (e) { return null; }
+  }
+
+  /* ---- 协议勾选（用户协议 / 隐私政策 / 安全承诺） ---- */
+  var AGREE_KEY = 'clubapp_agreed';
+  var AGREEMENTS = {
+1:{title:'《琪琪用户协议》',text:`《琪琪用户协议》（详细完整版）
+版本号：V2.0
+最后更新日期：2026年8月14日
+发布方：开发者“琪琪”（以下简称“本系统运营者”或“运营者”）
+适用系统：琪琪人员管理系统（以下简称“本系统”）
+
+第一条 定义
+1.1 “本系统”：指由运营者开发并运营的“琪琪人员管理系统”，包括其所有功能模块、数据存储、操作界面及后台服务。
+
+1.2 “用户”：指经运营者书面或系统内正式授权，拥有独立登录账号并使用本系统的管理员个人。
+
+1.3 “操作日志”：指系统自动记录的用户所有操作行为，包括但不限于登录时间、IP地址、操作内容、数据修改前后状态等。
+
+1.4 “数据”：指用户在使用本系统过程中录入、存储、生成或处理的全部信息，包括但不限于人员信息、管理记录、统计报表等。
+
+1.5 “协议”：指本《琪琪用户协议》及运营者后续发布或修改的相关补充规则。
+
+第二条 协议的接受与生效
+2.1 用户通过登录页面勾选“我已阅读并同意《琪琪用户协议》和《琪琪隐私政策》”并点击登录，即表示用户已详细阅读、充分理解并自愿接受本协议的全部条款。
+
+2.2 本协议自用户首次勾选同意之日起生效，并对双方具有法律约束力。
+
+第三条 授权与使用资格
+3.1 本系统仅面向经运营者事先明确授权的人员开放使用。普通员工、合作方及其他未获授权的人员不得以任何方式登录或使用本系统。
+
+3.2 用户账号为个人身份标识，仅限本人使用，不得以任何形式转让、出租、出借、共享或允许他人冒用。
+
+3.3 用户应妥善保管其账号及密码，因账号保管不善或违规使用所导致的一切后果（包括但不限于数据泄露、操作误判、系统风险等）由用户自行承担。
+
+第四条 账号管理与安全
+4.1 运营者有权对用户账号进行审核、激活、权限分配及必要时暂停或注销。
+
+4.2 用户应确保其账号信息（如联系方式等）真实、准确、有效，如有变更应及时通知运营者。
+
+4.3 用户发现账号异常或存在安全漏洞时，应立即通知运营者采取措施，否则由此引发的损失由用户自行负责。
+
+第五条 用户的权利与义务
+5.1 用户权利
+（1）在授权范围内正常使用本系统的各项功能；
+（2）获取与本系统使用相关的合理技术支持；
+（3）按规定查阅、导出自身操作记录及权限范围内的数据。
+
+5.2 用户义务
+（1）严格遵守本协议及运营者发布的各项管理规则；
+（2）合法、合规使用本系统，不得利用本系统进行任何违法、违规或侵犯他人合法权益的活动；
+（3）不得对系统进行逆向工程、反编译、破解、植入病毒或恶意代码，不得攻击、干扰系统的正常运行；
+（4）未经运营者书面同意，不得以任何形式复制、转载、公开发布或向任何第三方提供本系统中的数据（包括但不限于人员信息、管理记录等）；
+（5）不得利用本系统存储或传输违法信息、敏感数据或他人隐私。
+
+第六条 数据的所有权与使用
+6.1 用户在使用本系统过程中录入、生成的数据，其所有权归属于运营者或用户（视具体数据类型及授权约定而定），但运营者有权对数据进行聚合统计、安全维护及系统优化等处理。
+
+6.2 运营者承诺不将用户数据用于商业推广、对外出售或向非授权第三方披露，法律法规另有规定或经用户另行书面同意的除外。
+
+6.3 用户删除数据或账号注销后，运营者有权在法律允许及合理必要范围内保留备份数据，但将不再主动使用。
+
+第七条 知识产权
+7.1 本系统的软件架构、源代码、界面设计、功能逻辑、商标、名称及所有相关知识产权均归运营者“琪琪”所有，受著作权法、商标法及反不正当竞争法等法律保护。
+
+7.2 用户仅获得本协议约定范围内的使用权，并未获得任何知识产权许可或所有权。未经运营者书面同意，用户不得复制、修改、分发、公开传播或基于本系统开发衍生作品。
+
+第八条 操作记录与审计
+8.1 运营者有权对用户的所有操作行为进行自动日志记录，包括但不限于登录时间、操作类型、涉及数据等。
+
+8.2 该等记录将用于系统安全审计、故障排查、责任追溯及合规检查，运营者承诺不会将操作日志用于本协议约定范围之外的用途，但依法应当披露的除外。
+
+第九条 免责条款
+9.1 本系统按“现状”及“现有功能”提供，运营者不保证系统在运行过程中永不中断、完全无错误或满足用户所有特定需求。
+
+9.2 因以下原因导致的任何直接或间接损失，运营者不承担赔偿责任：
+（1）用户设备或网络故障；
+（2）用户自身误操作、违规操作或账号泄露；
+（3）第三方恶意攻击、网络病毒、黑客入侵；
+（4）不可抗力事件，包括但不限于自然灾害、政府行为、电力中断、通讯中断、战争、罢工等；
+（5）系统因正常维护、升级或安全防护需要而临时中断或调整功能。
+
+9.3 在任何情况下，运营者对用户的累计赔偿责任总额不超过用户为本系统直接支付的全部费用（如适用），但本系统为免费使用，故不涉及费用赔偿。
+
+第十条 违约责任
+10.1 用户违反本协议任何条款的，运营者有权视情节严重程度采取以下一项或多项措施：
+（1）发出书面警告；
+（2）暂停或限制用户登录权限；
+（3）注销用户账号并终止本协议；
+（4）依法追究用户的法律责任。
+
+10.2 因用户违约行为导致运营者遭受任何第三方索赔、诉讼、行政处罚或声誉损失的，用户应承担全部赔偿责任，包括但不限于赔偿损失、支付罚款、律师费、诉讼费等合理支出。
+
+第十一条 协议的修改与更新
+11.1 运营者有权根据法律法规变化、系统功能升级或业务需要，适时修改本协议。修改后的协议将通过系统登录页公示、系统通知或用户预留邮箱等方式告知。
+
+11.2 修改后的协议自公示之日起生效，用户继续使用本系统即视为接受修改后的协议。如用户不同意修改内容，应在公示后停止使用本系统并联系运营者处理账号事宜。
+
+第十二条 协议的终止
+12.1 用户可随时联系运营者申请注销账号并终止本协议。
+
+12.2 出现下列情形之一时，运营者有权单方终止本协议并注销用户账号：
+（1）用户违反本协议任何条款且未在合理期限内改正；
+（2）用户不再具备管理员资格；
+（3）用户的行为对系统安全或其他用户造成严重危害；
+（4）法律法规规定的其他情形。
+
+12.3 协议终止后，用户应立即停止使用本系统，运营者有权删除或匿名化处理用户数据，但法律法规要求保留的除外。
+
+第十三条 法律适用与争议解决
+13.1 本协议的订立、效力、解释、履行及争议解决均适用中华人民共和国法律法规。
+
+13.2 因本协议引起或与本协议有关的任何争议，双方应首先通过友好协商解决；协商不成的，任何一方均有权向运营者所在地有管辖权的人民法院提起诉讼。
+
+第十四条 通知与送达
+14.1 运营者向用户发出的任何通知，可通过系统弹窗、登录页公告、用户注册时提供的电子邮件或手机短信等方式送达。
+
+14.2 通知发出即视为有效送达，用户应主动关注系统通知，未能及时查收导致的后果由用户自行承担。
+
+第十五条 其他条款
+15.1 本协议构成双方关于本系统使用的完整约定，并取代此前双方所有口头或书面的理解、沟通或约定。
+
+15.2 本协议任何条款被认定为无效或不可执行的，不影响其他条款的效力。
+
+15.3 运营者未行使或执行本协议项下任何权利，不构成对该权利的放弃。
+
+15.4 本协议的最终解释权归运营者“琪琪”所有。`},
+2:{title:'《琪琪隐私政策》',text:`《琪琪隐私政策》（详细完整版）
+版本号：V2.0
+最后更新日期：2026年8月14日
+发布方：开发者“琪琪”（以下简称“本系统运营者”或“运营者”）
+适用系统：琪琪人员管理系统（以下简称“本系统”）
+
+第一条 总则
+1.1 本隐私政策旨在向用户（即经授权的管理员，以下简称“您”）清晰说明本系统在收集、使用、存储、保护、披露及删除您个人信息方面的具体做法与承诺。
+
+1.2 您通过登录页面勾选“我已阅读并同意《琪琪用户协议》和《琪琪隐私政策》”并点击登录，即表示您已详细阅读、充分理解并自愿接受本隐私政策的全部内容。
+
+1.3 本隐私政策是《琪琪用户协议》不可分割的组成部分，两者具有同等法律效力。
+
+第二条 信息的收集
+2.1 登录信息的收集
+当您登录本系统时，本系统会自动收集以下基本信息：
+（1）您的登录账号及角色权限；
+（2）登录时间及登录时长；
+（3）登录设备的IP地址、设备类型、操作系统版本及浏览器信息；
+（4）登录地理位置（基于IP地址解析的大致城市级别位置）。
+
+2.2 操作信息的收集
+在使用本系统过程中，本系统会自动记录您的操作行为，包括但不限于：
+（1）功能模块访问记录；
+（2）查询、新增、修改、删除等操作类型及操作时间；
+（3）涉及的数据对象及修改前后的内容变化。
+
+2.3 主动提交信息的收集
+您在使用人员管理功能时，可能会主动录入或上传涉及其他人员的相关信息，包括但不限于：
+（1）姓名、性别、出生日期；
+（2）岗位、部门、联系方式（手机号、邮箱等）；
+（3）考勤记录、绩效信息、培训记录等管理相关数据。
+特别说明：该等信息由您主动输入，本系统仅作为数据处理工具进行存储与管理，您应确保您有权处理该等信息。
+
+2.4 设备权限信息的收集
+如您通过特定设备（如移动终端）使用本系统，本系统可能会申请必要的设备权限（如存储、相机等），但仅在您明确授权且功能必需时使用。
+
+第三条 信息的使用
+3.1 本系统收集的您的个人信息及操作信息，仅用于以下合法目的：
+（1）验证您的管理员身份与系统使用权限；
+（2）为您正常使用本系统各项功能提供支持与服务；
+（3）记录操作日志，保障系统运行安全，用于事后审计与责任追溯；
+（4）进行系统故障排查、性能监控及功能优化；
+（5）向您发送必要的系统通知（如版本更新、安全提醒等）。
+
+3.2 本系统不会将您的个人信息或系统中存储的人员信息用于以下用途：
+（1）任何形式的商业推广、市场营销或广告投放；
+（2）对外公开、出售、交换或向任何非授权第三方转让；
+（3）超出本隐私政策明确约定范围的其他用途。
+法律法规另有规定或经您另行书面同意的除外。
+
+第四条 信息的存储与保护
+4.1 存储位置
+本系统数据存储于运营者指定的云端服务器，服务器位于中华人民共和国境内。
+
+4.2 存储期限
+（1）您的个人信息及操作日志将自收集之日起保留，直至您提出删除要求或本系统终止运营；
+（2）法律法规要求保留更长期限的，从其规定。
+
+4.3 安全保护措施
+运营者采取以下合理的技术和管理措施保护您的数据安全：
+（1）数据传输采用加密协议（如HTTPS/TLS）；
+（2）数据库访问采用严格的权限控制机制；
+（3）定期进行系统安全评估与漏洞扫描；
+（4）对数据实施定期备份，以防止数据丢失；
+（5）内部员工访问数据需经过审批并记录访问日志。
+
+4.4 安全风险告知
+尽管运营者已采取上述措施，但请您理解，任何网络传输或电子存储方式均无法保证100%绝对安全。运营者承诺在发生数据安全事件时，将及时采取补救措施并依法履行告知义务。
+
+第五条 信息的共享与披露
+5.1 运营者承诺不会主动向任何第三方共享、转让或公开披露您的个人信息，但以下情形除外：
+（1）获得您的明确单独同意；
+（2）根据法律法规的规定，或应行政、司法机关的合法要求，必须予以披露；
+（3）为维护运营者及其他用户的合法权益，在合理范围内进行披露；
+（4）涉及运营者合并、分立、收购、资产转让等情形，接收方承诺继续遵守本隐私政策。
+
+5.2 本系统不涉及与第三方广告平台、数据分析服务商等的合作，故不涉及该类共享。
+
+第六条 Cookie 与同类技术
+6.1 本系统可能会使用Cookie或类似技术（如Session存储）以维持您的登录状态及优化使用体验。
+
+6.2 该类技术不会收集您的个人敏感信息，仅用于会话管理、安全验证及系统设置记忆。
+
+6.3 您可以通过浏览器设置禁用Cookie，但可能会影响部分功能的正常使用。
+
+第七条 您的权利
+您作为本系统的授权管理员，享有以下权利：
+
+7.1 查询权
+您有权登录本系统查看与您账号直接相关的个人信息（如账号、权限等）。
+
+7.2 更正权
+如发现您的账号信息不准确或不完整，您有权要求运营者予以更正或补充。
+
+7.3 删除权
+您有权就您直接录入或提交的、与您个人直接相关的非必要数据，向运营者提出删除申请。运营者将在收到申请后的合理时限内予以处理，但法律法规要求保留或本系统管理所必需的除外。
+
+7.4 撤回同意权
+您有权随时通过停止使用本系统或联系运营者注销账号的方式，撤回对本隐私政策的同意。撤回同意后，运营者将停止收集您的信息并逐步删除已有数据，但已产生的操作日志等安全审计所需数据在合理保留期内仍可能保留。
+
+7.5 投诉与反馈权
+如您对个人信息的处理有任何疑问、意见或投诉，您有权通过本隐私政策第十一条的联系方式向运营者提出，运营者将在合理时限内予以答复。
+
+第八条 数据的跨境传输
+8.1 本系统的服务器位于中华人民共和国境内，您的数据不会主动传输至境外。
+
+8.2 如因系统升级或业务变更需要涉及数据跨境传输，运营者将事先征得您的单独同意，并确保传输符合适用法律法规的要求。
+
+第九条 未成年人信息保护
+9.1 本系统仅面向具备完全民事行为能力的成年人开放使用，不面向未成年人。
+
+9.2 运营者不主动收集未成年人个人信息。如因用户误操作导致录入未成年人信息的，用户应自行承担相应责任。
+
+第十条 隐私政策的修改与更新
+10.1 运营者有权根据法律法规变化、行业标准调整或系统功能升级的需要，适时对本隐私政策进行修改。
+
+10.2 修改后的隐私政策将通过以下方式之一告知您：
+（1）在系统登录页面显著位置公示；
+（2）通过系统内通知或您预留的电子邮箱发送通知；
+（3）在您下次登录时强制弹窗提示。
+
+10.3 修改后的隐私政策自公示或通知送达之日起生效。您继续使用本系统即视为您已接受修改后的隐私政策。如您不同意修改内容，您应停止使用本系统并联系运营者处理您的数据。
+
+第十一条 联系方式与投诉渠道
+11.1 如您对本隐私政策或您的个人信息处理有任何疑问、意见、建议或投诉，您可通过以下方式联系运营者：
+（1）系统内消息或公告指定的反馈渠道；
+（2）运营者在其他场景下公布的有效联系方式（如您已知悉的邮箱或即时通讯方式）。
+
+11.2 运营者将在收到您的请求后合理时限内（通常不超过十五个工作日）予以核实与回复。
+
+第十二条 法律适用与争议解决
+12.1 本隐私政策的订立、执行和解释均适用中华人民共和国法律法规。
+
+12.2 因本隐私政策引起的或与本隐私政策有关的任何争议，双方应首先通过友好协商解决；协商不成的，任何一方均有权向运营者所在地有管辖权的人民法院提起诉讼。
+
+第十三条 其他
+13.1 本隐私政策构成您与运营者之间关于个人信息保护的完整约定。
+
+13.2 本隐私政策任何条款被认定为无效或不可执行的，不影响其他条款的效力。
+
+13.3 本隐私政策的最终解释权归运营者“琪琪”所有。`},
+3:{title:'《安全使用承诺与责任确认书》',text:`《安全使用承诺与责任确认书》（详细完整版）
+版本号：V2.0
+最后更新日期：2026年8月14日
+发布方：开发者“琪琪”（以下简称“本系统运营者”或“运营者”）
+适用系统：琪琪人员管理系统（以下简称“本系统”）
+
+第一条 承诺主体与适用范围
+1.1 本确认书由本系统授权管理员（以下简称“本人”或“承诺人”）与运营者共同确认，是《琪琪用户协议》《琪琪隐私政策》之外独立的补充承诺文件。
+
+1.2 本人通过登录页面勾选“我已阅读、理解并承诺遵守《安全使用承诺与责任确认书》”并点击登录，即视为本人自愿、真实、完整地作出本确认书项下的全部承诺。
+
+1.3 本确认书自本人首次勾选同意之日起生效，对本人具有约束力，且在本人账号存续期间及账号注销后合理期限内持续有效。
+
+第二条 授权使用范围
+2.1 本人明确知悉并确认，本系统仅限经运营者正式书面或系统内授权的管理员使用，普通员工、临时人员、合作方及其他无关第三方一律不得以任何方式登录或使用。
+
+2.2 本人承诺仅通过本人专属的、由运营者分配的唯一账号登录本系统，不以任何形式将本人账号、密码、验证码或其他身份凭证转让、出租、出借、共享或提供给任何他人使用。
+
+2.3 本人承诺不冒用他人账号登录，不协助他人冒用本人账号登录，不通过非官方渠道或技术手段绕过正常登录流程进入本系统。
+
+2.4 因本人账号管理不善（包括但不限于密码过于简单、未及时退出、在公共设备上保存密码等）导致他人冒用登录的，视为本人行为，由本人承担全部后果。
+
+第三条 操作记录与审计确认
+3.1 本人明确知晓并接受，本系统将自动记录本人在系统内的所有操作行为，包括但不限于：
+
+每次登录的时间、IP地址、设备信息；
+
+访问的每个功能模块及操作时间；
+
+每一次查询、新增、修改、删除、导出等具体操作类型；
+
+涉及的数据对象及修改前后的内容变化。
+
+3.2 本人理解并同意，上述操作记录将作为系统安全审计、事件追溯、责任认定及合规检查的唯一或重要依据。
+
+3.3 本人确认不会以任何方式尝试删除、修改、屏蔽或破坏操作日志，亦不会以日志记录为由拒绝承担相应责任。
+
+第四条 数据保密义务
+4.1 本人在使用本系统过程中接触、查看、处理或导出的所有数据（包括但不限于人员信息、管理记录、统计报表、系统配置等），均属于本系统的核心资产或受保护信息。
+
+4.2 本人郑重承诺，不以任何形式将上述数据泄露、提供、转让、复制、打印、截图、拍照、录制、网络传播或用于本系统授权使用范围之外的任何目的。
+
+4.3 保密义务的具体内容包括但不限于：
+
+不得在非工作场合或非必要情况下讨论本系统内的数据内容；
+
+不得将系统数据存储于个人设备、个人云盘或个人邮箱；
+
+不得将系统数据用于任何外部报告、文章、社交平台或其他公开渠道；
+
+不得向无关人员展示系统操作界面或数据内容，即使仅为口头描述也不被允许。
+
+4.4 本保密义务不因本人账号注销、权限变更或离职而终止，持续有效直至该等信息依法进入公开领域或运营者书面同意豁免。
+
+第五条 违规使用与责任承担
+5.1 本人明确知晓并确认，以下行为属于严重违规：
+
+利用本系统从事任何违法、违规或侵犯他人合法权益的活动；
+
+将系统数据用于商业牟利、不正当竞争或其他非法用途；
+
+故意或过失导致系统数据被窃取、损坏、丢失或非法传播；
+
+对系统进行攻击、侵入、干扰或植入恶意代码；
+
+违反本确认书及《琪琪用户协议》中的任何其他义务。
+
+5.2 因本人违规操作、误操作或违反本确认书任何条款，导致以下后果的，由本人独立承担全部责任：
+
+系统数据被篡改、丢失、泄露或损坏；
+
+系统运行异常、中断或性能严重下降；
+
+运营者或第三方遭受经济损失、声誉损害或法律追责；
+
+违反适用法律法规，引发行政处罚或刑事责任。
+
+5.3 因本人行为导致运营者向第三方承担赔偿责任或遭受行政处罚的，本人应赔偿运营者全部实际损失，包括但不限于赔偿金、罚款、律师费、诉讼费、公证费、差旅费等合理支出。
+
+第六条 责任边界说明
+6.1 本确认书项下本人的责任，以本人自身操作行为为限，不因运营者系统自身设计缺陷或第三方攻击而免除，但运营者系统自身缺陷直接导致数据损失的，双方应根据各自过错程度分担责任。
+
+6.2 本人承诺不因本确认书的签订而豁免自身应尽的合理注意义务，包括但不限于：
+
+对操作结果进行必要确认；
+
+对重要数据操作保持谨慎；
+
+发现异常情况时及时报告运营者。
+
+第七条 承诺的撤销与变更
+7.1 本人在账号存续期间如需撤销或变更本承诺内容，应提前向运营者提出书面申请，经运营者审核同意后方可生效。
+
+7.2 运营者有权根据系统安全要求或管理需要，对本确认书内容进行修订。修订后的确认书将通过系统登录页公示或通知方式告知本人，本人继续使用本系统即视为接受修订内容。
+
+第八条 承诺的独立效力
+8.1 本确认书与《琪琪用户协议》《琪琪隐私政策》共同构成本人与运营者之间的完整约定，三者内容如有冲突，以有利于数据安全和保护运营者权益的条款为准。
+
+8.2 本确认书部分条款被认定为无效或不可执行的，不影响其余条款的效力。
+
+8.3 运营者未即时行使本确认书项下的权利，不视为对该权利的放弃。
+
+第九条 知情与自愿确认
+9.1 本人确认，在勾选同意之前已充分阅读、理解本确认书的全部内容，不存在任何误解、欺诈或胁迫情形。
+
+9.2 本人确认，勾选同意本确认书是本人真实意思表示，本人完全理解并接受因违反本承诺所可能面临的法律后果及管理后果。
+
+9.3 本人确认，如对本确认书任何条款存在疑问，已在签署前向运营者充分询问并获得清晰解答。
+
+第十条 法律适用与争议解决
+10.1 本确认书的解释与执行适用中华人民共和国法律法规。
+
+10.2 因本确认书引起的或与本确认书有关的任何争议，双方应首先通过友好协商解决；协商不成的，任何一方均有权向运营者所在地有管辖权的人民法院提起诉讼。`}
+};
+  function _agreed() {
+    try { return localStorage.getItem(AGREE_KEY) === '1'; } catch (e) { return false; }
+  }
+  function _markAgreed() {
+    try { localStorage.setItem(AGREE_KEY, '1'); } catch (e) {}
+  }
+  function _allAgreeChecked(groupId) {
+    var g = el(groupId);
+    if (!g) return false;
+    var boxes = g.querySelectorAll('.auth-agree-check');
+    if (!boxes.length) return false;
+    for (var i = 0; i < boxes.length; i++) if (!boxes[i].checked) return false;
+    return true;
+  }
+  function _renderAgreements() {
+    var html = '';
+    for (var n = 1; n <= 3; n++) {
+      var a = AGREEMENTS[n];
+      if (!a) continue;
+      html += '<div class="auth-agree-item"><label class="auth-agree-label"><input type="checkbox" class="auth-agree-check" value="' + n + '"> 我已阅读并' + (n === 3 ? '承诺遵守' : '同意') + '</label> <span class="auth-agree-link" data-agree="' + n + '">' + a.title + '</span></div>';
+    }
+    var lg = el('loginAgree'), rg = el('regAgree');
+    if (lg) lg.innerHTML = html;
+    if (rg) rg.innerHTML = html;
+  }
+  function _openAgree(n) {
+    var a = AGREEMENTS[n];
+    if (!a) return;
+    var t = el('agreeTitle'), b = el('agreeBody');
+    if (t) t.textContent = a.title;
+    if (b) b.textContent = a.text;
+    var ov = el('agreeOverlay');
+    if (ov) ov.classList.add('show');
+  }
+  function _closeAgree() {
+    var ov = el('agreeOverlay');
+    if (ov) ov.classList.remove('show');
+  }
 
   function switchPane(name) {
     ['login', 'register', 'forgot'].forEach(function (p) {
@@ -8935,6 +9780,7 @@ window.addEventListener('beforeunload', () => {
     var email = _lowerEmail(el('loginEmail').value);
     var pwd = el('loginPassword').value;
     if (!email || !pwd) { setErr('请输入邮箱和密码'); return; }
+    if (!_agreed() && !_allAgreeChecked('loginAgree')) { setErr('请先阅读并勾选全部协议'); return; }
     if (_rlBlocked()) return;
     var btn = el('btnLogin'); btn.disabled = true; btn.textContent = '登录中...';
     try {
@@ -8958,6 +9804,10 @@ window.addEventListener('beforeunload', () => {
       var nickname = (d.user && d.user.user_metadata && d.user.user_metadata.nickname) || '';
       _setAuthSession(d, email, nickname);
       _rlClear();
+      _markAgreed();
+      var _rem = el('loginRemember');
+      if (_rem && _rem.checked) _saveRemember(email, pwd);
+      else _clearRemember();
       auditLog('登录', email, '');
       hideAuthOverlay();
       refreshAccountUI();
@@ -8970,15 +9820,50 @@ window.addEventListener('beforeunload', () => {
     }
   }
 
+  /* ---- 游客模式（只读预览） ---- */
+  async function doGuestLogin() {
+    clearMsgs();
+    if (_guestLocked()) { setErr('游客模式已被临时锁定，请 ' + _guestLockRemainMin() + ' 分钟后再试'); return; }
+    var info = _guestInfo();
+    var btn = el('btnGuest'); if (btn) { btn.disabled = true; btn.textContent = '进入中...'; }
+    try {
+      var res = await _authLogin(GUEST_EMAIL, GUEST_PASSWORD);
+      if (res.error) {
+        var _em = res.error.message || '';
+        if (/Invalid login credentials/i.test(_em)) setErr('游客模式暂不可用，请联系管理员');
+        else if (/fetch|network|load|resolve|abort|timeout|refused/i.test(_em)) setErr('无法连接云端服务器，请确认已联网');
+        else setErr('游客模式进入失败：' + _em);
+        return;
+      }
+      var d = res.data;
+      _setAuthSession(d, GUEST_EMAIL, '游客');
+      _rlClear();
+      auditLog('游客登录', '游客', info);
+      recordSecurity('游客登录', '游客', '游客模式', info, '进入只读模式', true);
+      hideAuthOverlay();
+      refreshAccountUI();
+      _enterGuestMode();
+      initCloud();
+      showToast('已进入游客模式（只读预览）', true);
+    } catch (e) {
+      setErr('游客模式异常：' + e.message);
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = '👁 游客模式（只读预览）'; }
+    }
+  }
+
   /* ---- 注册 ---- */
   async function doRegister() {
     clearMsgs();
     var invite = (el('regInvite').value || '').trim();
     var email = _lowerEmail(el('regEmail').value);
     var pwd = el('regPassword').value;
+    var pwd2 = el('regPassword2') ? el('regPassword2').value : '';
     var nick = (el('regNickname').value || '').trim();
     if (!invite || !email || !pwd) { setErr('请填写邀请码、邮箱和密码'); return; }
     if (pwd.length < 6) { setErr('密码至少 6 位'); return; }
+    if (pwd !== pwd2) { setErr('两次输入的密码不一致'); return; }
+    if (!_agreed() && !_allAgreeChecked('regAgree')) { setErr('请先阅读并勾选全部协议'); return; }
     if (invite.length !== 8) { setErr('邀请码应为 8 位'); return; }
     if (_rlBlocked()) return;
     var btn = el('btnRegister'); btn.disabled = true; btn.textContent = '注册中...';
@@ -9008,6 +9893,7 @@ window.addEventListener('beforeunload', () => {
       }
       _setAuthSession(auth.data, email, nick || email);
       _rlClear();
+      _markAgreed();
       auditLog('注册', email, '');
       hideAuthOverlay();
       refreshAccountUI();
@@ -9044,6 +9930,7 @@ window.addEventListener('beforeunload', () => {
   /* ---- 退出登录 ---- */
   function doLogout() {
     auditLog('退出登录', getAccountEmail(), '');
+    stopRealtimeSync(); // Perf L2: 登出即断开实时同步/轮询，避免后台空转
     _authLogout();
     clearSession();
     var bar = document.getElementById('cloudUserBar');
@@ -9066,7 +9953,7 @@ window.addEventListener('beforeunload', () => {
     try {
       var res = await sb.from('invite_codes').insert({ code: code, used: false });
       if (res.error) { showToast('生成失败：' + res.error.message, false); return; }
-      auditLog('生成邀请码', code, '');
+      auditLog('生成邀请码', '已生成新邀请码', ''); // S3: 不在日志里明文记录邀请码
       alert('邀请码（一次性，发给注册人）：\n\n' + code);
       renderInviteList();
     } catch (e) {
@@ -9175,6 +10062,7 @@ window.addEventListener('beforeunload', () => {
   });
   if (el('btnLogin')) el('btnLogin').addEventListener('click', doLogin);
   if (el('btnRegister')) el('btnRegister').addEventListener('click', doRegister);
+  if (el('btnGuest')) el('btnGuest').addEventListener('click', doGuestLogin);
   if (el('btnForgot')) el('btnForgot').addEventListener('click', doForgot);
   if (el('btnForgotReset')) el('btnForgotReset').addEventListener('click', doResetPwd);
   if (el('btnEditNickname')) el('btnEditNickname').addEventListener('click', doEditNickname);
@@ -9203,6 +10091,29 @@ window.addEventListener('beforeunload', () => {
   if (settingsNav) settingsNav.addEventListener('click', function () {
     refreshAccountUI();
   });
+
+  /* ---- 记住密码：预填登录表单 ---- */
+  (function initRemember() {
+    var r = _loadRemember();
+    if (r && r.email) {
+      if (el('loginEmail')) el('loginEmail').value = r.email;
+      if (el('loginPassword')) el('loginPassword').value = r.pwd || '';
+      if (el('loginRemember')) el('loginRemember').checked = true;
+    }
+  })();
+
+  /* ---- 协议：渲染勾选区 + 点标题看全文 + 关闭 ---- */
+  _renderAgreements();
+  if (_agreed()) {
+    var _lgA = el('loginAgree'), _rgA = el('regAgree');
+    if (_lgA) _lgA.style.display = 'none';
+    if (_rgA) _rgA.style.display = 'none';
+  }
+  document.querySelectorAll('.auth-agree-link').forEach(function (lnk) {
+    lnk.addEventListener('click', function (ev) { ev.preventDefault(); _openAgree(lnk.getAttribute('data-agree')); });
+  });
+  if (el('agreeClose')) el('agreeClose').addEventListener('click', _closeAgree);
+  if (el('agreeOverlay')) el('agreeOverlay').addEventListener('click', function (ev) { if (ev.target === el('agreeOverlay')) _closeAgree(); });
 
   refreshAccountUI();
 })();
@@ -9256,10 +10167,9 @@ window.addEventListener('beforeunload', () => {
      5772   页面切换 switchPage
      5857   Canvas 天气动画（雨 / 雾，两套全屏）
      6214   人员档案详情
-            generateProfileData(6214) · renderOrderCards(6508) ·
-            订单暂停 / 结单 / 倒计时
+            renderOrderCards(6508) · 订单暂停 / 结单 / 倒计时
      6913   考勤 generateAttendanceData(6972)
-     7258   薪酬 generateSalaryData(7258)
+     7258   薪酬 renderSalaryOverview · salaryStatsFor(7258)
      7427   考核 renderExamCards(7427) · 通过 / 拒绝 / 改人头数
      7707   培训 generateTrainData(7707)
      7832   设置：热更新 doUpdate(8045) · sha256Hex(8033) · 深色模式(8198)
