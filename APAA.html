@@ -9,7 +9,7 @@
 	<link rel="manifest" href="manifest.json">
 <!--
 ══════════════════════════════════════════════════════════════════
-   ClubApp 目录索引（导航地图）· v2.4.33
+   ClubApp 目录索引（导航地图）· v2.4.34
    改代码前先看这里，按行号快速定位功能 / 分区
 ══════════════════════════════════════════════════════════════════
 
@@ -2878,6 +2878,7 @@ body:not(.edit-mode) .settings-wrap .setting-select {
 .log-cat.user { background: rgba(123,111,192,0.14); color: #6b5ec0; }
 .log-cat.security { background: rgba(224,77,93,0.16); color: #d64550; }
 .log-cat.ai { background: rgba(0,199,190,0.16); color: #0aa89f; }
+.log-cat.ai_chat { background: rgba(255,193,7,0.14); color: #b8860b; }
 .log-op { flex-shrink: 0; color: var(--text-3); font-weight: 600; }
 
 /* 邀请码管理弹窗 */
@@ -3384,6 +3385,7 @@ body:not(.edit-mode) .settings-wrap .setting-select {
               <button class="log-filter-btn" type="button" data-filter="warnerr">警告错误</button>
               <button class="log-filter-btn" type="button" data-filter="security">防御日志</button>
               <button class="log-filter-btn" type="button" data-filter="ai">AI窗口巡逻</button>
+              <button class="log-filter-btn" type="button" data-filter="ai_chat">AI历史对话</button>
             </div>
           </div>
           <div style="margin-top:8px;">
@@ -3400,6 +3402,7 @@ body:not(.edit-mode) .settings-wrap .setting-select {
           <div class="info-row"><span class="ir-label">输入 Tokens</span><span class="ir-value" id="aiPromptTokens">—</span></div>
           <div class="info-row"><span class="ir-label">输出 Tokens</span><span class="ir-value" id="aiCompletionTokens">—</span></div>
           <div class="info-row"><span class="ir-label">本月估算费用</span><span class="ir-value" id="aiCost">—</span></div>
+          <div class="info-row"><span class="ir-label">实时费用</span><span class="ir-value" id="aiLiveCost">—</span></div>
           <div class="info-row"><span class="ir-label">游客剩余提问</span><span class="ir-value" id="aiGuestQuota">—</span></div>
           <div style="margin-top:8px;font-size:12px;color:var(--text-3);" id="aiPatrolRecent">暂无巡逻记录</div>
         </div>
@@ -3793,6 +3796,7 @@ function renderAppLogs() {
       if (filter === 'user' && e.category !== 'user') return false;
       if (filter === 'security' && e.category !== 'security') return false;
       if (filter === 'ai' && e.category !== 'ai') return false;
+      if (filter === 'ai_chat' && e.category !== 'ai_chat') return false;
       if (filter === 'warnerr' && e.level !== 'warn' && e.level !== 'error') return false;
       if (kw) {
         var hay = ((e.msg || '') + ' ' + (e.operator || '') + ' ' + (e.action || '')).toLowerCase();
@@ -3810,7 +3814,9 @@ function renderAppLogs() {
           ? '<span class="log-cat security">攻击</span>'
           : (e.category === 'ai'
             ? '<span class="log-cat ai">棱镜</span>'
-            : '<span class="log-cat system">系统</span>'));
+            : (e.category === 'ai_chat'
+              ? '<span class="log-cat ai_chat">对话</span>'
+              : '<span class="log-cat system">系统</span>')));
       var opTxt = ((e.category === 'user' || e.category === 'security') && e.operator) ? '<span class="log-op">' + _escLogHtml(e.operator) + '</span>' : '';
       return '<div class="log-entry" data-idx="' + item.i + '"><span class="log-ts">' + e.ts + '</span>' +
         '<span class="log-level ' + e.level + '">' + (label[e.level] || e.level) + '</span>' +
@@ -4035,7 +4041,7 @@ if ("serviceWorker" in navigator) {
     .catch(function(err) { console.log("[SW] 注册失败", err); });
 }
 // --- 应用版本（热更新检测用） ---
-const APP_VERSION = '2.4.33';
+const APP_VERSION = '2.4.34';
 let __updateAvailable = false;       // 是否有可用更新
 let __updateVersion = null;          // 新版本号
 let __updateSha256 = null;           // 新版本的 SHA-256（防篡改校验）
@@ -9313,6 +9319,12 @@ const AI_GUEST_KEY = 'clubapp_ai_guest_quota'; // 游客配额（客户端兜底
 function aiLog(action, detail) {
   try { addAppLog('warn', detail || '', 'ai', 'Prism', action || 'AI巡逻'); } catch (e) {}
 }
+/* AI 历史对话日志：category='ai_chat'、info 级别（普通问答不算警告/错误），日志页「AI历史对话」可查 */
+function aiChatLog(action, detail) {
+  try { addAppLog('info', detail || '', 'ai_chat', 'Prism', action || 'AI对话'); } catch (e) {}
+}
+/* 最近一次 AI 调用的实际 tokens（用于「实时费用」显示，每次调用后立即同步） */
+let __aiLastUsage = { prompt: 0, completion: 0 };
 
 /* ---- 数据脱敏：发给 DeepSeek 前处理，不泄露真实姓名/联系方式/精确薪酬 ---- */
 function _maskName(n) {
@@ -9426,6 +9438,7 @@ async function patrolTick() {
       + '只报告确有异常的项；返回 JSON 数组，每项形如 {"type":"security|data|behavior","title":"简短标题","detail":"一句话说明"}；'
       + '若无异常返回 []。不要输出 JSON 以外的任何文字。\n\n' + JSON.stringify(snap);
     var res = await _prismRequest('patrol', '你是 ClubApp 的 AI 巡逻员「棱镜」，负责发现安全/数据/行为异常。只输出 JSON 数组。', [{ role: 'user', content: prompt }]);
+    if (res.usage) __aiLastUsage = { prompt: res.usage.prompt_tokens || 0, completion: res.usage.completion_tokens || 0 };
     var anomalies = _parseAnomalies(res.answer);
     if (anomalies.length) {
       for (var i = 0; i < anomalies.length; i++) {
@@ -9508,9 +9521,10 @@ async function doPrismSearch(q) {
     var system = '你是 ClubApp 的 AI 助手「棱镜」。根据下面附带的数据摘要（已脱敏）用中文简洁回答用户问题。';
     var msg = '用户问题：' + q + '\n\n数据摘要：' + JSON.stringify(snap);
     var res = await _prismRequest('chat', system, [{ role: 'user', content: msg }]);
+    if (res.usage) __aiLastUsage = { prompt: res.usage.prompt_tokens || 0, completion: res.usage.completion_tokens || 0 };
     if (isGuest()) _guestAiUse();
     _prismShowAnswer(res.answer || '(无回答)');
-    aiLog('搜索问答', q.slice(0, 80));
+    aiChatLog('AI对话', q.slice(0, 80));
     renderAiInfo(); // 提问产生用量后立即同步系统信息页
   } catch (e) {
     if (e && e.status === 429) _prismShowAnswer('⚠️ 游客 AI 提问已达上限（2 次）。', true);
@@ -9535,6 +9549,11 @@ async function renderAiInfo() {
     recentEl.innerHTML = recent.length
       ? recent.map(function (e) { return '<div>🛰 ' + _escLogHtml(e.ts) + ' · ' + _escLogHtml(e.msg) + '</div>'; }).join('')
       : '暂无巡逻记录';
+  }
+  var liveEl = document.getElementById('aiLiveCost');
+  if (liveEl) {
+    var lp = __aiLastUsage.prompt || 0, lc = __aiLastUsage.completion || 0;
+    liveEl.textContent = (lp || lc) ? ('¥' + (lp / 1e6 * 1 + lc / 1e6 * 2).toFixed(4) + '（' + lp + ' 入 + ' + lc + ' 出）') : '—';
   }
   if (typeof sb === 'undefined' || !sb || !cloudReady || !isLoggedIn()) return;
   try {
