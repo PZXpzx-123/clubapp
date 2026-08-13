@@ -9,7 +9,7 @@
 	<link rel="manifest" href="manifest.json">
 <!--
 ══════════════════════════════════════════════════════════════════
-   ClubApp 目录索引（导航地图）· v2.4.41
+   ClubApp 目录索引（导航地图）· v2.4.42
    改代码前先看这里，按行号快速定位功能 / 分区
 ══════════════════════════════════════════════════════════════════
 
@@ -183,11 +183,8 @@ body.dark-mode #rainOverlay  { opacity: 0.52; }
 body.dark-mode .sidebar { box-shadow: 2px 0 55px rgba(0,0,0,0.32); }
 body.dark-mode .sidebar::before { background: linear-gradient(90deg, transparent 10%, rgba(255,255,255,0.22) 50%, transparent 90%); }
 body.dark-mode .sidebar-logo .logo-mark { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.10); }
-body.dark-mode .topbar-stage { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.10); }
 body.dark-mode .toggle-sw .ts-slider { background: rgba(255,255,255,0.16); border-color: rgba(255,255,255,0.12); }
 body.dark-mode .toggle-sw input:checked + .ts-slider { background: #3b82f6; border-color: #3b82f6; }
-body.dark-mode .nav-badge.now { background: rgba(255,255,255,0.10); color: var(--text-2); }
-body.dark-mode .nav-badge.later { color: var(--text-3); border-color: rgba(255,255,255,0.12); }
 body.dark-mode .setting-row { border-bottom-color: rgba(255,255,255,0.048); }
 body.dark-mode .profile-field { border-bottom-color: rgba(255,255,255,0.048); }
 body.dark-mode .hamburger-btn span { background: var(--text-1); }
@@ -355,15 +352,6 @@ body {
 }
 .nav-item:hover .nav-dot { opacity: 0.80; }
 
-.nav-badge {
-  margin-left: auto;
-  font-size: 9px; font-weight: 700; letter-spacing: 0.4px;
-  padding: 2px 7px; border-radius: 9px;
-}
-
-.nav-badge.now  { background: rgba(0,0,0,0.06); color: var(--text-2); }
-.nav-badge.later { background: transparent; color: var(--text-3); border: 0.5px dashed rgba(0,0,0,0.12); }
-
 /* 侧边栏底部 */
 .sidebar-footer {
   padding: 12px 16px;
@@ -502,15 +490,6 @@ body {
 .sidebar-open .hamburger-btn span:nth-child(2) { opacity: 0; }
 .sidebar-open .hamburger-btn span:nth-child(3) {
   transform: translateY(-5.5px) rotate(-45deg);
-}
-
-.topbar-stage {
-  font-size: 10px; font-weight: 600;
-  padding: 3px 10px; border-radius: 16px;
-  background: rgba(0,0,0,0.03);
-  color: var(--text-2);
-  border: 0.5px solid rgba(0,0,0,0.05);
-  white-space: nowrap;
 }
 
 .topbar-search {
@@ -2650,7 +2629,6 @@ body:not(.edit-mode) .settings-wrap .setting-select {
   .topbar { margin: 6px 8px 0; border-radius: var(--r-lg); padding: 10px 14px; }
   .topbar-search { display: none; }
   .topbar-title { font-size: 14px; }
-  .topbar-stage { display: none; }
 
   /* 内容区 */
   .content-area { padding: 8px 8px 0 8px; }
@@ -3026,45 +3004,30 @@ body:not(.edit-mode) .settings-wrap .setting-select {
 
     <div class="nav-item active" data-page="appearance">
       <span class="nav-dot"></span>外观与布局
-      <span class="nav-badge now">阶段1</span>
     </div>
 
     <div class="nav-item" data-page="personnel">
-      <span class="nav-dot"></span>人员档案
-      <span class="nav-badge later">已完成</span>
-    </div>
+      <span class="nav-dot"></span>人员档案    </div>
 
     <div class="nav-item" data-page="performance">
-      <span class="nav-dot"></span>绩效考核
-      <span class="nav-badge later">已完成</span>
-    </div>
+      <span class="nav-dot"></span>绩效考核    </div>
 
     <div class="nav-section-label">更多</div>
 
     <div class="nav-item" data-page="salary">
-      <span class="nav-dot"></span>薪酬管理
-      <span class="nav-badge later">已完成</span>
-    </div>
+      <span class="nav-dot"></span>薪酬管理    </div>
 
     <div class="nav-item" data-page="attendance">
-      <span class="nav-dot"></span>考勤管理
-      <span class="nav-badge later">已完成</span>
-    </div>
+      <span class="nav-dot"></span>考勤管理    </div>
 
     <div class="nav-item" data-page="training">
-      <span class="nav-dot"></span>培训管理
-      <span class="nav-badge later">已完成</span>
-    </div>
+      <span class="nav-dot"></span>培训管理    </div>
 
     <div class="nav-item" data-page="settings">
-      <span class="nav-dot"></span>系统设置
-      <span class="nav-badge later">已完成</span>
-    </div>
+      <span class="nav-dot"></span>系统设置    </div>
 
     <div class="nav-item" data-page="sysinfo">
-      <span class="nav-dot"></span>系统信息
-      <span class="nav-badge later">已完成</span>
-    </div>
+      <span class="nav-dot"></span>系统信息    </div>
   </nav>
 
   <div class="sidebar-footer" style="position:relative;">
@@ -3102,7 +3065,6 @@ body:not(.edit-mode) .settings-wrap .setting-select {
       <span></span><span></span><span></span>
     </button>
     <span class="topbar-title">人员管理</span>
-    <span class="topbar-stage">阶段 1 — 外观搭建</span>
     <span class="edit-mode-badge">✎ 编辑模式</span>
     <div class="topbar-search" id="searchWrap">
       <span class="search-icon">🔍</span>
@@ -3787,6 +3749,7 @@ function renderAppLogs() {
   try {
     var el = document.getElementById('logList');
     if (!el) return;
+    if (isGuest()) { el.innerHTML = '<div class="log-empty">游客模式不可查看日志</div>'; return; }
     var logs = window.__appLogs;
     var state = _logFilterState();
     var kw = state.kw, filter = state.filter;
@@ -3881,6 +3844,7 @@ function _cloudLogToEntry(r) {
   } catch (e) { return null; }
 }
 async function loadCloudLogs() {
+  if (isGuest()) { window.__appLogs = []; renderAppLogs(); showToast('游客模式不可查看日志', false); return; }
   var btn = document.getElementById('btnLoadLogs');
   if (btn) { btn.disabled = true; btn.textContent = '⏳ 拉取中...'; }
   try {
@@ -4041,7 +4005,7 @@ if ("serviceWorker" in navigator) {
     .catch(function(err) { console.log("[SW] 注册失败", err); });
 }
 // --- 应用版本（热更新检测用） ---
-const APP_VERSION = '2.4.41';
+const APP_VERSION = '2.4.42';
 let __updateAvailable = false;       // 是否有可用更新
 let __updateVersion = null;          // 新版本号
 let __updateSha256 = null;           // 新版本的 SHA-256（防篡改校验）
@@ -4282,6 +4246,7 @@ function kickGuest(reason) {
 }
 
 function _enterGuestMode() {
+  window.__appLogs = []; // 游客进入即清空内存日志，杜绝看到上一成员的日志
   appMode = 'view';
   document.body.classList.add('guest-mode');
   document.body.classList.remove('edit-mode');
@@ -4672,7 +4637,6 @@ const cloudPersonnel = {
       people.length = 0;
       __clearAllOrderTimers();
       for (const k of Object.keys(personOrders)) { delete personOrders[k]; }
-      orderIdCounter = 1;
       return true;
     }
 
@@ -4724,15 +4688,6 @@ const cloudPersonnel = {
         });
       }
     }
-
-    // 恢复订单 ID 计数器——从订单实际 ID 中取最大值
-    let maxOrderId = orderIdCounter;
-    for (const k of Object.keys(personOrders)) {
-      for (const o of personOrders[k]) {
-        if (o.id > maxOrderId) maxOrderId = o.id;
-      }
-    }
-    orderIdCounter = maxOrderId + 1;
 
     console.log(`[Cloud] ✓ 人员档案已加载 (${people.length}人, ${ordData ? ordData.length : 0}单)`);
     return true;
@@ -4834,7 +4789,6 @@ const cloudExam = {
       console.log('[Cloud] 云端无考生数据');
       // 云端确认为空 → 清空本地，防止旧数据回流
       examCandidates.length = 0;
-      examIdCounter = 1;
       return true;
     }
 
@@ -4851,12 +4805,6 @@ const cloudExam = {
         rejectTime: c.reject_time || '',
         headcount: c.head_count || 0,
       });
-    }
-
-    // 恢复 ID 计数器
-    if (examCandidates.length > 0) {
-      const maxExamId = Math.max(0, ...examCandidates.map(c => c.id).filter(id => typeof id === 'number' && !isNaN(id) && isFinite(id)));
-      examIdCounter = Math.max(examIdCounter, maxExamId + 1);
     }
 
     console.log(`[Cloud] ✓ 绩效考核已加载 (${examCandidates.length}考生)`);
@@ -5446,11 +5394,6 @@ function loadLocalData() {
       const parsed = JSON.parse(o);
       for (const k of Object.keys(personOrders)) delete personOrders[k];
       Object.assign(personOrders, parsed);
-      let maxOid = 1;
-      for (const k of Object.keys(personOrders)) {
-        for (const o of personOrders[k]) { if (o.id >= maxOid) maxOid = o.id + 1; }
-      }
-      orderIdCounter = maxOid;
     }
     const e = localStorage.getItem(LS_KEYS.exam);
     if (e) {
@@ -5458,7 +5401,6 @@ function loadLocalData() {
       if (Array.isArray(parsed) && parsed.length > 0) {
         examCandidates.length = 0;
         examCandidates.push(...parsed);
-        examIdCounter = Math.max(0, ...examCandidates.map(x => x.id).filter(id => typeof id === 'number' && !isNaN(id) && isFinite(id))) + 1;
       }
     }
     const sl = localStorage.getItem(LS_KEYS.salary);
@@ -6157,11 +6099,6 @@ const pageLabels = {
   attendance:'考勤管理', salary:'薪酬管理', performance:'绩效考核',
   training:'培训管理', settings:'系统设置', sysinfo:'系统信息'
 };
-const pageStages = {
-  appearance:'阶段 1 — 外观搭建', personnel:'阶段 3 — 人员档案',
-  attendance:'阶段 4 — 考勤管理', salary:'阶段 5 — 薪酬管理', performance:'阶段 6 — 绩效考核',
-  training:'阶段 7 — 培训管理', settings:'阶段 8 — 系统设置', sysinfo:'系统信息'
-};
 
 let currentPageName = 'appearance';
 let isTransitioning = false;
@@ -6271,8 +6208,6 @@ function switchPage(targetPage) {
   // 更新标题
   const topbarTitle = document.querySelector('.topbar-title');
   if (topbarTitle) topbarTitle.textContent = pageLabels[targetPage] || targetPage;
-  const topbarStage = document.querySelector('.topbar-stage');
-  if (topbarStage) topbarStage.textContent = pageStages[targetPage] || '';
 
   // 非外观页隐藏搜索
   document.getElementById('searchWrap').style.display =
@@ -6846,7 +6781,6 @@ function openProfile(personId) {
 
 /* ---- 订单数据存储 ---- */
 const personOrders = {};
-let orderIdCounter = 1;
 const orderTimers = {};   // 注册表：orderId(String) → personId（由单一定时器统一驱动，不再每个订单一个 setInterval）
 let __orderTickTimer = null; // 全局倒计时定时器句柄
 
@@ -7434,9 +7368,6 @@ onAnyPageSwitch(function(targetPage) {
   }
 });
 
-/* ---- 更新 pageStages ---- */
-pageStages.personnel = '阶段 3 — 人员档案';
-
 console.log('◈ 阶段3 — 人员档案 — 订单卡片系统已就绪');
 
 /* ================================================================
@@ -7727,8 +7658,6 @@ onPageSwitch('attendance', () => {
   if (dv) dv.style.display = 'none';
 });
 
-pageStages.attendance = '阶段 4 — 考勤管理';
-
 console.log('◈ 阶段4 — 考勤管理 — 已就绪');
 
 /* ================================================================
@@ -7926,7 +7855,6 @@ function resetSalaryView() {
 
 /* ---- 考生数据存储 ---- */
 const examCandidates = [];    /* [{ id, name, project, count, status, addTime, passTime, rejectTime, headcount }] */
-let examIdCounter = 1;
 /* status: 'pending' | 'passed' | 'rejected' */
 
 /* 北京时间（UTC+8）格式化：YYYY-MM-DD HH:mm */
@@ -8939,14 +8867,10 @@ onPageSwitch('salary', () => {
   resetSalaryView();
 });
 
-pageStages.salary = '阶段 5 — 薪酬管理';
-
 /* ---- 阶段6 switchPage 集成 ---- */
 
 /* ---- 页面切换钩子：绩效考核 ---- */
 onPageSwitch('performance', () => { renderExamCards(); });
-
-pageStages.performance = '阶段 6 — 绩效考核';
 
 /* ---- 阶段7 switchPage 集成 ---- */
 
@@ -8956,14 +8880,10 @@ onPageSwitch('training', () => {
   resetTrainView();
 });
 
-pageStages.training = '阶段 7 — 培训管理';
-
 /* ---- 阶段8 switchPage 集成 ---- */
 
 /* ---- 页面切换钩子：系统设置 ---- */
 onPageSwitch('settings', () => { /* 静态页面，无额外逻辑 */ });
-
-pageStages.settings = '阶段 8 — 系统设置';
 
 console.log('◈ 阶段5-8 — 薪酬/绩效/培训/设置 — 已就绪');
 
@@ -10332,6 +10252,7 @@ window.addEventListener('beforeunload', () => {
     stopRealtimeSync(); // Perf L2: 登出即断开实时同步/轮询，避免后台空转
     _authLogout();
     clearSession();
+    window.__appLogs = []; // 清空本会话内存日志，避免下一个游客登录看到上一个成员的日志
     _exitGuestMode(); // 还原游客模式残留外观（此时已登出，走中性态）
     var bar = document.getElementById('cloudUserBar');
     if (bar && bar.parentNode) bar.parentNode.removeChild(bar);
