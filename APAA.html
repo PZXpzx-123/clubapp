@@ -9,7 +9,7 @@
 	<link rel="manifest" href="manifest.json">
 <!--
 ══════════════════════════════════════════════════════════════════
-   ClubApp 目录索引（导航地图）· v2.4.35
+   ClubApp 目录索引（导航地图）· v2.4.36
    改代码前先看这里，按行号快速定位功能 / 分区
 ══════════════════════════════════════════════════════════════════
 
@@ -4041,7 +4041,7 @@ if ("serviceWorker" in navigator) {
     .catch(function(err) { console.log("[SW] 注册失败", err); });
 }
 // --- 应用版本（热更新检测用） ---
-const APP_VERSION = '2.4.35';
+const APP_VERSION = '2.4.36';
 let __updateAvailable = false;       // 是否有可用更新
 let __updateVersion = null;          // 新版本号
 let __updateSha256 = null;           // 新版本的 SHA-256（防篡改校验）
@@ -9524,10 +9524,12 @@ async function renderAiInfo() {
       : '暂无巡逻记录';
   }
   var liveEl = document.getElementById('aiLiveCost');
-  if (liveEl) {
+  var _renderLiveCost = function () {
+    if (!liveEl) return;
     var lp = __aiLastUsage.prompt || 0, lc = __aiLastUsage.completion || 0;
     liveEl.textContent = (lp || lc) ? ('¥' + (lp / 1e6 * 1 + lc / 1e6 * 2).toFixed(4) + '（' + lp + ' 入 + ' + lc + ' 出）') : '—';
-  }
+  };
+  _renderLiveCost();
   if (typeof sb === 'undefined' || !sb || !cloudReady || !isLoggedIn()) return;
   try {
     var d = new Date();
@@ -9542,6 +9544,13 @@ async function renderAiInfo() {
     if (pEl) pEl.textContent = (u.prompt_tokens || 0).toLocaleString();
     if (cEl) cEl.textContent = (u.completion_tokens || 0).toLocaleString();
     if (costEl) costEl.textContent = '¥' + (((u.prompt_tokens || 0) / 1e6 * 1 + (u.completion_tokens || 0) / 1e6 * 2)).toFixed(2);
+
+    // 从云端恢复最近一次实时费用（刷新页面后仍显示，数据来自 ai_request_log 永久明细）
+    var lr = await sb.from('ai_request_log').select('prompt_tokens,completion_tokens').order('id', 'desc').limit(1).maybeSingle();
+    if (!lr.error && lr.data && (lr.data.prompt_tokens || lr.data.completion_tokens)) {
+      __aiLastUsage = { prompt: lr.data.prompt_tokens || 0, completion: lr.data.completion_tokens || 0 };
+      _renderLiveCost();
+    }
   } catch (e) {}
 }
 
