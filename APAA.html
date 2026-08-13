@@ -9,7 +9,7 @@
 	<link rel="manifest" href="manifest.json">
 <!--
 ══════════════════════════════════════════════════════════════════
-   ClubApp 目录索引（导航地图）· v2.4.40
+   ClubApp 目录索引（导航地图）· v2.4.41
    改代码前先看这里，按行号快速定位功能 / 分区
 ══════════════════════════════════════════════════════════════════
 
@@ -4041,7 +4041,7 @@ if ("serviceWorker" in navigator) {
     .catch(function(err) { console.log("[SW] 注册失败", err); });
 }
 // --- 应用版本（热更新检测用） ---
-const APP_VERSION = '2.4.40';
+const APP_VERSION = '2.4.41';
 let __updateAvailable = false;       // 是否有可用更新
 let __updateVersion = null;          // 新版本号
 let __updateSha256 = null;           // 新版本的 SHA-256（防篡改校验）
@@ -4296,6 +4296,25 @@ function _enterGuestMode() {
   var addBtn = document.getElementById('btnAddPerson');
   if (addBtn) { addBtn.style.opacity = '0.4'; addBtn.style.pointerEvents = 'none'; addBtn.title = '游客模式不可编辑'; }
   _startGuestWatch();
+}
+
+/* 退出游客模式：还原 _enterGuestMode() 改掉的侧边栏外观。
+   已登录成员 → 查看模式（管/超级管理员/真实昵称）；未登录 → 中性态（未登录/👤）。
+   否则「游客退出→正常登录」后侧边栏仍是游客态（bug：_enterGuestMode 只改不还原）。 */
+function _exitGuestMode() {
+  appMode = 'view';
+  document.body.classList.remove('guest-mode');
+  var editOpt = document.querySelector('.mode-option[data-mode="edit"]');
+  if (editOpt) editOpt.style.display = '';
+  var isMember = isLoggedIn() && !isGuest();
+  var roleEl = document.getElementById('userRole');
+  if (roleEl) { roleEl.textContent = isMember ? '超级管理员' : '未登录'; roleEl.style.color = ''; }
+  var nameEl = document.getElementById('userName');
+  if (nameEl) nameEl.textContent = isMember ? getUserName() : '未登录';
+  var avatarEl = document.getElementById('userAvatar');
+  if (avatarEl) avatarEl.textContent = isMember ? '管' : '👤';
+  var addBtn = document.getElementById('btnAddPerson');
+  if (addBtn) { addBtn.style.opacity = '0.4'; addBtn.style.pointerEvents = 'none'; addBtn.title = isMember ? '请切换到编辑模式' : '请先登录'; }
 }
 
 var __dtHits = 0;
@@ -10189,6 +10208,7 @@ window.addEventListener('beforeunload', () => {
       auditLog('登录', email, '');
       hideAuthOverlay();
       refreshAccountUI();
+      _exitGuestMode(); // 还原游客模式残留外观（此前若以游客身份退出，侧边栏仍是游客态）
       initCloud();
       showToast('欢迎回来，' + getUserName() + ' ✓', true);
     } catch (e) {
@@ -10275,6 +10295,7 @@ window.addEventListener('beforeunload', () => {
       auditLog('注册', email, '');
       hideAuthOverlay();
       refreshAccountUI();
+      _exitGuestMode(); // 还原游客模式残留外观
       initCloud();
       showToast('注册成功，欢迎 ✓', true);
     } catch (e) {
@@ -10311,6 +10332,7 @@ window.addEventListener('beforeunload', () => {
     stopRealtimeSync(); // Perf L2: 登出即断开实时同步/轮询，避免后台空转
     _authLogout();
     clearSession();
+    _exitGuestMode(); // 还原游客模式残留外观（此时已登出，走中性态）
     var bar = document.getElementById('cloudUserBar');
     if (bar && bar.parentNode) bar.parentNode.removeChild(bar);
     switchPane('login');
