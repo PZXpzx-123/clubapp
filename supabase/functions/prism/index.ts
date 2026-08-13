@@ -74,7 +74,7 @@ Deno.serve(async (req) => {
 
     if (!messages.length) return json({ error: "缺少消息" }, 400);
 
-    const key = Deno.env.get("sk-90157e8e49f0482fbb6dbcc46ff05534");
+    const key = Deno.env.get("DEEPSEEK_API_KEY");
     if (!key) return json({ error: "AI 未配置（缺少 DEEPSEEK_API_KEY）" }, 500);
 
     const msgs = (system ? [{ role: "system", content: system }] : []).concat(
@@ -107,6 +107,13 @@ Deno.serve(async (req) => {
     const usage = dsJson.usage || {};
     const promptT = usage.prompt_tokens || 0;
     const completionT = usage.completion_tokens || 0;
+    const isGuest = role === "guest";
+    const operator =
+      (user.user_metadata && (user.user_metadata.nickname || user.user_metadata.full_name)) ||
+      user.email ||
+      "unknown";
+    // 实时费用：DeepSeek deepseek-chat 定价 ≈ ¥1/M 输入 + ¥2/M 输出
+    const cost = promptT / 1e6 * 1 + completionT / 1e6 * 2;
 
     // 游客配额 +1（正式成员不计入配额）；用 RPC 原子累加，避免并发丢失
     if (role === "guest" && mode !== "patrol") {
@@ -118,6 +125,17 @@ Deno.serve(async (req) => {
       p_month: getMonth(),
       p_prompt: promptT,
       p_completion: completionT,
+    });
+
+    // 记录调用明细（实时费用，永久保存云端）
+    await supabase.rpc("log_ai_request", {
+      p_month: getMonth(),
+      p_mode: mode,
+      p_operator: operator,
+      p_is_guest: isGuest,
+      p_prompt: promptT,
+      p_completion: completionT,
+      p_cost: cost,
     });
 
     return json({

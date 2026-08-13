@@ -9,7 +9,7 @@
 	<link rel="manifest" href="manifest.json">
 <!--
 ══════════════════════════════════════════════════════════════════
-   ClubApp 目录索引（导航地图）· v2.4.34
+   ClubApp 目录索引（导航地图）· v2.4.35
    改代码前先看这里，按行号快速定位功能 / 分区
 ══════════════════════════════════════════════════════════════════
 
@@ -2965,8 +2965,8 @@ body:not(.edit-mode) .settings-wrap .setting-select {
   word-break: break-all;
 }
 .ld-row { display: flex; gap: 8px; margin-bottom: 9px; align-items: flex-start; }
-.ld-label { flex-shrink: 0; width: 46px; color: var(--text-3); font-size: 12px; }
-.ld-value { flex: 1; color: var(--text-2); font-size: 13px; word-break: break-all; }
+.ld-label { flex-shrink: 0; width: 46px; color: var(--text-2); font-size: 12px; }
+.ld-value { flex: 1; color: var(--text-1); font-size: 13px; word-break: break-all; }
 .ld-sep { height: 1px; background: var(--border-subtle); margin: 11px 0; }
 .ld-section { font-size: 12px; font-weight: 600; color: var(--text-3); letter-spacing: 0.5px; margin: 4px 0 10px; }
 </style>
@@ -3817,7 +3817,7 @@ function renderAppLogs() {
             : (e.category === 'ai_chat'
               ? '<span class="log-cat ai_chat">对话</span>'
               : '<span class="log-cat system">系统</span>')));
-      var opTxt = ((e.category === 'user' || e.category === 'security') && e.operator) ? '<span class="log-op">' + _escLogHtml(e.operator) + '</span>' : '';
+      var opTxt = (e.operator && e.category !== 'system') ? '<span class="log-op">' + _escLogHtml(e.operator) + '</span>' : '';
       return '<div class="log-entry" data-idx="' + item.i + '"><span class="log-ts">' + e.ts + '</span>' +
         '<span class="log-level ' + e.level + '">' + (label[e.level] || e.level) + '</span>' +
         catBadge + opTxt +
@@ -3987,7 +3987,7 @@ async function loadCloudLogs() {
       '<div class="ld-section">数据流向</div>' +
       '<div class="ld-row"><span class="ld-label">来源</span><span class="ld-value">' + _escLogHtml(srcNet) + '</span></div>' +
       '<div class="ld-row"><span class="ld-label">设备号</span><span class="ld-value">' + _escLogHtml(_getDeviceId() + ' · ' + _deviceOS()) + '</span></div>' +
-      '<div class="ld-row"><span class="ld-label">操作者</span><span class="ld-value">' + _escLogHtml(getUserName()) + '</span></div>' +
+      '<div class="ld-row"><span class="ld-label">操作者</span><span class="ld-value">' + _escLogHtml(log.operator || '系统') + '</span></div>' +
       '<div class="ld-row"><span class="ld-label">去向</span><span class="ld-value">' + _escLogHtml(destCloud) + '</span></div>' +
       '<div class="ld-row"><span class="ld-label">同步</span><span class="ld-value"><span class="ld-badge ' + syncCls + '">' + syncText + '</span><span class="ld-desc">上次同步：' + _escLogHtml(lastSyncStr) + '</span></span></div>' +
       '<div class="ld-sep"></div>' +
@@ -4041,7 +4041,7 @@ if ("serviceWorker" in navigator) {
     .catch(function(err) { console.log("[SW] 注册失败", err); });
 }
 // --- 应用版本（热更新检测用） ---
-const APP_VERSION = '2.4.34';
+const APP_VERSION = '2.4.35';
 let __updateAvailable = false;       // 是否有可用更新
 let __updateVersion = null;          // 新版本号
 let __updateSha256 = null;           // 新版本的 SHA-256（防篡改校验）
@@ -4054,26 +4054,6 @@ const UPDATE_URL = 'https://qstrmmaihqyguttnkyvt.supabase.co/storage/v1/object/p
 // 版本检查 URL — 取同一个远程目录下的 version.json，比拉整个 HTML 快 ~1000 倍
 // version.json 内容格式: {"v":"2.0.6"}
 const VERSION_JSON_URL = UPDATE_URL.replace(/APAA\.html$/i, 'version.json');
-
-// --- 忙碌状态追踪（有未保存数据或弹窗打开时标记为忙碌） ---
-function isAppBusy() {
-  // 有弹窗打开（全部使用可选链，防止 DOM 缺失崩溃）
-  var pm = document.getElementById('personModalOverlay');
-  if (pm && !pm.classList.contains('hidden')) return true;
-  var dm = document.getElementById('deleteModalOverlay');
-  if (dm && !dm.classList.contains('hidden')) return true;
-  var dob = document.getElementById('detailOverlay');
-  if (dob && !dob.classList.contains('hidden')) return true;
-  var ac = document.getElementById('addCardOverlay');
-  if (ac && ac.classList.contains('show')) return true;
-  var ea = document.getElementById('examAddOverlay');
-  if (ea && ea.classList.contains('show')) return true;
-  var ed = document.getElementById('examDetailOverlay');
-  if (ed && !ed.classList.contains('hidden')) return true;
-  // 有待保存的云端数据
-  if (cloudSaveTimer) return true;
-  return false;
-}
 
 /* ================================================================
    分区 11z: Supabase 云端同步引擎
@@ -4671,7 +4651,6 @@ const cloudPersonnel = {
       console.log('[Cloud] 云端无人员数据');
       // 云端确认为空 → 清空本地，防止旧数据回流（否则自动保存会把本地旧数据重新 upsert 回云端）
       people.length = 0;
-      nextId = 1;
       __clearAllOrderTimers();
       for (const k of Object.keys(personOrders)) { delete personOrders[k]; }
       orderIdCounter = 1;
@@ -4686,9 +4665,6 @@ const cloudPersonnel = {
         phone: p.phone || '', date: p.date || '', status: p.status || 'active',
       });
     }
-    // 恢复人员 ID 计数器
-    nextId = people.length > 0 ? Math.max(0, ...people.map(p => p.id).filter(id => typeof id === 'number' && !isNaN(id) && isFinite(id))) + 1 : 1;
-
     // 加载订单
     const { data: ordData, error: ordErr } = await sb.from('orders').select('*').eq('user_id', uid);
     if (ordErr) { console.warn('[Cloud] 订单加载失败:', ordErr.message); return false; }
@@ -5444,7 +5420,6 @@ function loadLocalData() {
       if (Array.isArray(parsed) && parsed.length > 0) {
         people.length = 0;
         people.push(...parsed);
-        nextId = Math.max(0, ...people.map(x => x.id).filter(id => typeof id === 'number' && !isNaN(id) && isFinite(id))) + 1;
       }
     }
     const o = localStorage.getItem(LS_KEYS.orders);
@@ -5563,7 +5538,6 @@ function avColor(name) {
 }
 
 let people = [];
-let nextId = 1;
 let currentPage = 1;
 let pageSize = 12;  /* 3行 × 4列 = 12 */
 let filteredPeople = [...people];
@@ -5726,7 +5700,7 @@ document.getElementById('modalSave').onclick = function() {
   const code   = document.getElementById('formCode').value.trim().replace(/[<>&]/g, '');
   const dept   = document.getElementById('formDept').value;
   const title  = document.getElementById('formTitle').value;
-  const date   = document.getElementById('formDate').value || new Date().toISOString().slice(0,16);
+  const date   = document.getElementById('formDate').value || localDateTimeInput();
   const status = document.getElementById('formStatus').value;
 
   if (!name || !code || !dept || !title) {
@@ -5771,7 +5745,7 @@ function openEdit(id) {
   document.getElementById('formCode').value    = p.code;
   document.getElementById('formDept').value    = p.dept;
   document.getElementById('formTitle').value   = p.title;
-  document.getElementById('formDate').value    = p.date !== '--' ? p.date : new Date().toISOString().slice(0,16);
+  document.getElementById('formDate').value    = p.date !== '--' ? p.date : localDateTimeInput();
   document.getElementById('formStatus').value  = p.status;
   openPersonModal('编辑人员');
 }
@@ -5828,7 +5802,6 @@ document.getElementById('deleteModalConfirm').onclick = async function() {
    ================================================================ */
 
 let detailPersonId = null;
-let detailCardRect = null;
 let detailIsOpen = false;
 let detailIsClosing = false;
 let detailCloseTimer = null;
@@ -5971,7 +5944,6 @@ function closeDetail() {
     sheet.style.cssText = '';  // 清理内联样式，避免下次打开闪现
     sheet.classList.remove('expanded');
     detailPersonId = null;
-    detailCardRect = null;
     detailIsClosing = false;
     detailCloseTimer = null;
   }, 450);
@@ -6909,6 +6881,14 @@ function formatBeijingTime(ms) {
          ' ' + pad(bj.getHours()) + ':' + pad(bj.getMinutes());
 }
 
+/* 本地日期时间（datetime-local 输入框格式 YYYY-MM-DDTHH:mm，取浏览器本地时区而非 UTC） */
+function localDateTimeInput() {
+  const d = new Date();
+  const pad = n => String(n).padStart(2, '0');
+  return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) +
+         'T' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+}
+
 /* 已完成订单卡片上的「要求时间 / 剩余时间 / 完成时间」信息块（未完成返回空串） */
 function renderCompletedTimeInfo(o) {
   if (!o || o.status !== 'completed') return '';
@@ -7631,7 +7611,7 @@ function renderAttDetail(year, month) {
   document.getElementById('attDetailMonthTitle').textContent = `${year}年 ${month}月`;
 
   const allData = generateAttendanceData(year, month);
-  const entry = allData.find(e => e.personId === attDetailPersonId);
+  const entry = allData.find(e => _idEq(e.personId, attDetailPersonId));
   if (!entry) return;
 
   /* 月历渲染 */
@@ -8979,7 +8959,6 @@ let appMode = 'view'; // 'view' | 'edit'
   const modePopup  = document.getElementById('modePopup');
   const modeOverlay = document.getElementById('modeOverlay');
   const userAvatar = document.getElementById('userAvatar');
-  const userNameEl = document.getElementById('userName');
   const userRoleEl = document.getElementById('userRole');
   const options    = modePopup ? modePopup.querySelectorAll('.mode-option') : [];
 
@@ -9093,7 +9072,6 @@ console.log('◈ 分区 11z — 管理员模式切换 — 已就绪');
    分区 11z2: 编辑模式 — 全局编辑引擎
    ================================================================ */
 
-let _epResolve = null;
 let _epTarget  = null;
 
 function openEditPopover(title, fields, target, onSave) {
@@ -9182,7 +9160,7 @@ document.addEventListener('click', function(e) {
       if (dayNum && attDetailPersonId) {
         var allData = generateAttendanceData(attCurrentYear, attCurrentMonth);
         for (var i = 0; i < allData.length; i++) {
-          if (allData[i].personId === attDetailPersonId) {
+          if (_idEq(allData[i].personId, attDetailPersonId)) {
             var days = allData[i].days;
             for (var j = 0; j < days.length; j++) {
               if (days[j].day === dayNum) {
@@ -9317,11 +9295,12 @@ const AI_GUEST_KEY = 'clubapp_ai_guest_quota'; // 游客配额（客户端兜底
 
 /* ---- AI 日志落库：永久存 app_logs（category='ai'），日志页「AI窗口巡逻」可查 ---- */
 function aiLog(action, detail) {
-  try { addAppLog('warn', detail || '', 'ai', 'Prism', action || 'AI巡逻'); } catch (e) {}
+  try { addAppLog('warn', detail || '', 'ai', '棱镜巡逻', action || 'AI巡逻'); } catch (e) {}
 }
-/* AI 历史对话日志：category='ai_chat'、info 级别（普通问答不算警告/错误），日志页「AI历史对话」可查 */
+/* AI 历史对话日志：category='ai_chat'、info 级别（普通问答不算警告/错误），operator 记录实际操作者（游客/成员昵称） */
 function aiChatLog(action, detail) {
-  try { addAppLog('info', detail || '', 'ai_chat', 'Prism', action || 'AI对话'); } catch (e) {}
+  var op = isGuest() ? '游客' : (getUserName() || '成员');
+  try { addAppLog('info', detail || '', 'ai_chat', op, action || 'AI对话'); } catch (e) {}
 }
 /* 最近一次 AI 调用的实际 tokens（用于「实时费用」显示，每次调用后立即同步） */
 let __aiLastUsage = { prompt: 0, completion: 0 };
@@ -9331,12 +9310,6 @@ function _maskName(n) {
   n = String(n || '');
   if (!n) return '';
   return n.length <= 1 ? (n + '*') : (n.charAt(0) + '**');
-}
-function _maskContact(c) {
-  c = String(c || '');
-  if (!c) return '';
-  if (c.length <= 4) return '***';
-  return c.slice(0, 3) + '****' + c.slice(-2);
 }
 function _bucketAmount(v) {
   var n = Number(v);
