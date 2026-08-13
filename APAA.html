@@ -9,7 +9,7 @@
 	<link rel="manifest" href="manifest.json">
 <!--
 ══════════════════════════════════════════════════════════════════
-   ClubApp 目录索引（导航地图）· v2.4.28
+   ClubApp 目录索引（导航地图）· v2.4.30
    改代码前先看这里，按行号快速定位功能 / 分区
 ══════════════════════════════════════════════════════════════════
 
@@ -2877,6 +2877,7 @@ body:not(.edit-mode) .settings-wrap .setting-select {
 .log-cat.system { background: rgba(90,158,158,0.14); color: #3d7a7a; }
 .log-cat.user { background: rgba(123,111,192,0.14); color: #6b5ec0; }
 .log-cat.security { background: rgba(224,77,93,0.16); color: #d64550; }
+.log-cat.ai { background: rgba(0,199,190,0.16); color: #0aa89f; }
 .log-op { flex-shrink: 0; color: var(--text-3); font-weight: 600; }
 
 /* 邀请码管理弹窗 */
@@ -3107,6 +3108,7 @@ body:not(.edit-mode) .settings-wrap .setting-select {
       <input type="text" id="globalSearch" placeholder="搜索代号、联系方式..." />
     </div>
     <div class="topbar-actions">
+      <button class="icon-btn" id="btnPrism" title="棱镜 AI 问答" style="font-size:15px;">✨</button>
       <button class="icon-btn" title="通知">🔔</button>
     </div>
   </header>
@@ -3381,12 +3383,25 @@ body:not(.edit-mode) .settings-wrap .setting-select {
               <button class="log-filter-btn" type="button" data-filter="user">用户操作</button>
               <button class="log-filter-btn" type="button" data-filter="warnerr">警告错误</button>
               <button class="log-filter-btn" type="button" data-filter="security">防御日志</button>
+              <button class="log-filter-btn" type="button" data-filter="ai">AI窗口巡逻</button>
             </div>
           </div>
           <div style="margin-top:8px;">
             <button class="btn btn-glass primary" id="btnLoadLogs" style="padding:6px 14px;font-size:13px;">📥 查看日志（从云端拉取）</button>
           </div>
           <div class="log-list" id="logList" style="max-height:420px;display:none;"></div>
+        </div>
+
+        <!-- AI · 棱镜 Prism -->
+        <div class="settings-section collapsible" id="sysinfoAiSection">
+          <div class="ss-title">AI · 棱镜 Prism</div>
+          <div class="info-row"><span class="ir-label">模型</span><span class="ir-value">DeepSeek（deepseek-chat）</span></div>
+          <div class="info-row"><span class="ir-label">本月请求次数</span><span class="ir-value" id="aiReqCount">—</span></div>
+          <div class="info-row"><span class="ir-label">输入 Tokens</span><span class="ir-value" id="aiPromptTokens">—</span></div>
+          <div class="info-row"><span class="ir-label">输出 Tokens</span><span class="ir-value" id="aiCompletionTokens">—</span></div>
+          <div class="info-row"><span class="ir-label">本月估算费用</span><span class="ir-value" id="aiCost">—</span></div>
+          <div class="info-row"><span class="ir-label">游客剩余提问</span><span class="ir-value" id="aiGuestQuota">—</span></div>
+          <div style="margin-top:8px;font-size:12px;color:var(--text-3);" id="aiPatrolRecent">暂无巡逻记录</div>
         </div>
 
         <!-- 邀请码管理 -->
@@ -3777,6 +3792,7 @@ function renderAppLogs() {
       if (filter === 'system' && e.category !== 'system') return false;
       if (filter === 'user' && e.category !== 'user') return false;
       if (filter === 'security' && e.category !== 'security') return false;
+      if (filter === 'ai' && e.category !== 'ai') return false;
       if (filter === 'warnerr' && e.level !== 'warn' && e.level !== 'error') return false;
       if (kw) {
         var hay = ((e.msg || '') + ' ' + (e.operator || '') + ' ' + (e.action || '')).toLowerCase();
@@ -3792,7 +3808,9 @@ function renderAppLogs() {
         ? '<span class="log-cat user">操作</span>'
         : (e.category === 'security'
           ? '<span class="log-cat security">攻击</span>'
-          : '<span class="log-cat system">系统</span>');
+          : (e.category === 'ai'
+            ? '<span class="log-cat ai">棱镜</span>'
+            : '<span class="log-cat system">系统</span>'));
       var opTxt = ((e.category === 'user' || e.category === 'security') && e.operator) ? '<span class="log-op">' + _escLogHtml(e.operator) + '</span>' : '';
       return '<div class="log-entry" data-idx="' + item.i + '"><span class="log-ts">' + e.ts + '</span>' +
         '<span class="log-level ' + e.level + '">' + (label[e.level] || e.level) + '</span>' +
@@ -4017,7 +4035,7 @@ if ("serviceWorker" in navigator) {
     .catch(function(err) { console.log("[SW] 注册失败", err); });
 }
 // --- 应用版本（热更新检测用） ---
-const APP_VERSION = '2.4.28';
+const APP_VERSION = '2.4.30';
 let __updateAvailable = false;       // 是否有可用更新
 let __updateVersion = null;          // 新版本号
 let __updateSha256 = null;           // 新版本的 SHA-256（防篡改校验）
@@ -4324,16 +4342,25 @@ async function _authRequest(method, path, body) {
   if (tok) headers['Authorization'] = 'Bearer ' + tok;
   var opts = { method: method, headers: headers };
   if (body !== undefined) opts.body = JSON.stringify(body);
-  var r;
-  try { r = await _fetchWithTimeout(AUTH_API + path, opts); }
-  catch (e) { return { data: null, error: { message: e.message } }; }
-  var txt = '';
-  try { txt = await r.text(); } catch (e) {}
-  var j = null;
-  try { j = txt ? JSON.parse(txt) : null; } catch (e) {}
-  if (r.ok) return { data: j, error: null };
-  var msg = (j && (j.msg || j.error_description || j.message)) || (r.status + ' ' + r.statusText);
-  return { data: null, error: { message: msg } };
+  // 429(认证限流)退避重试：20 人同时登录/续期会触发 Supabase 认证限流，稍等重试即可全部成功
+  var attempt = 0;
+  while (true) {
+    attempt++;
+    var r;
+    try { r = await _fetchWithTimeout(AUTH_API + path, opts); }
+    catch (e) { return { data: null, error: { message: e.message, status: 0 } }; } // 网络错误/超时：status=0 表示临时故障
+    var txt = '';
+    try { txt = await r.text(); } catch (e) {}
+    var j = null;
+    try { j = txt ? JSON.parse(txt) : null; } catch (e) {}
+    if (r.ok) return { data: j, error: null };
+    if (r.status === 429 && attempt < 5) {
+      await new Promise(function(res) { setTimeout(res, 800 * attempt); }); // 0.8s/1.6s/2.4s/3.2s 递增退避
+      continue;
+    }
+    var msg = (j && (j.msg || j.error_description || j.message)) || (r.status + ' ' + r.statusText);
+    return { data: null, error: { message: msg, status: r.status } };
+  }
 }
 
 async function _authLogin(email, pwd) {
@@ -4400,7 +4427,14 @@ async function _ensureFreshToken() {
   __refreshPromise = (async function() {
     try {
       var r = await _authRefresh(s.refresh_token);
-      if (r.error || !r.data || !r.data.access_token) { clearSession(); return null; }
+      if (r.error || !r.data || !r.data.access_token) {
+        // 只在令牌被服务端「明确拒绝」(400 无效/过期/吊销、401 未授权) 时才清会话；
+        // 429(认证限流)/网络错误(status=0)/超时/5xx 都是临时故障——保留会话，仅本次请求降级为无令牌(fail-closed)，
+        // 避免正常用户因一次网络抖动或限流就被踢出登录。
+        var st = (r.error && r.error.status) || 0;
+        if (st === 400 || st === 401) { clearSession(); }
+        return null;
+      }
       var s2 = getSession() || s; // 读取最新会话（可能已被其它写入覆盖）
       s2.access_token = r.data.access_token;
       if (r.data.refresh_token) s2.refresh_token = r.data.refresh_token;
@@ -4996,6 +5030,7 @@ async function cloudLoadAll() {
 
 async function cloudSaveAll() {
   if (!cloudReady) { console.log('[Cloud] 云端未就绪，跳过保存'); return; }
+  if (isGuest()) { console.log('[Cloud] 游客只读，跳过云端保存'); return; } // G4: 游客不写云端，避免「确认更新」等触发的保存把游客踢出
   console.log('[Cloud] ⬆ 开始保存全部数据到云端...');
   await cloudAppearance.save();
   await cloudPersonnel.save();
@@ -9264,6 +9299,268 @@ document.addEventListener('click', function(e) {
 })();
 
 console.log('◈ 分区 11z2-11z6 — 编辑模式引擎 — 已就绪');
+
+// ================================================================
+// 分区 11ai — 棱镜 Prism AI（DeepSeek 代理 · 巡逻 · 搜索 · 脱敏）
+// 说明：DeepSeek key 藏在 Supabase Edge Function，前端只调 /functions/v1/prism。
+// ================================================================
+const PRISM_FN_URL = SUPABASE_URL + '/functions/v1/prism';
+const AI_GUEST_QUOTA = 2;                    // 游客每台设备最多 2 次 AI 提问
+const AI_PATROL_INTERVAL = 5 * 60 * 1000;    // 巡逻间隔 5 分钟
+const AI_GUEST_KEY = 'clubapp_ai_guest_quota'; // 游客配额（客户端兜底，服务端也有一份）
+
+/* ---- AI 日志落库：永久存 app_logs（category='ai'），日志页「AI窗口巡逻」可查 ---- */
+function aiLog(action, detail) {
+  try { addAppLog('warn', detail || '', 'ai', 'Prism', action || 'AI巡逻'); } catch (e) {}
+}
+
+/* ---- 数据脱敏：发给 DeepSeek 前处理，不泄露真实姓名/联系方式/精确薪酬 ---- */
+function _maskName(n) {
+  n = String(n || '');
+  if (!n) return '';
+  return n.length <= 1 ? (n + '*') : (n.charAt(0) + '**');
+}
+function _maskContact(c) {
+  c = String(c || '');
+  if (!c) return '';
+  if (c.length <= 4) return '***';
+  return c.slice(0, 3) + '****' + c.slice(-2);
+}
+function _bucketAmount(v) {
+  var n = Number(v);
+  if (isNaN(n)) return 'NaN';
+  if (n < 0) return '负';
+  var edges = [0, 1000, 3000, 5000, 8000, 10000, 15000, 20000, 30000];
+  for (var i = edges.length - 1; i >= 0; i--) {
+    if (n >= edges[i]) {
+      var hi = (i + 1 < edges.length) ? edges[i + 1] : null;
+      return hi === null ? (edges[i] + '以上') : (edges[i] + '~' + hi);
+    }
+  }
+  return '0';
+}
+
+/* ---- 采集脱敏后的数据快照（用于巡逻 + 搜索问答上下文） ---- */
+function buildPrismSnapshot() {
+  var personCount = (typeof people !== 'undefined' && Array.isArray(people)) ? people.length : 0;
+  var examCount = (typeof examCandidates !== 'undefined' && Array.isArray(examCandidates)) ? examCandidates.length : 0;
+  var salaryCount = (typeof salaryRecords !== 'undefined' && Array.isArray(salaryRecords)) ? salaryRecords.length : 0;
+  var orderCount = 0;
+  try { for (var k in personOrders) { if (personOrders.hasOwnProperty(k)) orderCount += (Array.isArray(personOrders[k]) ? personOrders[k].length : 0); } } catch (e) {}
+
+  var recentLogs = [];
+  try {
+    recentLogs = (window.__appLogs || []).filter(function (e) {
+      return e && (e.category === 'security' || e.category === 'user' || e.category === 'ai');
+    }).slice(-50).map(function (e) {
+      return { t: e.ts, cat: e.category, level: e.level, op: _maskName(e.operator), action: e.action, msg: (e.msg || '').slice(0, 120) };
+    });
+  } catch (e) {}
+
+  var persons = [];
+  try {
+    persons = (people || []).slice(0, 200).map(function (p) {
+      return { name: _maskName(p.name), dept: (p.dept || '').slice(0, 10), status: p.status || 'active' };
+    });
+  } catch (e) {}
+
+  var salary = [];
+  try {
+    salary = (salaryRecords || []).slice(-30).map(function (r) {
+      return { order: (r.orderName || '').slice(0, 20), scope: r.scope, price: _bucketAmount(r.priceRMB), coin: _bucketAmount(r.priceCoin) };
+    });
+  } catch (e) {}
+
+  var exam = [];
+  try {
+    exam = (examCandidates || []).slice(-30).map(function (c) {
+      return { name: _maskName(c.name), project: (c.project || '').slice(0, 12), count: c.count, status: c.status };
+    });
+  } catch (e) {}
+
+  return { personCount: personCount, orderCount: orderCount, examCount: examCount, salaryCount: salaryCount, recentLogs: recentLogs, persons: persons, salary: salary, exam: exam };
+}
+
+/* ---- 调用 Edge Function（通用入口，返回 {answer, usage}） ---- */
+async function _prismRequest(mode, system, messages) {
+  var tok = null;
+  try { tok = await _ensureFreshToken(); } catch (e) {}
+  var headers = { 'Content-Type': 'application/json' };
+  if (tok) headers['Authorization'] = 'Bearer ' + tok;
+  var r = await _fetchWithTimeout(PRISM_FN_URL, {
+    method: 'POST', headers: headers,
+    body: JSON.stringify({ mode: mode, deviceId: _getDeviceId(), system: system, messages: messages })
+  }, 25000);
+  var txt = '';
+  try { txt = await r.text(); } catch (e) {}
+  var j = null;
+  try { j = JSON.parse(txt); } catch (e) {}
+  if (!r.ok) {
+    var em = (j && j.error) || (r.status + ' ' + r.statusText);
+    var err = new Error(em); err.status = r.status; throw err;
+  }
+  return j;
+}
+
+/* ---- 解析 Prism 返回的异常清单（JSON 数组） ---- */
+function _parseAnomalies(text) {
+  try {
+    var s = String(text || '').trim().replace(/```json/gi, '').replace(/```/g, '').trim();
+    var arr = JSON.parse(s);
+    if (Array.isArray(arr)) return arr;
+    if (arr && Array.isArray(arr.anomalies)) return arr.anomalies;
+    return [];
+  } catch (e) { return []; }
+}
+
+/* ---- 巡逻：仅正式成员在线才跑（游客/未登录直接跳过），异常写入 AI 日志 ---- */
+let __patrolRunning = false;
+let __patrolTimer = null;
+async function patrolTick() {
+  if (!isLoggedIn() || isGuest()) return;
+  if (__patrolRunning) return;
+  __patrolRunning = true;
+  try {
+    var snap = buildPrismSnapshot();
+    var prompt = '你是 ClubApp 的 AI 巡逻员「棱镜」。分析下面这份【已脱敏】的数据摘要，找出安全/数据/行为异常。\n'
+      + '只报告确有异常的项；返回 JSON 数组，每项形如 {"type":"security|data|behavior","title":"简短标题","detail":"一句话说明"}；'
+      + '若无异常返回 []。不要输出 JSON 以外的任何文字。\n\n' + JSON.stringify(snap);
+    var res = await _prismRequest('patrol', '你是 ClubApp 的 AI 巡逻员「棱镜」，负责发现安全/数据/行为异常。只输出 JSON 数组。', [{ role: 'user', content: prompt }]);
+    var anomalies = _parseAnomalies(res.answer);
+    if (anomalies.length) {
+      for (var i = 0; i < anomalies.length; i++) {
+        var a = anomalies[i];
+        aiLog('巡逻-' + (a.type || '异常'), (a.title || '异常') + (a.detail ? '：' + a.detail : ''));
+      }
+    }
+  } catch (e) {
+    /* 巡逻失败静默处理，避免网络抖动刷屏；下个周期自动重试 */
+  } finally {
+    __patrolRunning = false;
+  }
+}
+function startPatrol() {
+  if (__patrolTimer) return;
+  __patrolTimer = setInterval(patrolTick, AI_PATROL_INTERVAL);
+}
+
+/* ---- 游客 AI 提问配额（客户端） ---- */
+function _guestAiRemaining() {
+  if (!isGuest()) return Infinity;
+  try { var n = parseInt(localStorage.getItem(AI_GUEST_KEY) || '0', 10); if (isNaN(n)) n = 0; return Math.max(0, AI_GUEST_QUOTA - n); } catch (e) { return 0; }
+}
+function _guestAiUse() {
+  try { var n = parseInt(localStorage.getItem(AI_GUEST_KEY) || '0', 10); if (isNaN(n)) n = 0; localStorage.setItem(AI_GUEST_KEY, String(n + 1)); } catch (e) {}
+}
+
+/* ---- 顶栏「棱镜」AI 搜索弹窗 ---- */
+function _ensurePrismOverlay() {
+  var ov = document.getElementById('prismOverlay');
+  if (ov) return ov;
+  ov = document.createElement('div');
+  ov.id = 'prismOverlay';
+  ov.className = 'modal-overlay hidden';
+  ov.innerHTML = ''
+    + '<div class="modal" style="max-width:520px;">'
+    + '<div class="modal-header"><span>✨ 棱镜 Prism</span><button class="modal-close" id="prismClose" type="button">✕</button></div>'
+    + '<div class="modal-body">'
+    + '<div class="form-group"><input type="text" id="prismInput" placeholder="问我数据问题，如：上月薪酬超8000的有谁" /></div>'
+    + '<div id="prismQuota" style="font-size:12px;color:var(--text-3);margin:6px 0;"></div>'
+    + '<div id="prismAnswer" style="min-height:60px;max-height:260px;overflow:auto;font-size:13px;line-height:1.6;color:var(--text-1);white-space:pre-wrap;"></div>'
+    + '<div style="margin-top:10px;text-align:right;"><button class="btn btn-glass primary" id="prismAsk" type="button">提问</button></div>'
+    + '</div></div>';
+  document.body.appendChild(ov);
+  ov.addEventListener('click', function (ev) { if (ev.target === ov) ov.classList.add('hidden'); });
+  var close = document.getElementById('prismClose');
+  if (close) close.onclick = function () { ov.classList.add('hidden'); };
+  var ask = document.getElementById('prismAsk');
+  if (ask) ask.onclick = function () { doPrismSearch(document.getElementById('prismInput').value); };
+  var input = document.getElementById('prismInput');
+  if (input) input.addEventListener('keydown', function (ev) { if (ev.key === 'Enter') doPrismSearch(ev.target.value); });
+  return ov;
+}
+function _openPrism() {
+  var ov = _ensurePrismOverlay();
+  ov.classList.remove('hidden');
+  var quota = document.getElementById('prismQuota');
+  if (quota) quota.textContent = isGuest() ? ('游客模式：剩余 ' + _guestAiRemaining() + ' / ' + AI_GUEST_QUOTA + ' 次 AI 提问') : '';
+  var input = document.getElementById('prismInput');
+  if (input) { input.value = ''; input.focus(); }
+  var ans = document.getElementById('prismAnswer');
+  if (ans) ans.textContent = '';
+}
+function _prismShowAnswer(text, isErr) {
+  var ans = document.getElementById('prismAnswer');
+  if (ans) { ans.textContent = text || ''; if (isErr) ans.style.color = '#d64550'; else ans.style.color = 'var(--text-1)'; }
+}
+function _prismSetLoading(on) {
+  var ask = document.getElementById('prismAsk');
+  if (ask) { ask.disabled = !!on; ask.textContent = on ? '思考中…' : '提问'; }
+}
+async function doPrismSearch(q) {
+  q = String(q || '').trim();
+  if (!q) return;
+  if (isGuest() && _guestAiRemaining() <= 0) { _prismShowAnswer('⚠️ 游客 AI 提问已达上限（2 次）。', true); return; }
+  _prismSetLoading(true);
+  try {
+    var snap = buildPrismSnapshot();
+    var system = '你是 ClubApp 的 AI 助手「棱镜」。根据下面附带的数据摘要（已脱敏）用中文简洁回答用户问题。';
+    var msg = '用户问题：' + q + '\n\n数据摘要：' + JSON.stringify(snap);
+    var res = await _prismRequest('chat', system, [{ role: 'user', content: msg }]);
+    if (isGuest()) _guestAiUse();
+    _prismShowAnswer(res.answer || '(无回答)');
+    aiLog('搜索问答', q.slice(0, 80));
+  } catch (e) {
+    if (e && e.status === 429) _prismShowAnswer('⚠️ 游客 AI 提问已达上限（2 次）。', true);
+    else _prismShowAnswer('⚠️ ' + ((e && e.message) || '调用失败'), true);
+  } finally {
+    _prismSetLoading(false);
+    // 刷新配额显示（游客）——不清空答案，只更新剩余次数
+    var quotaEl2 = document.getElementById('prismQuota');
+    if (quotaEl2) quotaEl2.textContent = isGuest() ? ('游客模式：剩余 ' + _guestAiRemaining() + ' / ' + AI_GUEST_QUOTA + ' 次 AI 提问') : '';
+  }
+}
+
+/* ---- 系统信息页「AI · 棱镜 Prism」区块渲染 ---- */
+async function renderAiInfo() {
+  var reqEl = document.getElementById('aiReqCount');
+  if (!reqEl) return;
+  var quotaEl = document.getElementById('aiGuestQuota');
+  if (quotaEl) quotaEl.textContent = isGuest() ? (Math.max(0, _guestAiRemaining()) + ' 次') : '不限';
+  var recentEl = document.getElementById('aiPatrolRecent');
+  if (recentEl) {
+    var recent = (window.__appLogs || []).filter(function (e) { return e && e.category === 'ai'; }).slice(-3);
+    recentEl.innerHTML = recent.length
+      ? recent.map(function (e) { return '<div>🛰 ' + _escLogHtml(e.ts) + ' · ' + _escLogHtml(e.msg) + '</div>'; }).join('')
+      : '暂无巡逻记录';
+  }
+  if (typeof sb === 'undefined' || !sb || !cloudReady || !isLoggedIn()) return;
+  try {
+    var d = new Date();
+    var m = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+    var res = await sb.from('ai_usage').select('requests,prompt_tokens,completion_tokens').eq('id', m).maybeSingle();
+    if (res.error) return;
+    var u = res.data || { requests: 0, prompt_tokens: 0, completion_tokens: 0 };
+    reqEl.textContent = String(u.requests || 0) + ' 次';
+    var pEl = document.getElementById('aiPromptTokens');
+    var cEl = document.getElementById('aiCompletionTokens');
+    var costEl = document.getElementById('aiCost');
+    if (pEl) pEl.textContent = (u.prompt_tokens || 0).toLocaleString();
+    if (cEl) cEl.textContent = (u.completion_tokens || 0).toLocaleString();
+    if (costEl) costEl.textContent = '¥' + (((u.prompt_tokens || 0) / 1e6 * 1 + (u.completion_tokens || 0) / 1e6 * 2)).toFixed(2);
+  } catch (e) {}
+}
+
+/* ---- 启动：巡逻定时器 + 顶栏按钮 + AI 信息刷新 ---- */
+startPatrol();
+(function () {
+  var btn = document.getElementById('btnPrism');
+  if (btn) btn.onclick = _openPrism;
+  setTimeout(renderAiInfo, 3000);
+  setInterval(renderAiInfo, 30000);
+})();
+
+console.log('◈ 分区 11ai — 棱镜 Prism AI — 已就绪');
 
 // 所有变量已定义，启动云端 + 本地数据恢复
 // 登录门禁：先检查登录状态，未登录显示登录页；登录后加载数据
