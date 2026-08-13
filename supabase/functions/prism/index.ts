@@ -114,6 +114,7 @@ Deno.serve(async (req) => {
     const deviceId = String(body.deviceId || "unknown");
     const system = typeof body.system === "string" ? body.system : "";
     const messages = Array.isArray(body.messages) ? body.messages : [];
+    const tools = Array.isArray(body.tools) ? body.tools : [];
 
     // 巡逻仅正式成员（游客不可触发巡逻）
     if (mode === "patrol" && role === "guest") {
@@ -135,7 +136,13 @@ Deno.serve(async (req) => {
     if (!key) return json({ error: "AI 未配置（缺少 DEEPSEEK_API_KEY）" }, 500);
 
     const msgs = (system ? [{ role: "system", content: system }] : []).concat(
-      messages.map((m: any) => ({ role: m.role === "assistant" ? "assistant" : "user", content: String(m.content || "") }))
+      messages.map((m: any) => {
+        const role = (m.role === "assistant" || m.role === "tool") ? m.role : "user";
+        const out: any = { role, content: String(m.content || "") };
+        if (role === "assistant" && Array.isArray(m.tool_calls) && m.tool_calls.length) out.tool_calls = m.tool_calls;
+        if (role === "tool" && m.tool_call_id) out.tool_call_id = m.tool_call_id;
+        return out;
+      })
     );
 
     let dsResp;
@@ -148,6 +155,7 @@ Deno.serve(async (req) => {
           messages: msgs,
           temperature: 0.3,
           max_tokens: 1200,
+          ...(tools.length ? { tools } : {}),
         }),
       });
     } catch (e) {
@@ -160,7 +168,9 @@ Deno.serve(async (req) => {
       return json({ error: em }, 502);
     }
 
-    const answer = (dsJson.choices?.[0]?.message?.content) || "";
+    const dsMsg = dsJson.choices?.[0]?.message || {};
+    const answer = dsMsg.content || "";
+    const tool_calls = Array.isArray(dsMsg.tool_calls) && dsMsg.tool_calls.length ? dsMsg.tool_calls : null;
     const usage = dsJson.usage || {};
     const promptT = usage.prompt_tokens || 0;
     const completionT = usage.completion_tokens || 0;
@@ -197,6 +207,7 @@ Deno.serve(async (req) => {
 
     return json({
       answer,
+      tool_calls,
       usage: { prompt_tokens: promptT, completion_tokens: completionT },
     });
   } catch (e) {

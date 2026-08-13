@@ -9,7 +9,7 @@
 	<link rel="manifest" href="manifest.json">
 <!--
 ══════════════════════════════════════════════════════════════════
-   ClubApp 目录索引（导航地图）· v2.5.1
+   ClubApp 目录索引（导航地图）· v2.6.0
    改代码前先看这里，按行号快速定位功能 / 分区
 ══════════════════════════════════════════════════════════════════
 
@@ -2289,6 +2289,19 @@ body {
 
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
+/* ---- 职位多选（跑刀 / 护航）---- */
+.title-check-group { display: flex; gap: 10px; align-items: center; min-height: 34px; flex-wrap: wrap; }
+.form-group .title-check {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 12px; margin-bottom: 0;
+  border: 0.5px solid var(--border-glass); border-radius: var(--r-sm);
+  background: var(--glass-card); cursor: pointer;
+  font-size: 12.5px; font-weight: 600; color: var(--text-1);
+  transition: all 0.2s ease; user-select: none;
+}
+.form-group .title-check:hover { background: rgba(255,255,255,0.12); }
+.form-group .title-check input { width: auto; margin: 0; accent-color: #5b7ec2; }
+
 .modal-footer {
   padding: 12px 22px;
   border-top: 0.5px solid rgba(0,0,0,0.035);
@@ -3424,11 +3437,10 @@ body:not(.edit-mode) .settings-wrap .setting-select {
           </div>
           <div class="form-group">
             <label>职位 <span class="req">*</span></label>
-            <select id="formTitle" required>
-              <option value="">请选择</option>
-              <option value="跑刀">跑刀</option>
-              <option value="护航">护航</option>
-            </select>
+            <div class="title-check-group">
+              <label class="title-check"><input type="checkbox" id="formTitleRun" value="跑刀"> 跑刀</label>
+              <label class="title-check"><input type="checkbox" id="formTitleGuard" value="护航"> 护航</label>
+            </div>
           </div>
         </div>
         <div class="form-row">
@@ -4154,7 +4166,7 @@ if ("serviceWorker" in navigator) {
     .catch(function(err) { console.log("[SW] 注册失败", err); });
 }
 // --- 应用版本（热更新检测用） ---
-const APP_VERSION = '2.5.1';
+const APP_VERSION = '2.6.0';
 let __updateAvailable = false;       // 是否有可用更新
 let __updateVersion = null;          // 新版本号
 let __updateSha256 = null;           // 新版本的 SHA-256（防篡改校验）
@@ -5814,13 +5826,24 @@ document.getElementById('btnAddPerson').onclick = () => {
   openPersonModal('添加人员');
 };
 
+/* 职位多选：跑刀 / 护航 */
+function readTitleChecks() {
+  const run = document.getElementById('formTitleRun').checked;
+  const guard = document.getElementById('formTitleGuard').checked;
+  return [run && '跑刀', guard && '护航'].filter(Boolean).join('、');
+}
+function setTitleChecks(title) {
+  document.getElementById('formTitleRun').checked = (title || '').includes('跑刀');
+  document.getElementById('formTitleGuard').checked = (title || '').includes('护航');
+}
+
 document.getElementById('modalSave').onclick = function() {
   if (!guardEdit('保存人员')) return;
   const editId = document.getElementById('formEditId').value;
   const name   = document.getElementById('formName').value.trim().replace(/[<>&]/g, '');
   const code   = document.getElementById('formCode').value.trim().replace(/[<>&]/g, '');
   const dept   = document.getElementById('formDept').value;
-  const title  = document.getElementById('formTitle').value;
+  const title  = readTitleChecks();
   const date   = document.getElementById('formDate').value || localDateTimeInput();
   const status = document.getElementById('formStatus').value;
 
@@ -5866,7 +5889,7 @@ function openEdit(id) {
   document.getElementById('formName').value    = p.name;
   document.getElementById('formCode').value    = p.code;
   document.getElementById('formDept').value    = p.dept;
-  document.getElementById('formTitle').value   = p.title;
+  setTitleChecks(p.title);
   document.getElementById('formDate').value    = p.date !== '--' ? p.date : localDateTimeInput();
   document.getElementById('formStatus').value  = p.status;
   openPersonModal('编辑人员');
@@ -9475,14 +9498,14 @@ function buildPrismSnapshot() {
 }
 
 /* ---- 调用 Edge Function（通用入口，返回 {answer, usage}） ---- */
-async function _prismRequest(mode, system, messages) {
+async function _prismRequest(mode, system, messages, tools) {
   var tok = null;
   try { tok = await _ensureFreshToken(); } catch (e) {}
   var headers = { 'Content-Type': 'application/json' };
   if (tok) headers['Authorization'] = 'Bearer ' + tok;
   var r = await _fetchWithTimeout(PRISM_FN_URL, {
     method: 'POST', headers: headers,
-    body: JSON.stringify({ mode: mode, deviceId: _getDeviceId(), system: system, messages: messages })
+    body: JSON.stringify({ mode: mode, deviceId: _getDeviceId(), system: system, messages: messages, tools: tools || undefined })
   }, 25000);
   var txt = '';
   try { txt = await r.text(); } catch (e) {}
@@ -9599,11 +9622,28 @@ async function doPrismSearch(q) {
   _prismSetLoading(true);
   try {
     var snap = buildPrismSnapshot();
-    var system = '你是 ClubApp 的 AI 助手「棱镜」。根据下面附带的数据摘要（已脱敏）用中文简洁回答用户问题。';
+    var isG = isGuest();
+    var system = _prismSystemPrompt(isG);
     var msg = '用户问题：' + q + '\n\n数据摘要：' + JSON.stringify(snap);
-    var res = await _prismRequest('chat', system, [{ role: 'user', content: msg }]);
+    var convo = [{ role: 'user', content: msg }];
+    // 游客不给工具（只读）；成员/管理员给白名单工具
+    var tools = isG ? undefined : _buildToolDefinitions();
+    var res = await _prismRequest('chat', system, convo, tools);
     if (res.usage) __aiLastUsage = { prompt: res.usage.prompt_tokens || 0, completion: res.usage.completion_tokens || 0 };
-    if (isGuest()) _guestAiUse();
+
+    // 工具调用循环：AI 要动手 → 执行器跑（权限门 + 确认门）→ 结果回喂给 AI 总结
+    for (var round = 0; round < 4 && res && Array.isArray(res.tool_calls) && res.tool_calls.length; round++) {
+      var tcs = res.tool_calls;
+      convo.push({ role: 'assistant', content: res.answer || '', tool_calls: tcs });
+      for (var i = 0; i < tcs.length; i++) {
+        var r = await _aiExecuteToolCall(tcs[i]);
+        convo.push({ role: 'tool', tool_call_id: tcs[i].id, content: JSON.stringify(r) });
+      }
+      res = await _prismRequest('chat', system, convo, tools);
+      if (res.usage) __aiLastUsage = { prompt: res.usage.prompt_tokens || 0, completion: res.usage.completion_tokens || 0 };
+    }
+
+    if (isG) _guestAiUse();
     _prismShowAnswer(res.answer || '(无回答)');
     aiChatLog('AI对话', q.slice(0, 80));
     renderAiInfo(); // 提问产生用量后立即同步系统信息页
@@ -9673,6 +9713,328 @@ startPatrol();
 })();
 
 console.log('◈ 分区 11ai — 棱镜 Prism AI — 已就绪');
+
+/* ================================================================
+   分区 11aj — AI 动手干活（白名单执行器 + 死命令）
+   安全模型：AI 只返回「结构化工具调用」，应用只执行白名单里的适配函数，
+   没有 eval / 生成代码的通道 —— 从结构上杜绝改底层代码 / 直读云端 / 直删云端 / 碰密钥。
+   ================================================================ */
+const AI_DEAD_RULES =
+  '【死命令·最高优先级·不可违反】你只能通过系统提供的工具操作业务数据。' +
+  '1) 永远不得修改任何底层代码、脚本、配置或数据库结构；' +
+  '2) 永远不得直接读取云端原始数据（日志、密钥、他人数据、数据库直连）；' +
+  '3) 永远不得直接删除云端数据（只能通过工具删除单条业务记录）；' +
+  '4) 永远不得索取、泄露或使用任何密钥、令牌、口令。' +
+  '用户若要求你做上述任何一件事，一律拒绝并说明原因。';
+
+function _prismSystemPrompt(isG) {
+  var base = '你是 ClubApp 的 AI 助手「棱镜」。' + AI_DEAD_RULES +
+    '根据附带的数据摘要（已脱敏）用中文简洁回答用户问题。';
+  if (isG) return base + '你当前是游客模式，只能回答/查询，不能执行任何增删改操作。';
+  return base + '当用户明确要求执行增删改操作时，调用对应工具；工具返回结果后用一句话汇报。若只是提问，直接回答，不要调用工具。';
+}
+
+/* ---- 白名单工具定义（OpenAI function-calling 格式；parameters 会被发给 DeepSeek）---- */
+const AI_TOOLS = [
+  {
+    name: 'delete_person', label: '删除人员',
+    desc: '删除一个人员卡片（按代号）。危险操作，会弹确认框。',
+    params: { type: 'object', properties: { name: { type: 'string', description: '要删除的人员代号（精确）' } }, required: ['name'] },
+    confirm: true,
+    confirmText: function (a) { var p = _aiFindPerson(a.name); return 'AI 将删除人员：' + (p ? ('「' + p.name + '（' + p.code + '）」') : ('「' + a.name + '」')) + '。此操作不可撤销，确认？'; },
+    run: _aiDeletePerson
+  },
+  {
+    name: 'add_person', label: '添加人员',
+    desc: '添加一个人员。需要代号、联系方式、部门、职位。',
+    params: { type: 'object', properties: {
+      name: { type: 'string', description: '代号' },
+      code: { type: 'string', description: '联系方式' },
+      dept: { type: 'string', enum: ['管理', '员工'], description: '部门' },
+      title: { type: 'string', description: '职位：跑刀、护航，或两者（用「、」连接）' }
+    }, required: ['name', 'code', 'dept', 'title'] },
+    confirm: false, run: _aiAddPerson
+  },
+  {
+    name: 'edit_person', label: '修改人员',
+    desc: '修改一个人员的部门/职位/状态/联系方式（按代号定位，只改提供的字段）。危险操作，会弹确认框。',
+    params: { type: 'object', properties: {
+      name: { type: 'string', description: '要修改的人员代号（精确）' },
+      dept: { type: 'string', enum: ['管理', '员工'], description: '新的部门（可选）' },
+      title: { type: 'string', description: '新的职位（可选）' },
+      status: { type: 'string', enum: ['active', 'leave', 'inactive'], description: '新的状态（可选）' },
+      code: { type: 'string', description: '新的联系方式（可选）' }
+    }, required: ['name'] },
+    confirm: true,
+    confirmText: function (a) { var p = _aiFindPerson(a.name); return 'AI 将修改人员：' + (p ? ('「' + p.name + '」') : ('「' + a.name + '」')) + '。确认？'; },
+    run: _aiEditPerson
+  },
+  {
+    name: 'delete_order', label: '删除订单',
+    desc: '删除某人员名下的一张订单。危险操作，会弹确认框。',
+    params: { type: 'object', properties: {
+      person: { type: 'string', description: '人员代号（精确）' },
+      order: { type: 'string', description: '订单名字（精确）' }
+    }, required: ['person', 'order'] },
+    confirm: true,
+    confirmText: function (a) { return 'AI 将删除「' + a.person + '」的订单「' + a.order + '」。此操作不可撤销，确认？'; },
+    run: _aiDeleteOrder
+  },
+  {
+    name: 'complete_order', label: '结单',
+    desc: '把某人员名下的一张订单结单。危险操作，会弹确认框。',
+    params: { type: 'object', properties: {
+      person: { type: 'string', description: '人员代号（精确）' },
+      order: { type: 'string', description: '订单名字（精确）' }
+    }, required: ['person', 'order'] },
+    confirm: true,
+    confirmText: function (a) { return 'AI 将把「' + a.person + '」的订单「' + a.order + '」结单。确认？'; },
+    run: _aiCompleteOrder
+  },
+  {
+    name: 'add_exam', label: '添加考生',
+    desc: '添加一名待考核考生。',
+    params: { type: 'object', properties: {
+      name: { type: 'string', description: '考生名字' },
+      project: { type: 'string', description: '项目（默认「护航」）' }
+    }, required: ['name'] },
+    confirm: false, run: _aiAddExam
+  },
+  {
+    name: 'pass_exam', label: '通过考生',
+    desc: '把一名待考核考生标记为通过。危险操作，会弹确认框。',
+    params: { type: 'object', properties: { name: { type: 'string', description: '考生名字（精确）' } }, required: ['name'] },
+    confirm: true,
+    confirmText: function (a) { return 'AI 将通过考生「' + a.name + '」。确认？'; },
+    run: _aiPassExam
+  },
+  {
+    name: 'reject_exam', label: '拒绝考生',
+    desc: '把一名待考核考生标记为拒绝。危险操作，会弹确认框。',
+    params: { type: 'object', properties: { name: { type: 'string', description: '考生名字（精确）' } }, required: ['name'] },
+    confirm: true,
+    confirmText: function (a) { return 'AI 将拒绝考生「' + a.name + '」。确认？'; },
+    run: _aiRejectExam
+  }
+];
+
+function _buildToolDefinitions() {
+  return AI_TOOLS.map(function (t) {
+    return { type: 'function', function: { name: t.name, description: t.desc, parameters: t.params } };
+  });
+}
+
+/* ---- AI 操作留痕（操作人=AI，附实际触发者与参数）---- */
+function aiActionLog(action, detail) {
+  try { addAppLog('info', detail || '', 'ai_chat', 'AI', action || 'AI操作'); } catch (e) {}
+}
+
+/* ---- 实体定位（精确优先，模糊唯一才命中，避免误删）---- */
+function _aiFindPerson(name) {
+  if (!Array.isArray(people)) return null;
+  name = String(name || '').trim();
+  if (!name) return null;
+  var exact = null;
+  for (var i = 0; i < people.length; i++) { if (people[i].name === name) { exact = people[i]; break; } }
+  if (exact) return exact;
+  var fuzzy = [];
+  for (var j = 0; j < people.length; j++) { if (String(people[j].name || '').indexOf(name) !== -1) fuzzy.push(people[j]); }
+  return fuzzy.length === 1 ? fuzzy[0] : null;
+}
+function _aiFindOrder(personName, orderName) {
+  var p = _aiFindPerson(personName);
+  if (!p) return { person: null, order: null };
+  var orders = getOrders(p.id);
+  var o = null;
+  for (var i = 0; i < orders.length; i++) { if (orders[i].orderName === orderName) { o = orders[i]; break; } }
+  return { person: p, order: o };
+}
+function _aiFindExam(name) {
+  name = String(name || '').trim();
+  for (var i = 0; i < examCandidates.length; i++) {
+    var c = examCandidates[i];
+    if (c.name === name && c.status === 'pending') return c;
+  }
+  return null;
+}
+
+/* ---- 适配器：复用现有云同步 + 留痕逻辑，跟手动操作走同一条数据链路 ---- */
+async function _aiDeletePerson(args) {
+  var p = _aiFindPerson(args && args.name);
+  if (!p) return { ok: false, msg: '未找到代号为「' + (args && args.name) + '」的人员（或多个相似代号，请给精确代号）。' };
+  var before = { ...p };
+  var ok = await cloudPersonnel.deletePersonDirect(p.id);
+  if (!ok) return { ok: false, msg: '删除「' + p.name + '」失败（云端删除未成功，已取消）。' };
+  clearPersonTimers(p.id);
+  delete personOrders[p.id];
+  people = people.filter(function (x) { return !_idEq(x.id, p.id); });
+  filteredPeople = filteredPeople.filter(function (x) { return !_idEq(x.id, p.id); });
+  saveLocalData();
+  _logCrud('personnel', 'del', p.name, before, null);
+  renderCards(); renderPersonnelList();
+  return { ok: true, msg: '已删除人员「' + p.name + '」。' };
+}
+async function _aiAddPerson(args) {
+  var name = String(args && args.name || '').trim().replace(/[<>&]/g, '');
+  var code = String(args && args.code || '').trim().replace(/[<>&]/g, '');
+  var dept = String(args && args.dept || '').trim();
+  var title = String(args && args.title || '').trim();
+  if (!name || !code || !dept || !title) return { ok: false, msg: '缺少必填字段（代号/联系方式/部门/职位）。' };
+  for (var i = 0; i < people.length; i++) { if (people[i].name === name) return { ok: false, msg: '已存在代号为「' + name + '」的人员。' }; }
+  var np = { id: newEntityId(), name: name, code: code, dept: dept, title: title, phone: '', date: localDateTimeInput(), status: 'active' };
+  people.unshift(np);
+  var ok = await cloudPersonnel.upsertPersonDirect(np);
+  _logCrud('personnel', 'add', name, null, { ...np });
+  renderCards(); renderPersonnelList();
+  return { ok: true, msg: '已添加人员「' + name + '」。' + (ok ? '' : '（云端同步失败，请检查网络）') };
+}
+async function _aiEditPerson(args) {
+  var p = _aiFindPerson(args && args.name);
+  if (!p) return { ok: false, msg: '未找到代号为「' + (args && args.name) + '」的人员。' };
+  var before = { ...p };
+  var changed = false;
+  if (args.dept != null && args.dept !== '') { p.dept = String(args.dept).trim(); changed = true; }
+  if (args.title != null && args.title !== '') { p.title = String(args.title).trim(); changed = true; }
+  if (args.status != null && args.status !== '') { p.status = String(args.status).trim(); changed = true; }
+  if (args.code != null && args.code !== '') { p.code = String(args.code).trim().replace(/[<>&]/g, ''); changed = true; }
+  if (!changed) return { ok: false, msg: '没有提供要修改的字段。' };
+  var ok = await cloudPersonnel.upsertPersonDirect(p);
+  _logCrud('personnel', 'edit', p.name, before, { ...p });
+  renderCards(); renderPersonnelList();
+  return { ok: true, msg: '已更新人员「' + p.name + '」。' + (ok ? '' : '（云端同步失败）') };
+}
+async function _aiDeleteOrder(args) {
+  var r = _aiFindOrder(args && args.person, args && args.order);
+  if (!r.person) return { ok: false, msg: '未找到人员「' + (args && args.person) + '」。' };
+  if (!r.order) return { ok: false, msg: '未找到「' + (args && args.person) + '」的订单「' + (args && args.order) + '」。' };
+  var before = { ...r.order };
+  try {
+    var res = await sb.from('orders').delete().eq('id', r.order.id).eq('user_id', getUserId());
+    if (res.error) throw new Error(res.error.message);
+    notifyChange();
+    _logCrud('order', 'del', r.order.orderName, before, null);
+    personOrders[r.person.id] = getOrders(r.person.id).filter(function (o) { return !_idEq(o.id, r.order.id); });
+    delete orderTimers[String(r.order.id)];
+    if (Object.keys(orderTimers).length === 0) __stopOrderTimer();
+    saveLocalData();
+    renderOrderCards(r.person.id);
+    return { ok: true, msg: '已删除「' + r.person.name + '」的订单「' + r.order.orderName + '」。' };
+  } catch (e) { return { ok: false, msg: '删除订单失败：' + (e && e.message || e) }; }
+}
+async function _aiCompleteOrder(args) {
+  var r = _aiFindOrder(args && args.person, args && args.order);
+  if (!r.person) return { ok: false, msg: '未找到人员「' + (args && args.person) + '」。' };
+  if (!r.order) return { ok: false, msg: '未找到「' + (args && args.person) + '」的订单「' + (args && args.order) + '」。' };
+  var o = r.order;
+  if (o.status === 'completed') return { ok: false, msg: '订单「' + o.orderName + '」已经是结单状态。' };
+  var before = { ...o };
+  o.status = 'completed'; o.completedAt = Date.now();
+  if (o.pausedAt == null) o.pausedRemaining = null;
+  o.pausedAt = null;
+  _logCrud('order', 'complete', o.orderName, before, { ...o });
+  var ok = await cloudPersonnel.upsertOrderDirect(o, r.person.id);
+  await cloudSalary.insertDirect(o, r.person.id);
+  if (!ok) cloudAutoSave();
+  renderOrderCards(r.person.id);
+  return { ok: true, msg: '订单「' + o.orderName + '」已结单。' + (ok ? '' : '（云端同步失败）') };
+}
+async function _aiAddExam(args) {
+  var name = String(args && args.name || '').trim().replace(/[<>&]/g, '');
+  if (!name) return { ok: false, msg: '缺少考生名字。' };
+  for (var i = 0; i < examCandidates.length; i++) {
+    if (examCandidates[i].name === name && examCandidates[i].status === 'pending') return { ok: false, msg: '已存在同名待考核考生「' + name + '」。' };
+  }
+  var project = String(args && args.project || '护航').trim();
+  var c = { id: newEntityId(), name: name, project: project, count: 0, status: 'pending', addTime: beijingNow(), headcount: 0 };
+  _logCrud('exam', 'add', name, null, { ...c });
+  var success = await cloudExam.upsertCandidateDirect(c);
+  examCandidates.push(c);
+  saveLocalData();
+  renderExamCards();
+  return { ok: true, msg: '已添加考生「' + name + '」。' + (success ? '' : '（云端同步失败）') };
+}
+async function _aiPassExam(args) {
+  var c = _aiFindExam(args && args.name);
+  if (!c) return { ok: false, msg: '未找到待考核考生「' + (args && args.name) + '」。' };
+  var before = { ...c };
+  c.status = 'passed'; c.passTime = beijingNow();
+  _logCrud('exam', 'pass', c.name, before, { ...c });
+  await cloudExam.upsertCandidateDirect(c);
+  renderExamCards();
+  return { ok: true, msg: '考生「' + c.name + '」已通过。' };
+}
+async function _aiRejectExam(args) {
+  var c = _aiFindExam(args && args.name);
+  if (!c) return { ok: false, msg: '未找到待考核考生「' + (args && args.name) + '」。' };
+  var before = { ...c };
+  c.status = 'rejected'; c.rejectTime = beijingNow();
+  _logCrud('exam', 'reject', c.name, before, { ...c });
+  await cloudExam.upsertCandidateDirect(c);
+  renderExamCards();
+  return { ok: true, msg: '考生「' + c.name + '」已被拒绝。' };
+}
+
+/* ---- 执行器：白名单 + 权限门 + 确认门（死命令在此硬拦截）---- */
+async function _aiExecuteToolCall(tc) {
+  var fn = tc && tc.function;
+  if (!fn || !fn.name) return { ok: false, msg: '无效的工具调用。' };
+  var tool = null;
+  for (var i = 0; i < AI_TOOLS.length; i++) { if (AI_TOOLS[i].name === fn.name) { tool = AI_TOOLS[i]; break; } }
+  if (!tool) return { ok: false, msg: '未知操作「' + fn.name + '」已被拒绝（不在白名单内）。' };
+  // 权限门（死命令补充：游客一律只读）
+  if (isGuest()) return { ok: false, msg: '游客模式只能查看，不能执行「' + tool.label + '」。' };
+  if (appMode !== 'edit') return { ok: false, msg: '当前为查看模式，请切换到编辑模式后再让 AI 操作。' };
+  var args = {};
+  try { args = JSON.parse(fn.arguments || '{}'); } catch (e) { return { ok: false, msg: '操作参数解析失败。' }; }
+  if (typeof args !== 'object' || !args) args = {};
+  // 确认门（危险操作）
+  if (tool.confirm) {
+    var desc = tool.confirmText ? tool.confirmText(args) : ('确认执行「' + tool.label + '」？');
+    var yes = await _aiConfirm(desc);
+    if (!yes) return { ok: false, msg: '已取消「' + tool.label + '」操作。' };
+  }
+  try {
+    var r = await tool.run(args);
+    aiActionLog('AI操作-' + tool.label, JSON.stringify({ action: fn.name, args: args, result: (r && r.msg) || '' }));
+    return r;
+  } catch (e) { return { ok: false, msg: '操作执行出错：' + (e && e.message || e) }; }
+}
+
+/* ---- AI 操作确认弹窗（返回 Promise）---- */
+function _aiConfirm(desc) {
+  return new Promise(function (resolve) {
+    var ov = document.getElementById('aiConfirmOverlay');
+    if (!ov) {
+      ov = document.createElement('div');
+      ov.id = 'aiConfirmOverlay';
+      ov.className = 'modal-overlay hidden';
+      ov.innerHTML = ''
+        + '<div class="modal modal-sm">'
+        + '<div class="modal-header"><span>🤖 AI 操作确认</span><button class="modal-close" id="aiConfirmClose" type="button">✕</button></div>'
+        + '<div class="modal-body" id="aiConfirmBody" style="font-size:13px;line-height:1.6;color:var(--text-1);"></div>'
+        + '<div class="modal-footer">'
+        + '<button class="btn btn-glass" id="aiConfirmCancel" type="button">取消</button>'
+        + '<button class="btn btn-glass primary" id="aiConfirmOk" type="button">确认执行</button>'
+        + '</div></div>';
+      document.body.appendChild(ov);
+    }
+    var body = document.getElementById('aiConfirmBody');
+    if (body) body.textContent = desc || '确认执行该操作？';
+    ov.classList.remove('hidden');
+    function done(val) {
+      ov.classList.add('hidden');
+      ov.onclick = null;
+      document.getElementById('aiConfirmOk').onclick = null;
+      document.getElementById('aiConfirmCancel').onclick = null;
+      document.getElementById('aiConfirmClose').onclick = null;
+      resolve(val);
+    }
+    ov.onclick = function (e) { if (e.target === ov) done(false); };
+    document.getElementById('aiConfirmClose').onclick = function () { done(false); };
+    document.getElementById('aiConfirmCancel').onclick = function () { done(false); };
+    document.getElementById('aiConfirmOk').onclick = function () { done(true); };
+  });
+}
 
 // 所有变量已定义，启动云端 + 本地数据恢复
 // 登录门禁：先检查登录状态，未登录显示登录页；登录后加载数据
