@@ -1,4 +1,4 @@
-﻿
+
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -9,7 +9,7 @@
 	<link rel="manifest" href="manifest.json">
 <!--
   人员管理系统 — iOS 液态玻璃风格
-  阶段 1 — 外观与布局：侧边栏动画 + 卡片网格
+  阶段 1 — 外观与布局：侧边栏动画 + 卡片网格 · 📍 功能地图见文件末尾
 -->
 <style>
 /* ================================================================
@@ -1215,6 +1215,17 @@ body {
 	.order-card-countdown.paused   { color: #9e6000; background: rgba(255,159,10,0.08); }
 	.order-card-countdown.expired  { color: #a82020; background: rgba(255,59,48,0.08); }
 	.order-card-countdown.none     { color: var(--text-3); }
+
+	/* 已结单卡片：要求时间 / 剩余时间 信息块 */
+	.order-card-done-info {
+	  position: relative; z-index: 1;
+	  display: flex; flex-direction: column; gap: 3px;
+	  font-size: 12px; padding: 6px 12px; border-radius: 8px;
+	  background: rgba(0,0,0,0.04);
+	}
+	.order-card-done-info .odi-row { display: flex; justify-content: space-between; align-items: center; }
+	.order-card-done-info .odi-label { font-size: 11px; color: var(--text-3); }
+	.order-card-done-info .odi-value { font-weight: 700; color: var(--text-1); }
 
 	/* 操作按钮行 */
 	.order-card-actions {
@@ -2725,6 +2736,208 @@ body:not(.edit-mode) .settings-wrap .setting-select {
   /* 编辑浮窗 */
   .edit-popover { max-height: 85vh; overflow-y: auto; }
 }
+
+/* ============ 横屏提示遮罩（手机竖屏时提示旋转，纯黑背景） ============ */
+.rotate-hint {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 99999;
+  background: #000 !important;
+  color: #eef2f8;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  text-align: center;
+  padding: 32px;
+  font-size: 15px;
+  letter-spacing: 0.5px;
+  visibility: hidden;
+}
+.rotate-hint .rh-phone {
+  width: 46px;
+  height: 80px;
+  border: 3px solid #8ea7c9;
+  border-radius: 10px;
+  position: relative;
+  animation: rhSpin 1.8s ease-in-out infinite;
+}
+.rotate-hint .rh-phone::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 6px;
+  transform: translateX(-50%);
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #8ea7c9;
+}
+@keyframes rhSpin {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(90deg); }
+}
+@media (orientation: portrait) and (max-width: 900px) {
+  .rotate-hint { visibility: visible; }
+}
+
+/* ============ 运行日志 ============ */
+.log-list {
+  margin-top: 8px;
+  max-height: 320px;
+  overflow-y: auto;
+  background: var(--glass-subtle);
+  border: 0.5px solid var(--border-subtle);
+  border-radius: var(--r-sm);
+  padding: 10px 12px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Courier New", monospace;
+  font-size: 11px;
+  line-height: 1.6;
+}
+.log-entry { display: flex; gap: 8px; padding: 2px 0; border-bottom: 0.5px solid var(--border-subtle); word-break: break-all; cursor: pointer; }
+.log-entry:hover { background: rgba(128,164,202,0.08); }
+.log-entry:last-child { border-bottom: none; }
+.log-ts { color: var(--text-3); flex-shrink: 0; }
+.log-level { flex-shrink: 0; font-weight: 600; }
+.log-level.info { color: var(--accent-blue); }
+.log-level.warn { color: #e8870a; }
+.log-level.error { color: #d5534d; }
+.log-msg { color: var(--text-2); flex: 1; }
+.log-empty { color: var(--text-3); text-align: center; padding: 12px 0; }
+
+/* 可折叠区块（系统信息页） */
+.settings-section.collapsible > .ss-title { cursor: pointer; user-select: none; position: relative; padding-right: 20px; }
+.settings-section.collapsible > .ss-title::after { content: '▾'; position: absolute; right: 2px; top: 0; transition: transform 0.2s ease; color: var(--text-3); }
+.settings-section.collapsible.collapsed > .ss-title::after { transform: rotate(-90deg); }
+.settings-section.collapsible.collapsed > .ss-title { margin-bottom: 0; border-bottom: none; }
+.settings-section.collapsible.collapsed > *:not(.ss-title) { display: none; }
+
+/* 日志工具栏：搜索 + 筛选 */
+.log-toolbar { margin-top: 8px; display: flex; flex-direction: column; gap: 8px; }
+.log-search { padding: 9px 12px; border-radius: 9px; border: 1px solid var(--border-glass); background: var(--glass-card); backdrop-filter: var(--blur-md); -webkit-backdrop-filter: var(--blur-md); font-size: 13px; font-family: var(--font); color: var(--text-1); outline: none; width: 100%; box-sizing: border-box; }
+.log-search::placeholder { color: var(--text-3); }
+.log-filters { display: flex; gap: 6px; flex-wrap: wrap; }
+.log-filter-btn { padding: 5px 12px; border-radius: 999px; border: 0.5px solid var(--border-glass); background: var(--glass-subtle); color: var(--text-2); font-size: 12px; cursor: pointer; font-family: var(--font); transition: all 0.15s ease; }
+.log-filter-btn:hover { color: var(--text-1); }
+.log-filter-btn.active { background: var(--accent-blue); color: #fff; border-color: transparent; }
+.log-cat { flex-shrink: 0; font-size: 10px; padding: 1px 6px; border-radius: 6px; font-weight: 700; line-height: 1.5; }
+.log-cat.system { background: rgba(90,158,158,0.14); color: #3d7a7a; }
+.log-cat.user { background: rgba(123,111,192,0.14); color: #6b5ec0; }
+.log-cat.security { background: rgba(224,77,93,0.16); color: #d64550; }
+.log-op { flex-shrink: 0; color: var(--text-3); font-weight: 600; }
+
+/* 邀请码管理弹窗 */
+.invite-overlay { position: fixed; inset: 0; z-index: 99997; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; padding: 20px; visibility: hidden; opacity: 0; transition: opacity 0.18s ease; }
+.invite-overlay.show { visibility: visible; opacity: 1; }
+.invite-modal { background: var(--glass-card); backdrop-filter: var(--blur-md); -webkit-backdrop-filter: var(--blur-md); border: 0.5px solid var(--border-glass); border-radius: var(--r-lg); padding: 20px 22px; width: 480px; max-width: 94vw; max-height: 82vh; overflow-y: auto; box-shadow: var(--glass-edge), var(--shadow-lg); }
+.invite-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.invite-title { font-size: 15px; font-weight: 700; color: var(--text-1); }
+.invite-close { border: none; background: none; color: var(--text-3); font-size: 20px; cursor: pointer; padding: 2px 6px; line-height: 1; }
+.invite-item { border-bottom: 0.5px solid var(--border-subtle); }
+.invite-item:last-child { border-bottom: none; }
+.invite-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; cursor: pointer; }
+.invite-row:hover { background: rgba(128,164,202,0.06); }
+.inv-arrow { color: var(--text-3); font-size: 11px; width: 12px; flex-shrink: 0; }
+.inv-code { font-family: ui-monospace, Menlo, Consolas, monospace; font-weight: 700; letter-spacing: 2px; font-size: 14px; color: var(--text-1); }
+.inv-status { font-size: 12px; font-weight: 700; }
+.inv-status.used { color: var(--text-3); }
+.inv-status.avail { color: #34c759; }
+.invite-detail { padding: 2px 0 10px 22px; font-size: 12px; color: var(--text-2); }
+.invite-detail.hidden { display: none; }
+.inv-detail-row { display: flex; justify-content: space-between; padding: 3px 0; }
+.inv-detail-row span:first-child { color: var(--text-3); }
+
+/* 日志详情弹窗 */
+.log-detail-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  width: 100%; height: 100%;
+  z-index: 99998;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 0.18s ease;
+}
+.log-detail-overlay.show { visibility: visible; opacity: 1; }
+.log-detail-card {
+  width: 92vw; max-width: 560px;
+  max-height: 82vh;
+  background: var(--glass-card);
+  border: 0.5px solid var(--border-subtle);
+  border-radius: var(--r-lg);
+  box-shadow: 0 18px 50px rgba(0,0,0,0.35);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.ld-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 0.5px solid var(--border-subtle); }
+.ld-title { font-size: 15px; font-weight: 600; color: var(--text-1); }
+.ld-close { border: none; background: none; color: var(--text-3); font-size: 20px; cursor: pointer; padding: 2px 6px; line-height: 1; }
+.ld-body { padding: 16px 18px; overflow-y: auto; }
+.ld-badge { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+.ld-badge.info { background: rgba(87,121,166,0.16); color: var(--accent-blue); }
+.ld-badge.warn { background: rgba(232,135,10,0.16); color: #e8870a; }
+.ld-badge.error { background: rgba(213,83,77,0.16); color: #d5534d; }
+.ld-desc { font-size: 12px; color: var(--text-3); margin-left: 8px; }
+.ld-msg {
+  margin: 12px 0;
+  padding: 12px;
+  background: var(--glass-subtle);
+  border: 0.5px solid var(--border-subtle);
+  border-radius: var(--r-sm);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Courier New", monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-1);
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+.ld-row { display: flex; gap: 8px; margin-bottom: 9px; align-items: flex-start; }
+.ld-label { flex-shrink: 0; width: 46px; color: var(--text-3); font-size: 12px; }
+.ld-value { flex: 1; color: var(--text-2); font-size: 13px; word-break: break-all; }
+.ld-sep { height: 1px; background: var(--border-subtle); margin: 11px 0; }
+.ld-section { font-size: 12px; font-weight: 600; color: var(--text-3); letter-spacing: 0.5px; margin: 4px 0 10px; }
+</style>
+<style>
+/* ================================================================
+   登录系统：全屏遮罩 + 表单
+   ================================================================ */
+.auth-overlay { position: fixed; inset: 0; z-index: 9999; display: flex; align-items: center; justify-content: center;
+  background: rgba(18,22,34,0.55); backdrop-filter: blur(18px) saturate(150%); -webkit-backdrop-filter: blur(18px) saturate(150%);
+  opacity: 0; pointer-events: none; transition: opacity .25s ease; }
+.auth-overlay.show { opacity: 1; pointer-events: auto; }
+.auth-card { width: 360px; max-width: 92vw; max-height: 92vh; overflow: auto; background: var(--glass-card);
+  border: 0.5px solid var(--border-glass); border-radius: var(--r-lg); padding: 28px 26px; box-shadow: var(--glass-edge), var(--shadow-lg); }
+.auth-title { font-size: 20px; font-weight: 800; color: var(--text-1); margin: 0 0 4px; }
+.auth-sub { font-size: 12px; color: var(--text-3); margin: 0 0 18px; }
+.auth-tabs { display: flex; gap: 6px; margin-bottom: 16px; }
+.auth-tab { flex: 1; padding: 8px 0; text-align: center; font-size: 13px; font-weight: 600; color: var(--text-3);
+  background: transparent; border: 0.5px solid var(--border-subtle); border-radius: var(--r-sm); cursor: pointer; }
+.auth-tab.active { color: var(--text-1); background: var(--glass-subtle); border-color: var(--accent-blue); }
+.auth-field { margin-bottom: 12px; }
+.auth-field label { display: block; font-size: 12px; color: var(--text-3); margin-bottom: 6px; }
+.auth-field input { width: 100%; box-sizing: border-box; padding: 11px 12px; font-size: 14px; color: var(--text-1);
+  background: rgba(255,255,255,0.06); border: 0.5px solid var(--border-subtle); border-radius: var(--r-sm); outline: none; }
+.auth-field input:focus { border-color: var(--accent-blue); }
+.auth-btn { width: 100%; padding: 12px; font-size: 14px; font-weight: 700; color: #fff; background: var(--accent-blue);
+  border: none; border-radius: var(--r-sm); cursor: pointer; }
+.auth-btn:disabled { opacity: .6; cursor: default; }
+.auth-link { display: block; text-align: center; font-size: 12px; color: var(--text-3); margin-top: 14px; cursor: pointer; }
+.auth-link:hover { color: var(--accent-blue); }
+.auth-err { font-size: 12px; color: #ff6b6b; min-height: 16px; margin: 2px 0 6px; }
+.auth-msg { font-size: 12px; color: #34c759; min-height: 16px; margin: 2px 0 6px; }
+.auth-pane { display: none; }
+.auth-pane.active { display: block; }
 </style>
 <!-- Supabase: 内联 fetch() REST 客户端 — 无需 CDN — 兼容 file:// / http:// / WebView -->
 </head>
@@ -2779,6 +2992,11 @@ body:not(.edit-mode) .settings-wrap .setting-select {
 
     <div class="nav-item" data-page="settings">
       <span class="nav-dot"></span>系统设置
+      <span class="nav-badge later">已完成</span>
+    </div>
+
+    <div class="nav-item" data-page="sysinfo">
+      <span class="nav-dot"></span>系统信息
       <span class="nav-badge later">已完成</span>
     </div>
   </nav>
@@ -3018,8 +3236,8 @@ body:not(.edit-mode) .settings-wrap .setting-select {
       <div class="settings-wrap">
         <!-- 系统信息 -->
         <div class="settings-section">
-          <div class="ss-title">系统信息</div>
-          <div class="info-row"><span class="ir-label">系统版本</span><span class="ir-value">v2.3.1</span></div>
+          <div class="ss-title">关于本机</div>
+          <div class="info-row"><span class="ir-label">系统版本</span><span class="ir-value">v2.4.3</span></div>
           <div class="info-row"><span class="ir-label">数据总量</span><span class="ir-value" id="sysDataCount">— 名员工</span></div>
           <div class="info-row"><span class="ir-label">最后更新</span><span class="ir-value">2026-08-12</span></div>
           <div class="info-row"><span class="ir-label">浏览器</span><span class="ir-value" id="sysBrowser">—</span></div>
@@ -3062,11 +3280,23 @@ body:not(.edit-mode) .settings-wrap .setting-select {
         <!-- 系统更新 -->
         <div class="settings-section">
           <div class="ss-title">系统更新</div>
-          <div class="info-row"><span class="ir-label">当前版本</span><span class="ir-value" id="sysVersion">v2.3.1</span></div>
+          <div class="info-row"><span class="ir-label">当前版本</span><span class="ir-value" id="sysVersion">v2.4.3</span></div>
           <div style="margin-top:8px;">
             <button class="btn btn-glass primary" id="btnCheckUpdate" style="width:100%;">🔍 检查更新</button>
           </div>
           <div id="updateStatus" style="margin-top:8px;font-size:12px;color:var(--text-2);text-align:center;display:none;"></div>
+        </div>
+
+        <!-- 账号 -->
+        <div class="settings-section">
+          <div class="ss-title">账号</div>
+          <div class="info-row"><span class="ir-label">当前账号</span><span class="ir-value" id="accEmail">—</span></div>
+          <div class="info-row"><span class="ir-label">昵称</span><span class="ir-value" id="accNickname">—</span></div>
+          <div style="margin-top:10px;display:flex;gap:8px;">
+            <button class="btn btn-glass" id="btnEditNickname" style="flex:1;">改昵称</button>
+            <button class="btn btn-glass" id="btnChangePwd" style="flex:1;">改密码</button>
+            <button class="btn btn-glass" id="btnLogout" style="flex:1;color:#ff6b6b;">退出登录</button>
+          </div>
         </div>
 
         <!-- 通知设置 -->
@@ -3081,6 +3311,37 @@ body:not(.edit-mode) .settings-wrap .setting-select {
             <select class="setting-select" id="setPageSize">
               <option value="8">8 张</option><option value="12" selected>12 张</option><option value="16">16 张</option><option value="24">24 张</option><option value="0">全部</option>
             </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="page-panel hidden" id="page-sysinfo">
+      <div class="settings-wrap">
+        <!-- 运行日志 -->
+        <div class="settings-section collapsible" id="sysinfoLogSection">
+          <div class="ss-title">运行日志</div>
+          <div class="log-toolbar">
+            <input type="text" class="log-search" id="logSearch" placeholder="搜索关键字 / 操作者 / 动作">
+            <div class="log-filters" id="logFilters">
+              <button class="log-filter-btn active" type="button" data-filter="all">全部</button>
+              <button class="log-filter-btn" type="button" data-filter="system">系统日志</button>
+              <button class="log-filter-btn" type="button" data-filter="user">用户操作</button>
+              <button class="log-filter-btn" type="button" data-filter="warnerr">警告错误</button>
+              <button class="log-filter-btn" type="button" data-filter="security">防御日志</button>
+            </div>
+          </div>
+          <div style="margin-top:8px;">
+            <button class="btn btn-glass primary" id="btnLoadLogs" style="padding:6px 14px;font-size:13px;">📥 查看日志（从云端拉取）</button>
+          </div>
+          <div class="log-list" id="logList" style="max-height:420px;display:none;"></div>
+        </div>
+
+        <!-- 邀请码管理 -->
+        <div class="settings-section collapsible" id="sysinfoInviteSection">
+          <div class="ss-title">邀请码管理</div>
+          <div style="margin-top:8px;">
+            <button class="btn btn-glass primary" id="btnOpenInvite" style="width:100%;">🔑 打开邀请码管理</button>
           </div>
         </div>
       </div>
@@ -3338,10 +3599,333 @@ body:not(.edit-mode) .settings-wrap .setting-select {
 <!-- Toast -->
 <div id="toast"></div>
 
+<!-- 横屏提示遮罩 -->
+<div class="rotate-hint" id="rotateHint" style="background:#000;">
+  <div class="rh-phone"></div>
+  <div>请将手机旋转为横屏使用</div>
+</div>
+
 <!-- ================================================================
      分区 11: JavaScript — 数据层
      ================================================================ -->
 <script>
+
+// --- 全局运行日志（设置页「运行日志」查看） ---
+window.__appLogs = [];
+var __appLogMax = 200;
+function _escLogHtml(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+function _getOrientLabel() {
+  var portrait = false;
+  if (window.matchMedia) { try { portrait = window.matchMedia('(orientation: portrait)').matches; } catch (e) {} }
+  if (!portrait && typeof window.innerWidth === 'number' && typeof window.innerHeight === 'number') {
+    portrait = window.innerWidth < window.innerHeight;
+  }
+  return portrait ? '竖屏' : '横屏';
+}
+function _fmtTime(ms) {
+  var d = new Date(ms);
+  var pad = function (n) { return String(n).padStart(2, '0'); };
+  return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
+}
+var _NET_TYPE_CN = { wifi: 'WiFi', cellular: '蜂窝网络', ethernet: '有线', bluetooth: '蓝牙', none: '无', wimax: 'WiMAX', other: '其他' };
+var _NET_EFF_CN = { '4g': '4G', '3g': '3G', '2g': '2G', 'slow-2g': '慢速2G' };
+function _getNetworkInfo() {
+  var info = { type: null, eff: null, downlink: null, online: (navigator.onLine !== false) };
+  var conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+  if (conn) {
+    if (conn.type) info.type = conn.type;
+    if (conn.effectiveType) info.eff = conn.effectiveType;
+    if (typeof conn.downlink === 'number') info.downlink = conn.downlink;
+  }
+  return info;
+}
+function _getDeviceId() {
+  var key = 'clubapp_device_id';
+  var id = null;
+  try { id = localStorage.getItem(key); } catch (e) {}
+  if (!id) {
+    id = 'dev-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
+    try { localStorage.setItem(key, id); } catch (e) {}
+  }
+  return id;
+}
+function _deviceOS() {
+  var ua = navigator.userAgent || '';
+  if (/Android/i.test(ua)) return 'Android';
+  if (/iPhone|iPad|iPod/i.test(ua)) return 'iOS';
+  if (/Windows/i.test(ua)) return 'Windows';
+  if (/Mac/i.test(ua)) return 'macOS';
+  if (/Linux/i.test(ua)) return 'Linux';
+  return '未知系统';
+}
+function auditLog(action, target, detail) {
+  try {
+    addAppLog('info', (target ? target + ' · ' : '') + (detail || ''), 'user', getUserName(), action);
+  } catch (e) {}
+}
+function recordSecurity(eventType, source, target, detail, action, success) {
+  try {
+    var msg = '有人攻击[' + (target || '未指定') + '] ' + (detail || '') + ' → 防御' + (success ? '成功' : '失败') + (action ? ' · ' + action : '');
+    addAppLog('warn', msg, 'security', source || '', eventType || '攻击');
+  } catch (e) {}
+}
+function _fmtLogArgs(args) {
+  return Array.prototype.map.call(args, function (a) {
+    if (typeof a === 'string') return a;
+    try { return JSON.stringify(a); } catch (e) { return String(a); }
+  }).join(' ');
+}
+function _logFilterState() {
+  try {
+    var kw = '';
+    var searchEl = document.getElementById('logSearch');
+    if (searchEl) kw = searchEl.value.toLowerCase();
+    var filter = 'all';
+    var active = document.querySelector('.log-filter-btn.active');
+    if (active) filter = active.getAttribute('data-filter') || 'all';
+    return { kw: kw, filter: filter };
+  } catch (e) { return { kw: '', filter: 'all' }; }
+}
+function renderAppLogs() {
+  try {
+    var el = document.getElementById('logList');
+    if (!el) return;
+    var logs = window.__appLogs;
+    var state = _logFilterState();
+    var kw = state.kw, filter = state.filter;
+    var indexed = logs.map(function (e, i) { return { e: e, i: i }; }).filter(function (item) {
+      var e = item.e;
+      if (filter === 'system' && e.category !== 'system') return false;
+      if (filter === 'user' && e.category !== 'user') return false;
+      if (filter === 'security' && e.category !== 'security') return false;
+      if (filter === 'warnerr' && e.level !== 'warn' && e.level !== 'error') return false;
+      if (kw) {
+        var hay = ((e.msg || '') + ' ' + (e.operator || '') + ' ' + (e.action || '')).toLowerCase();
+        if (hay.indexOf(kw) < 0) return false;
+      }
+      return true;
+    });
+    if (!indexed.length) { el.innerHTML = '<div class="log-empty">暂无匹配日志</div>'; return; }
+    var label = { info: '信息', warn: '警告', error: '错误' };
+    el.innerHTML = indexed.map(function (item) {
+      var e = item.e;
+      var catBadge = e.category === 'user'
+        ? '<span class="log-cat user">操作</span>'
+        : (e.category === 'security'
+          ? '<span class="log-cat security">攻击</span>'
+          : '<span class="log-cat system">系统</span>');
+      var opTxt = ((e.category === 'user' || e.category === 'security') && e.operator) ? '<span class="log-op">' + _escLogHtml(e.operator) + '</span>' : '';
+      return '<div class="log-entry" data-idx="' + item.i + '"><span class="log-ts">' + e.ts + '</span>' +
+        '<span class="log-level ' + e.level + '">' + (label[e.level] || e.level) + '</span>' +
+        catBadge + opTxt +
+        '<span class="log-msg">' + _escLogHtml(e.msg) + '</span></div>';
+    }).reverse().join('');
+  } catch (e) {}
+}
+function addAppLog(level, msg, category, operator, action) {
+  try {
+    var d = new Date();
+    var pad = function (n) { return String(n).padStart(2, '0'); };
+    var ts = pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
+    var fullTs = d.getFullYear() + '-' + ts;
+    var entry = { ts: ts, fullTs: fullTs, level: level, msg: String(msg), orient: _getOrientLabel(), online: (navigator.onLine !== false), category: category || 'system', operator: operator || '', action: action || '' };
+    window.__appLogs.push(entry);
+    if (window.__appLogs.length > __appLogMax) window.__appLogs.shift();
+    _queueLogUpload(entry);
+    renderAppLogs();
+  } catch (e) {}
+}
+// --- 日志批量上传云端 app_logs（系统日志 + 用户操作统一存这里） ---
+var _origConsole = { log: console.log.bind(console), warn: console.warn.bind(console), error: console.error.bind(console) };
+window.__logUploadQueue = [];
+var __logFlushTimer = null;
+function _queueLogUpload(entry) {
+  try {
+    if (typeof sb === 'undefined' || !sb || !cloudReady) return;
+    window.__logUploadQueue.push(entry);
+    if (window.__logUploadQueue.length >= 20) { flushLogUpload(); return; }
+    if (__logFlushTimer) return;
+    __logFlushTimer = setTimeout(flushLogUpload, 3000);
+  } catch (e) {}
+}
+async function flushLogUpload() {
+  try {
+    if (__logFlushTimer) { clearTimeout(__logFlushTimer); __logFlushTimer = null; }
+    if (!window.__logUploadQueue.length) return;
+    if (typeof sb === 'undefined' || !sb || !cloudReady) { window.__logUploadQueue = []; return; }
+    var batch = window.__logUploadQueue.splice(0, window.__logUploadQueue.length);
+    var rows = batch.map(function (e) {
+      return { category: e.category || 'system', level: e.level || 'info', operator: e.operator || null, action: e.action || null, message: e.msg || '' };
+    });
+    var res = await sb.from('app_logs').insert(rows);
+    if (res && res.error) _origConsole.warn('[Log] 日志上传失败:', res.error.message);
+  } catch (e) { _origConsole.warn('[Log] 日志上传异常:', e && e.message); }
+}
+function _cloudLogToEntry(r) {
+  try {
+    var d = r.created_at ? new Date(r.created_at) : new Date();
+    if (isNaN(d.getTime())) d = new Date();
+    var pad = function (n) { return String(n).padStart(2, '0'); };
+    var ts = pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
+    var fullTs = d.getFullYear() + '-' + ts;
+    return { ts: ts, fullTs: fullTs, level: r.level || 'info', msg: r.message || '', orient: '', online: true, category: r.category || 'system', operator: r.operator || '', action: r.action || '' };
+  } catch (e) { return null; }
+}
+async function loadCloudLogs() {
+  var btn = document.getElementById('btnLoadLogs');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ 拉取中...'; }
+  try {
+    await flushLogUpload();
+    if (typeof sb === 'undefined' || !sb || !cloudReady) { renderAppLogs(); return; }
+    var res = await sb.from('app_logs').select('category,level,operator,action,message,created_at').order('id', 'desc').limit(300);
+    if (res.error) { _origConsole.warn('[Log] 拉取日志失败:', res.error.message); }
+    else {
+      var rows = (res.data || []).map(_cloudLogToEntry).filter(Boolean);
+      window.__appLogs = rows.reverse(); // 最旧→最新（renderAppLogs 会再倒序显示）
+      if (window.__appLogs.length > __appLogMax) window.__appLogs = window.__appLogs.slice(-__appLogMax);
+    }
+    renderAppLogs();
+  } catch (e) {
+    _origConsole.warn('[Log] 拉取日志异常:', e && e.message);
+    renderAppLogs();
+  } finally {
+    var listEl = document.getElementById('logList');
+    if (listEl) listEl.style.display = '';
+    if (btn) { btn.disabled = false; btn.textContent = '📥 查看日志（从云端拉取）'; }
+  }
+}
+(function () {
+  var origLog = console.log, origWarn = console.warn, origError = console.error;
+  console.log = function () { try { origLog.apply(console, arguments); } catch (e) {} addAppLog('info', _fmtLogArgs(arguments)); };
+  console.warn = function () { try { origWarn.apply(console, arguments); } catch (e) {} addAppLog('warn', _fmtLogArgs(arguments)); };
+  console.error = function () { try { origError.apply(console, arguments); } catch (e) {} addAppLog('error', _fmtLogArgs(arguments)); };
+})();
+(function () {
+  var loadBtn = document.getElementById('btnLoadLogs');
+  if (loadBtn) loadBtn.onclick = function () { loadCloudLogs(); };
+})();
+// --- 运行日志：搜索 + 类型筛选 ---
+(function () {
+  var search = document.getElementById('logSearch');
+  if (search) search.addEventListener('input', function () { renderAppLogs(); });
+  var filterBox = document.getElementById('logFilters');
+  if (filterBox) {
+    filterBox.addEventListener('click', function (ev) {
+      var btn = ev.target && ev.target.closest ? ev.target.closest('.log-filter-btn') : null;
+      if (!btn) return;
+      filterBox.querySelectorAll('.log-filter-btn').forEach(function (b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+      renderAppLogs();
+    });
+  }
+})();
+// --- 可折叠区块（系统信息页） ---
+(function () {
+  document.querySelectorAll('.settings-section.collapsible > .ss-title').forEach(function (title) {
+    title.addEventListener('click', function () { title.parentElement.classList.toggle('collapsed'); });
+  });
+})();
+
+// --- 日志详情弹窗 ---
+(function () {
+  var levelInfo = {
+    info: { label: '信息', desc: '正常操作或提示，程序按预期运行' },
+    warn: { label: '警告', desc: '有异常但程序仍可继续运行，需留意' },
+    error: { label: '错误', desc: '出现错误，可能导致功能异常或失败' }
+  };
+  var overlay = null;
+  function ensureOverlay() {
+    if (overlay) return overlay;
+    var ov = document.createElement('div');
+    ov.className = 'log-detail-overlay';
+    ov.id = 'logDetailOverlay';
+    ov.innerHTML = '<div class="log-detail-card"><div class="ld-head"><span class="ld-title">日志详情</span><button class="ld-close" id="logDetailClose" type="button">✕</button></div><div class="ld-body" id="logDetailBody"></div></div>';
+    document.body.appendChild(ov);
+    ov.addEventListener('click', function (ev) {
+      if (ev.target === ov || (ev.target && ev.target.id === 'logDetailClose')) ov.classList.remove('show');
+    });
+    overlay = ov;
+    return ov;
+  }
+  function openLogDetail(log) {
+    if (!log) return;
+    var ov = ensureOverlay();
+    var body = document.getElementById('logDetailBody');
+    if (!body) return;
+    var lv = levelInfo[log.level] || levelInfo.info;
+
+    var net = _getNetworkInfo();
+    var typeStr = _NET_TYPE_CN[net.type] || net.type || '未知';
+    var effStr = _NET_EFF_CN[net.eff] || net.eff || '';
+    var dlStr = (net.downlink !== null && net.downlink !== undefined) ? ('下行 ' + net.downlink + ' Mbps') : '';
+    var srcNet = [typeStr + (effStr ? ' ' + effStr : ''), dlStr, (net.online ? '在线' : '离线')].filter(Boolean).join(' · ');
+
+    var destCloud = 'Supabase 云端 · ' + SUPABASE_URL;
+
+    var syncText, syncCls;
+    if (!cloudReady) { syncText = '未连接云端'; syncCls = 'warn'; }
+    else if (cloudDirty) { syncText = '有未同步更改'; syncCls = 'warn'; }
+    else if (__lastCloudSyncTime) { syncText = '已上传云端'; syncCls = 'info'; }
+    else { syncText = '尚未同步'; syncCls = 'warn'; }
+    var lastSyncStr = __lastCloudSyncTime ? _fmtTime(__lastCloudSyncTime) : '—';
+
+    body.innerHTML =
+      '<div><span class="ld-badge ' + (log.level || 'info') + '">' + lv.label + '</span><span class="ld-desc">' + lv.desc + '</span></div>' +
+      '<div class="ld-msg">' + _escLogHtml(log.msg) + '</div>' +
+      '<div class="ld-row"><span class="ld-label">时间</span><span class="ld-value">' + _escLogHtml(log.fullTs || log.ts) + '</span></div>' +
+      '<div class="ld-row"><span class="ld-label">版本</span><span class="ld-value">v' + _escLogHtml(APP_VERSION) + '</span></div>' +
+      '<div class="ld-sep"></div>' +
+      '<div class="ld-section">数据流向</div>' +
+      '<div class="ld-row"><span class="ld-label">来源</span><span class="ld-value">' + _escLogHtml(srcNet) + '</span></div>' +
+      '<div class="ld-row"><span class="ld-label">设备号</span><span class="ld-value">' + _escLogHtml(_getDeviceId() + ' · ' + _deviceOS()) + '</span></div>' +
+      '<div class="ld-row"><span class="ld-label">操作者</span><span class="ld-value">' + _escLogHtml(getUserName()) + '</span></div>' +
+      '<div class="ld-row"><span class="ld-label">去向</span><span class="ld-value">' + _escLogHtml(destCloud) + '</span></div>' +
+      '<div class="ld-row"><span class="ld-label">同步</span><span class="ld-value"><span class="ld-badge ' + syncCls + '">' + syncText + '</span><span class="ld-desc">上次同步：' + _escLogHtml(lastSyncStr) + '</span></span></div>' +
+      '<div class="ld-sep"></div>' +
+      '<div class="ld-row"><span class="ld-label">设备</span><span class="ld-value" style="font-size:11px;color:var(--text-3);">' + _escLogHtml(navigator.userAgent) + '</span></div>';
+
+    ov.classList.add('show');
+  }
+  var listEl = document.getElementById('logList');
+  if (listEl) {
+    listEl.addEventListener('click', function (ev) {
+      var node = ev.target;
+      while (node && node !== listEl) {
+        if (node.getAttribute && node.getAttribute('data-idx') !== null) break;
+        node = node.parentNode;
+      }
+      if (node && node.getAttribute && node.getAttribute('data-idx') !== null) {
+        var idx = parseInt(node.getAttribute('data-idx'), 10);
+        var log = window.__appLogs[idx];
+        if (log) openLogDetail(log);
+      }
+    });
+  }
+})();
+
+// --- 横屏提示：JS 强制纯黑遮罩（兜底 WebView CSS 渲染差异） ---
+(function () {
+  var hint = document.getElementById('rotateHint');
+  if (!hint) return;
+  function apply() {
+    var w = window.innerWidth, h = window.innerHeight;
+    var portrait = w < h;
+    if (window.matchMedia) {
+      try { portrait = window.matchMedia('(orientation: portrait)').matches; } catch (e) {}
+    }
+    var small = Math.min(w, h) <= 900;
+    if (portrait && small) {
+      hint.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;width:100%;height:100%;z-index:2147483647;background:#000;background-color:#000;color:#eef2f8;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;text-align:center;padding:32px;visibility:visible;opacity:1;';
+    } else {
+      hint.style.cssText = 'visibility:hidden;';
+    }
+  }
+  window.addEventListener('resize', apply);
+  window.addEventListener('orientationchange', apply);
+  apply();
+})();
 
 // --- Service Worker (PWA 更新缓存) ---
 if ("serviceWorker" in navigator) {
@@ -3350,9 +3934,10 @@ if ("serviceWorker" in navigator) {
     .catch(function(err) { console.log("[SW] 注册失败", err); });
 }
 // --- 应用版本（热更新检测用） ---
-const APP_VERSION = '2.3.1';
+const APP_VERSION = '2.4.11';
 let __updateAvailable = false;       // 是否有可用更新
 let __updateVersion = null;          // 新版本号
+let __updateSha256 = null;           // 新版本的 SHA-256（防篡改校验）
 let __updateChecking = false;        // 是否正在检查中
 
 // 远程部署地址 — Supabase Storage（公有桶 app）
@@ -3455,8 +4040,16 @@ function _createSupabaseClient(url, key) {
         _filters.push('order=' + encodeURIComponent(col) + '.' + (dir || 'asc'));
         return chain;
       },
+      neq: function(col, val) {
+        _filters.push(encodeURIComponent(col) + '=neq.' + encodeURIComponent(val));
+        return chain;
+      },
+      limit: function(n) {
+        _filters.push('limit=' + encodeURIComponent(String(n)));
+        return chain;
+      },
       // ---- thenable: 使链对象可被 await ----
-      then: function(resolve, reject) {
+      then: async function(resolve, reject) {
         try {
           var qurl = REST_URL + '/' + encodeURIComponent(table);
           var parts = [];
@@ -3464,41 +4057,41 @@ function _createSupabaseClient(url, key) {
           for (var i = 0; i < _filters.length; i++) { parts.push(_filters[i]); }
           if (parts.length > 0) qurl += '?' + parts.join('&');
 
+          // 每次请求取最新令牌（过期自动刷新）
+          var tok = await _ensureFreshToken();
+          _reqHeaders['Authorization'] = 'Bearer ' + (tok || key);
+
           var opts = { method: _method, headers: _reqHeaders };
           if (_body) opts.body = _body;
 
-          fetch(qurl, opts).then(function(r) {
-            // DELETE / 204 No Content → success with no data
-            if (_method === 'DELETE' || r.status === 204) {
-              return r.ok
-                ? resolve({ data: null, error: null })
-                : resolve({ data: null, error: { message: r.status + ' ' + r.statusText } });
+          var r = await fetch(qurl, opts);
+          // DELETE / 204 No Content → success with no data
+          if (_method === 'DELETE' || r.status === 204) {
+            return r.ok
+              ? resolve({ data: null, error: null })
+              : resolve({ data: null, error: { message: r.status + ' ' + r.statusText } });
+          }
+          // maybeSingle() 找不到行时 PostgREST 返回 406 → 视为空结果
+          if (r.status === 406) {
+            return resolve({ data: null, error: null });
+          }
+          if (!r.ok) {
+            try {
+              var t = await r.text();
+              return resolve({ data: null, error: { message: t || (r.status + ' ' + r.statusText) } });
+            } catch (e2) {
+              return resolve({ data: null, error: { message: r.status + ' ' + r.statusText } });
             }
-            // maybeSingle() 找不到行时 PostgREST 返回 406 → 视为空结果
-            if (r.status === 406) {
-              return resolve({ data: null, error: null });
-            }
-            if (!r.ok) {
-              return r.text().then(function(t) {
-                resolve({ data: null, error: { message: t || (r.status + ' ' + r.statusText) } });
-              }).catch(function() {
-                resolve({ data: null, error: { message: r.status + ' ' + r.statusText } });
-              });
-            }
-            // 201/200 成功，解析 JSON body（可能为空）
-            return r.text().then(function(t) {
-              if (!t || t.length === 0) {
-                resolve({ data: null, error: null });
-              } else {
-                try { resolve({ data: JSON.parse(t), error: null }); }
-                catch(_) { resolve({ data: null, error: null }); }
-              }
-            }).catch(function() {
-              resolve({ data: null, error: null });
-            });
-          }).catch(function(e) {
-            resolve({ data: null, error: { message: e.message } });
-          });
+          }
+          // 201/200 成功，解析 JSON body（可能为空）
+          try {
+            var txt = await r.text();
+            if (!txt || txt.length === 0) return resolve({ data: null, error: null });
+            try { return resolve({ data: JSON.parse(txt), error: null }); }
+            catch (_) { return resolve({ data: null, error: null }); }
+          } catch (e3) {
+            return resolve({ data: null, error: null });
+          }
         } catch (e) {
           resolve({ data: null, error: { message: e.message } });
         }
@@ -3517,6 +4110,139 @@ let sb = _createSupabaseClient(SUPABASE_URL, SUPABASE_KEY);
 let cloudReady = true;
 console.log('[Cloud] REST 内联客户端已就绪 (fetch 模式)');
 
+// ================================================================
+// 登录系统：邮箱+密码登录 / 邀请码注册 / 昵称 / 管理员
+// （Supabase Auth + 成员制 RLS，数据仍共用 shared）
+// ================================================================
+
+function _lowerEmail(e) { return String(e || '').trim().toLowerCase(); }
+
+// --- 会话管理（localStorage，一直保持直到退出） ---
+const AUTH_KEY = 'clubapp_session';
+function getSession() { try { return JSON.parse(localStorage.getItem(AUTH_KEY) || 'null'); } catch (e) { return null; } }
+function setSession(s) { try { localStorage.setItem(AUTH_KEY, JSON.stringify(s)); } catch (e) {} }
+function clearSession() { try { localStorage.removeItem(AUTH_KEY); } catch (e) {} }
+function isLoggedIn() { return !!getSession(); }
+function getAccountEmail() { var s = getSession(); return s ? s.email : ''; }
+
+/* ---- 官方 Auth（Supabase Auth）令牌与请求 ---- */
+const AUTH_API = SUPABASE_URL + '/auth/v1';
+
+function _getAuthToken() {
+  var s = getSession();
+  return (s && s.access_token) ? s.access_token : null;
+}
+
+async function _authRequest(method, path, body) {
+  var headers = { 'apikey': SUPABASE_KEY, 'Content-Type': 'application/json' };
+  var tok = _getAuthToken();
+  if (tok) headers['Authorization'] = 'Bearer ' + tok;
+  var opts = { method: method, headers: headers };
+  if (body !== undefined) opts.body = JSON.stringify(body);
+  var r;
+  try { r = await fetch(AUTH_API + path, opts); }
+  catch (e) { return { data: null, error: { message: e.message } }; }
+  var txt = '';
+  try { txt = await r.text(); } catch (e) {}
+  var j = null;
+  try { j = txt ? JSON.parse(txt) : null; } catch (e) {}
+  if (r.ok) return { data: j, error: null };
+  var msg = (j && (j.msg || j.error_description || j.message)) || (r.status + ' ' + r.statusText);
+  return { data: null, error: { message: msg } };
+}
+
+async function _authLogin(email, pwd) {
+  return _authRequest('POST', '/token?grant_type=password', { email: email, password: pwd });
+}
+async function _authSignup(email, pwd, nick) {
+  return _authRequest('POST', '/signup', { email: email, password: pwd, options: { data: { nickname: nick } } });
+}
+async function _authRefresh(refreshToken) {
+  return _authRequest('POST', '/token?grant_type=refresh_token', { refresh_token: refreshToken });
+}
+async function _authLogout() {
+  var tok = _getAuthToken();
+  if (!tok) return;
+  try { await _authRequest('POST', '/logout', null); } catch (e) {}
+}
+async function _authChangePassword(newPwd) {
+  return _authRequest('PUT', '/user', { password: newPwd });
+}
+async function _authUpdateNickname(nick) {
+  return _authRequest('PUT', '/user', { data: { nickname: nick } });
+}
+
+/* 兑换邀请码（走云端函数，别人没法绕过） */
+async function _redeemInvite(code, token) {
+  var tok = token || _getAuthToken();
+  if (!tok) return false;
+  var r;
+  try {
+    r = await fetch(SUPABASE_URL + '/rest/v1/rpc/redeem_invite', {
+      method: 'POST',
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + tok, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ p_code: code })
+    });
+  } catch (e) { return false; }
+  if (!r.ok) return false;
+  var txt = '';
+  try { txt = await r.text(); } catch (e) {}
+  return txt === 'true';
+}
+
+/* 当前登录用户是否管理员（首个注册成员 = 管理员） */
+async function _amIAdmin() {
+  try {
+    var s = getSession();
+    if (!s || !s.uid) return false;
+    if (typeof sb === 'undefined' || !sb || !cloudReady) return false;
+    var res = await sb.from('app_members').select('is_admin').eq('user_id', s.uid).maybeSingle();
+    return !!(res && res.data && res.data.is_admin);
+  } catch (e) { return false; }
+}
+
+/* 取最新令牌：未过期直接用，即将过期用 refresh_token 换新 */
+async function _ensureFreshToken() {
+  var s = getSession();
+  if (!s || !s.access_token) return null;
+  var now = Math.floor(Date.now() / 1000);
+  if (s.expires_at && (s.expires_at - now) > 60) return s.access_token;
+  if (!s.refresh_token) return s.access_token;
+  try {
+    var r = await _authRefresh(s.refresh_token);
+    if (r.error || !r.data || !r.data.access_token) { clearSession(); return null; }
+    s.access_token = r.data.access_token;
+    if (r.data.refresh_token) s.refresh_token = r.data.refresh_token;
+    if (r.data.expires_at) s.expires_at = r.data.expires_at;
+    setSession(s);
+    return s.access_token;
+  } catch (e) {
+    return s.access_token;
+  }
+}
+
+/* 登录/注册成功后写入会话 */
+function _setAuthSession(authData, email, nickname) {
+  setSession({
+    email: email,
+    nickname: nickname || email,
+    loginAt: Date.now(),
+    access_token: authData.access_token,
+    refresh_token: authData.refresh_token,
+    expires_at: authData.expires_at || 0,
+    uid: authData.user ? authData.user.id : null
+  });
+}
+
+function showAuthOverlay() {
+  var ov = document.getElementById('authOverlay');
+  if (ov) ov.classList.add('show');
+}
+function hideAuthOverlay() {
+  var ov = document.getElementById('authOverlay');
+  if (ov) ov.classList.remove('show');
+}
+
 
 // --- 共享数据 ID：所有人使用同一个固定 ID，数据全共享 ---
 const SHARED_USER_ID = 'shared';
@@ -3525,13 +4251,27 @@ function getUserId() {
   return SHARED_USER_ID;
 }
 
-// --- 个人昵称（每台设备独立） ---
+// --- 个人昵称（登录账号的昵称，回退邮箱 / 未登录） ---
 function getUserName() {
-  return localStorage.getItem('clubapp_user_name') || '未命名用户';
+  var s = getSession();
+  if (s && s.nickname) return s.nickname;
+  if (s && s.email) return s.email;
+  return '未登录';
 }
 
 function setUserName(name) {
-  localStorage.setItem('clubapp_user_name', name);
+  var s = getSession();
+  var n = String(name || '').trim();
+  if (!s || !n) return;
+  s.nickname = n;
+  setSession(s);
+  auditLog('修改昵称', '', n);
+  // 同步昵称到官方 Auth 用户资料
+  if (cloudReady) {
+    _authUpdateNickname(n).then(function (res) {
+      if (res && res.error) console.warn('[Auth] 昵称同步失败:', res.error.message);
+    }).catch(function () {});
+  }
 }
 
 // --- 确保共享记录存在 ---
@@ -3684,7 +4424,16 @@ const cloudPersonnel = {
     // 加载人员
     const { data: persData, error: persErr } = await sb.from('personnel').select('*').eq('user_id', uid);
     if (persErr) { console.warn('[Cloud] 人员加载失败:', persErr.message); return; }
-    if (!persData || persData.length === 0) { console.log('[Cloud] 云端无人员数据'); return; }
+    if (!persData || persData.length === 0) {
+      console.log('[Cloud] 云端无人员数据');
+      // 云端确认为空 → 清空本地，防止旧数据回流（否则自动保存会把本地旧数据重新 upsert 回云端）
+      people.length = 0;
+      nextId = 1;
+      for (const tid of Object.keys(orderTimers)) { clearInterval(orderTimers[tid]); delete orderTimers[tid]; }
+      for (const k of Object.keys(personOrders)) { delete personOrders[k]; }
+      orderIdCounter = 1;
+      return;
+    }
 
     // 替换本地 people 数组
     people.length = 0;
@@ -3815,17 +4564,6 @@ const cloudExam = {
       }
     }
 
-    // 清理云端多余的考生（本地已删除的）
-    const localExamIds = new Set(rows.map(r => r.id));
-    const { data: cloudExams } = await sb.from('exam_candidates').select('id').eq('user_id', uid);
-    if (cloudExams) {
-      const staleIds = cloudExams.filter(ce => !localExamIds.has(ce.id)).map(ce => ce.id);
-      if (staleIds.length > 0) {
-        for (let i = 0; i < staleIds.length; i += 200) {
-          await sb.from('exam_candidates').delete().in('id', staleIds.slice(i, i + 200));
-        }
-      }
-    }
     console.log(`[Cloud] ✓ 绩效考核已同步 (${rows.length}考生)`);
   },
 
@@ -3835,7 +4573,13 @@ const cloudExam = {
 
     const { data, error } = await sb.from('exam_candidates').select('*').eq('user_id', uid);
     if (error) { console.warn('[Cloud] 考生加载失败:', error.message); return; }
-    if (!data || data.length === 0) { console.log('[Cloud] 云端无考生数据'); return; }
+    if (!data || data.length === 0) {
+      console.log('[Cloud] 云端无考生数据');
+      // 云端确认为空 → 清空本地，防止旧数据回流
+      examCandidates.length = 0;
+      examIdCounter = 1;
+      return;
+    }
 
     examCandidates.length = 0;
     for (const c of data) {
@@ -3908,6 +4652,7 @@ async function cloudSaveAll() {
   await cloudPersonnel.save();
   await cloudExam.save();
   console.log('[Cloud] ✅ 云端数据保存完成');
+  __lastCloudSyncTime = Date.now();
 }
 
 // ================================================================
@@ -3916,6 +4661,7 @@ async function cloudSaveAll() {
 let cloudSaveTimer = null;
 let cloudDirty = false;
 let cloudFirstDirty = 0;
+let __lastCloudSyncTime = null; // 上次成功同步(上传)时间戳
 function cloudAutoSave() {
   if (!cloudReady) return;
   if (!cloudDirty) { cloudDirty = true; cloudFirstDirty = Date.now(); }
@@ -4226,6 +4972,7 @@ async function initCloud() {
     renderCards();
     showCloudUserUI();
     __cloudLoadDone = true;
+    saveLocalData(); // 把云端(含空)状态写回本地缓存，覆盖旧数据，防止回流
     startRealtimeSync(); // 启动 Realtime 实时推送（替代轮询）
     console.log('[Cloud] 🚀 云端已加载 (人员:' + people.length + ', 订单:' + Object.keys(personOrders).length + ', 考生:' + examCandidates.length + ')');
   } catch (e) {
@@ -4395,16 +5142,19 @@ function updateStats() {
    ================================================================ */
 
 let searchTimer;
-document.getElementById('globalSearch').addEventListener('input', function(e) {
+/* 全局搜索：大小写不敏感；编辑/新增后复用，保持当前过滤 */
+function applyGlobalSearch() {
+  const el = document.getElementById('globalSearch');
+  const q = (el ? el.value : '').trim().toLowerCase();
+  filteredPeople = q
+    ? people.filter(p => (p.name || '').toLowerCase().includes(q) || (p.code || '').toLowerCase().includes(q) || (p.dept || '').toLowerCase().includes(q))
+    : [...people];
+  currentPage = 1;
+  renderCards();
+}
+document.getElementById('globalSearch').addEventListener('input', function() {
   clearTimeout(searchTimer);
-  searchTimer = setTimeout(() => {
-    const q = e.target.value.trim().toLowerCase();
-    filteredPeople = q
-      ? people.filter(p => (p.name || '').includes(q) || (p.code || '').toLowerCase().includes(q) || (p.dept || '').includes(q))
-      : [...people];
-    currentPage = 1;
-    renderCards();
-  }, 140);
+  searchTimer = setTimeout(applyGlobalSearch, 140);
 });
 
 /* ================================================================
@@ -4460,18 +5210,19 @@ document.getElementById('modalSave').onclick = function() {
     if (idx !== -1) {
       people[idx] = { ...people[idx], ...payload };
       cloudPersonnel.upsertPersonDirect(people[idx]);  // 直接写云端，不依赖 autoSave
+      auditLog('修改人员', people[idx].name, '部门:' + people[idx].dept + ' · 职位:' + people[idx].title);
       showToast('人员信息已更新', true);
     }
   } else {
     const newPerson = { id: nextId++, ...payload };
     people.unshift(newPerson);
     cloudPersonnel.upsertPersonDirect(newPerson);  // 直接写云端
+    auditLog('新增人员', newPerson.name, '部门:' + newPerson.dept + ' · 职位:' + newPerson.title);
     showToast('人员添加成功', true);
   }
 
-  filteredPeople = [...people];
+  applyGlobalSearch();  // 保持当前搜索过滤，而不是重置为全部
   closePersonModal();
-  renderCards();
   renderPersonnelList();  // 同步更新列表视图
 };
 
@@ -4523,10 +5274,12 @@ document.getElementById('deleteModalConfirm').onclick = async function() {
       }
       delete personOrders[delId];
     }
+    const delPerson = people.find(p => p.id === delId);
     // 先直接删云端，再删本地（确保云端必删）
     await cloudPersonnel.deletePersonDirect(delId);
     people = people.filter(p => p.id !== delId);
     filteredPeople = filteredPeople.filter(p => p.id !== delId);
+    auditLog('删除人员', delPerson ? delPerson.name : String(delId), '');
     showToast('已删除', true);
     closeDeleteModal();
     renderCards();
@@ -4773,6 +5526,7 @@ function inlineEditField(person, field, el) {
   renderPersonnelList();
   buildDetailContent(person);
   cloudPersonnel.upsertPersonDirect(person);  // 直接写云端
+  auditLog('修改字段', person.name, fieldLabel + ' = ' + person[field]);
   showToast('已更新 ' + fieldLabel, true);
 }
 
@@ -4785,12 +5539,14 @@ function rebindDetailEvents(p) {
 
     const editBtn = document.getElementById('detailEditBtn');
     if (editBtn) editBtn.onclick = () => {
+      if (!guardEdit('编辑人员')) return;  // 查看模式下先提示，不关闭详情
       closeDetail();
       setTimeout(() => openEdit(p.id), 660);
     };
 
     const delBtn = document.getElementById('detailDeleteBtn');
     if (delBtn) delBtn.onclick = () => {
+      if (!guardEdit('删除人员')) return;
       closeDetail();
       setTimeout(() => openDelete(p.id), 660);
     };
@@ -4834,7 +5590,34 @@ function showToast(msg, success) {
 }
 
 /* 导出按钮 */
-document.getElementById('btnExport').onclick = () => showToast('导出功能待后续阶段实现', false);
+document.getElementById('btnExport').onclick = () => {
+  try {
+    var settings = null;
+    try { settings = JSON.parse(localStorage.getItem(LS_KEYS.settings) || 'null'); } catch (e) {}
+    var dump = {
+      app: 'ClubApp',
+      version: APP_VERSION,
+      exportedAt: new Date().toISOString(),
+      people: people,
+      orders: personOrders,
+      exam: examCandidates,
+      settings: settings
+    };
+    var blob = new Blob([JSON.stringify(dump, null, 2)], { type: 'application/json' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'ClubApp_backup_' + new Date().toISOString().slice(0, 10) + '.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function() { URL.revokeObjectURL(url); }, 1500);
+    auditLog('导出备份', '', '人员' + people.length + '·订单' + Object.keys(personOrders).length + '·考生' + examCandidates.length);
+    showToast('已导出备份文件 ✓', true);
+  } catch (e) {
+    showToast('导出失败：' + e.message, false);
+  }
+};
 
 /* ================================================================
    分区 12: 页面切换动画引擎 (0.7s slide+fade)
@@ -4845,12 +5628,12 @@ const TRANSITION_MS = 700;  /* 0.7秒 */
 const pageLabels = {
   appearance:'外观与布局', personnel:'人员档案',
   attendance:'考勤管理', salary:'薪酬管理', performance:'绩效考核',
-  training:'培训管理', settings:'系统设置'
+  training:'培训管理', settings:'系统设置', sysinfo:'系统信息'
 };
 const pageStages = {
   appearance:'阶段 1 — 外观搭建', personnel:'阶段 3 — 人员档案',
   attendance:'阶段 4 — 考勤管理', salary:'阶段 5 — 薪酬管理', performance:'阶段 6 — 绩效考核',
-  training:'阶段 7 — 培训管理', settings:'阶段 8 — 系统设置'
+  training:'阶段 7 — 培训管理', settings:'阶段 8 — 系统设置', sysinfo:'系统信息'
 };
 
 let currentPageName = 'appearance';
@@ -4940,6 +5723,10 @@ document.getElementById('sidebarOverlay').addEventListener('click', closeMobileS
 function switchPage(targetPage) {
   isTransitioning = true;
 
+  // 暂停天气/水珠画布动画，让出主线程给切页过渡，避免掉帧
+  if (window.__weatherStop) window.__weatherStop();
+  if (window.__overlayStop) window.__overlayStop();
+
   const oldPanel = document.getElementById('page-' + currentPageName);
   const newPanel = document.getElementById('page-' + targetPage);
 
@@ -4991,6 +5778,9 @@ function switchPage(targetPage) {
     setTimeout(() => {
       newPanel.classList.remove('enter-right', 'show');
       isTransitioning = false;
+      // 恢复天气/水珠动画
+      if (window.__weatherStart) window.__weatherStart();
+      if (window.__overlayStart) window.__overlayStart();
       // 分发页面切换后钩子
       const hooks = _pageHooks[targetPage];
       if (hooks) hooks.forEach(fn => setTimeout(fn, 50));
@@ -5204,6 +5994,9 @@ document.addEventListener('keydown', function(e) {
   buildRainColors();
   resize();
   startAnim();
+  // 暴露暂停/恢复，供页面切换时暂停动画（避免切页掉帧）
+  window.__weatherStop = stopAnim;
+  window.__weatherStart = startAnim;
   console.log('◈ 天气引擎 v2.1 — 真实细雨 + 柔雾 — 已启动');
 })();
 
@@ -5296,7 +6089,6 @@ document.addEventListener('keydown', function(e) {
       if (d.x > OW + 20) d.x = -20;
 
       // Draw droplet
-      ctx.save();
       ctx.globalAlpha = d.opacity;
 
       // Drop shadow
@@ -5325,10 +6117,9 @@ document.addEventListener('keydown', function(e) {
       ctx.beginPath();
       ctx.ellipse(d.x, d.y, d.rx, d.ry, 0, 0, Math.PI * 2);
       ctx.stroke();
-
-      ctx.restore();
     }
 
+    ctx.globalAlpha = 1;
     overlayRAF = requestAnimationFrame(drawDroplets);
   }
 
@@ -5351,6 +6142,8 @@ document.addEventListener('keydown', function(e) {
 
   resizeOverlay();
   startOverlay();
+  window.__overlayStop = stopOverlay;
+  window.__overlayStart = startOverlay;
   console.log('◈ 玻璃水珠覆盖层 v2.1 — 水滴折射 + 滑落 — 已启动');
 })();
 
@@ -5476,14 +6269,16 @@ function renderPersonnelList() {
 /* 初始化部门筛选下拉 */
 function initPersonnelFilters() {
   const deptSel = document.getElementById('personnelDeptFilter');
-  if (deptSel && deptSel.options.length <= 1) {
-    const depts = [...new Set(people.map(p => p.dept))].sort();
-    depts.forEach(d => {
-      const opt = document.createElement('option');
-      opt.value = d; opt.textContent = d;
-      deptSel.appendChild(opt);
-    });
-  }
+  if (!deptSel) return;
+  const prev = deptSel.value;
+  const depts = [...new Set(people.map(p => p.dept))].sort();
+  deptSel.innerHTML = '<option value="">全部部门</option>';
+  depts.forEach(d => {
+    const opt = document.createElement('option');
+    opt.value = d; opt.textContent = d;
+    deptSel.appendChild(opt);
+  });
+  if (prev && depts.includes(prev)) deptSel.value = prev;
 }
 
 /* ================================================================
@@ -5620,6 +6415,43 @@ function getCountdownState(order) {
   return getRemainingMs(order) <= 0 ? 'expired' : 'running';
 }
 
+/* 已完成订单的剩余时间（结单时刻）：由 deadline/start/completed 反推；不限时返回 Infinity */
+function getCompletedRemainingMs(order) {
+  if (order.deadlineHours <= 0) return Infinity;
+  // 暂停中直接结单时，剩余时间以暂停时记录为准（暂停期间不扣时）
+  if (order.pausedRemaining != null) return Math.round(order.pausedRemaining);
+  const elapsed = (order.completedAt || Date.now()) - (order.startTime || 0);
+  return Math.round(Math.max(0, order.deadlineHours * 3600000 - elapsed));
+}
+
+/* 北京时间（UTC+8）格式化给定时间戳：YYYY-MM-DD HH:mm */
+function formatBeijingTime(ms) {
+  if (!ms) return '—';
+  const d = new Date(ms);
+  const bj = new Date(d.getTime() + (d.getTimezoneOffset() + 480) * 60000);
+  const pad = n => String(n).padStart(2, '0');
+  return bj.getFullYear() + '-' + pad(bj.getMonth() + 1) + '-' + pad(bj.getDate()) +
+         ' ' + pad(bj.getHours()) + ':' + pad(bj.getMinutes());
+}
+
+/* 已完成订单卡片上的「要求时间 / 剩余时间 / 完成时间」信息块（未完成返回空串） */
+function renderCompletedTimeInfo(o) {
+  if (!o || o.status !== 'completed') return '';
+  const reqText = o.deadlineHours > 0 ? o.deadlineHours + ' 小时' : '不限时';
+  let remText;
+  if (o.deadlineHours <= 0) remText = '不限时';
+  else {
+    const rem = getCompletedRemainingMs(o);
+    remText = rem <= 0 ? '已超时' : formatCountdown(rem);
+  }
+  const doneText = formatBeijingTime(o.completedAt);
+  return '<div class="order-card-done-info">' +
+    '<div class="odi-row"><span class="odi-label">要求时间</span><span class="odi-value">' + reqText + '</span></div>' +
+    '<div class="odi-row"><span class="odi-label">剩余时间</span><span class="odi-value">' + remText + '</span></div>' +
+    '<div class="odi-row"><span class="odi-label">完成时间</span><span class="odi-value">' + doneText + '</span></div>' +
+    '</div>';
+}
+
 function escHtml(str) {
   return String(str).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m]);
 }
@@ -5662,6 +6494,7 @@ function renderOrderCards(personId) {
         '<div class="oc-price-item"><span class="oc-price-label">保哈哈币</span><span class="oc-price-value">' + o.priceCoin.toLocaleString() + 'W</span></div>' +
       '</div>' +
       '<div class="order-card-countdown ' + cdClass + '"><span class="oc-cd-icon">' + cdIcon + '</span><span class="oc-cd-time">' + cdText + '</span></div>' +
+      renderCompletedTimeInfo(o) +
       '<div class="order-card-actions">' + actionBtns + '</div>' +
     '</div>';
   }).join('');
@@ -5718,6 +6551,7 @@ function submitAddCard(personId) {
     startTime: Date.now(), status: 'active', pausedAt: null, pausedRemaining: null, completedAt: null
   };
 
+  auditLog('新增订单', orderName, '范围:' + scope + ' · ¥' + priceRMB + ' · 币' + priceCoin + 'W');
   // 先写云端，再同步本地
   cloudPersonnel.upsertOrderDirect(order, personId).then(success => {
     if (!personOrders[personId]) personOrders[personId] = [];
@@ -5736,8 +6570,10 @@ function togglePauseOrder(orderId, personId) {
   if (!order || order.status !== 'active') return;
   if (order.pausedAt != null) {
     /* 恢复 */
+    const rem = order.pausedRemaining || 0;
     order.startTime = Date.now();
-    order.deadlineHours = (order.pausedRemaining || 0) / 3600000;
+    // 已超时(rem<=0)时保持过期，避免 deadlineHours=0 被误判为「不限时」
+    order.deadlineHours = rem > 0 ? rem / 3600000 : (1 / 3600000);
     order.pausedAt = null;
     order.pausedRemaining = null;
     showToast('「' + order.orderName + '」倒计时已恢复', true);
@@ -5768,12 +6604,14 @@ function openConfirmComplete(orderId, personId) {
   const cdState = getCountdownState(order);
   const remainingText = cdState === 'none' ? '不限时' : cdState === 'expired' ? '⚠ 已超时' : formatCountdown(remainingMs);
   const scopeClass = order.scope === '跑刀' ? 'oc-scope-run' : 'oc-scope-guard';
+  const reqText = order.deadlineHours > 0 ? order.deadlineHours + ' 小时' : '不限时';
 
   document.getElementById('confirmBody').innerHTML =
     '<div class="cd-info-row"><span class="cd-info-label">单名字</span><span class="cd-info-value">' + escHtml(order.orderName) + '</span></div>' +
     '<div class="cd-info-row"><span class="cd-info-label">范围</span><span class="cd-info-value"><span class="oc-scope ' + scopeClass + '">' + escHtml(order.scope) + '</span></span></div>' +
     '<div class="cd-info-row"><span class="cd-info-label">人民币</span><span class="cd-info-value">¥' + order.priceRMB.toLocaleString() + '</span></div>' +
     '<div class="cd-info-row"><span class="cd-info-label">保哈哈币</span><span class="cd-info-value">' + order.priceCoin.toLocaleString() + 'W</span></div>' +
+    '<div class="cd-info-row"><span class="cd-info-label">要求时间</span><span class="cd-info-value">' + reqText + '</span></div>' +
     '<div class="cd-info-row"><span class="cd-info-label">剩余时间</span><span class="cd-info-value">' + remainingText + '</span></div>' +
     '<div class="cd-highlight">确认此订单已完成？此操作不可撤销</div>';
 
@@ -5785,22 +6623,27 @@ function closeConfirm() {
   confirmTarget = null;
 }
 
-function executeConfirmComplete() {
+async function executeConfirmComplete() {
   if (!confirmTarget) return;
   if (!guardEdit('结单操作')) return;
   const { orderId, personId } = confirmTarget;
   const order = getOrders(personId).find(o => o.id === orderId);
   if (!order) return;
+  // 结单前先算剩余时间（此时 order 仍是 active，getRemainingMs 能算出真实剩余）
+  const rem = getRemainingMs(order);
+  const reqText = order.deadlineHours > 0 ? order.deadlineHours + ' 小时' : '不限时';
+  const remText = order.deadlineHours <= 0 ? '不限时' : (rem <= 0 ? '已超时' : formatCountdown(rem));
   order.status = 'completed';
   order.completedAt = Date.now();
+  // 暂停中结单：保留 paused_remaining 供结单卡片正确展示剩余时间（暂停期间不扣时）
+  if (order.pausedAt == null) order.pausedRemaining = null;
   order.pausedAt = null;
-  order.pausedRemaining = null;
   closeConfirm();
-  // 先写云端，再刷新本地
-  cloudPersonnel.upsertOrderDirect(order, personId).then(() => {
-    renderOrderCards(personId);
-  });
-  showToast('「' + order.orderName + '」已结单 ✓', true);
+  auditLog('结单', order.orderName, '要求' + reqText + ' · 剩余' + remText + ' · ¥' + order.priceRMB + ' · 币' + order.priceCoin + 'W');
+  // 实时同步云端：写成功再刷新本地
+  const ok = await cloudPersonnel.upsertOrderDirect(order, personId);
+  renderOrderCards(personId);
+  showToast(ok ? '「' + order.orderName + '」已结单 ✓' : '「' + order.orderName + '」已结单（云端同步失败，请检查网络）', ok);
 }
 
 /* ---- 删除订单 ---- */
@@ -5815,6 +6658,7 @@ async function deleteOrderCard(orderId, personId) {
     const { error } = await sb.from('orders').delete().eq('id', orderId).eq('user_id', getUserId());
     if (error) throw new Error(error.message);
     notifyChange();
+    auditLog('删除订单', order.orderName, '');
     personOrders[personId] = getOrders(personId).filter(o => o.id !== orderId);
     if (orderTimers[orderId]) { clearInterval(orderTimers[orderId]); delete orderTimers[orderId]; }
     renderOrderCards(personId);
@@ -5888,6 +6732,7 @@ function refreshSingleCard(orderId, personId) {
       '<div class="oc-price-item"><span class="oc-price-label">保哈哈币</span><span class="oc-price-value">' + o.priceCoin.toLocaleString() + 'W</span></div>' +
     '</div>' +
     '<div class="order-card-countdown ' + cdClass + '"><span class="oc-cd-icon">' + cdIcon + '</span><span class="oc-cd-time">' + cdText + '</span></div>' +
+    renderCompletedTimeInfo(o) +
     '<div class="order-card-actions">' + actionBtns + '</div>' +
   '</div>';
   oldCard.outerHTML = newHTML;
@@ -6044,7 +6889,7 @@ onPageSwitch('personnel', () => {
     const pid = parseInt(pv.dataset.personId, 10);
     if (!isNaN(pid)) clearPersonTimers(pid);
   }
-  if (lv) { lv.style.opacity = ''; lv.style.transition = ''; }
+  if (lv) { lv.style.opacity = ''; lv.style.transition = ''; lv.style.pointerEvents = ''; }
 });
 onAnyPageSwitch(function(targetPage) {
   if (targetPage !== 'personnel') {
@@ -6056,7 +6901,7 @@ onAnyPageSwitch(function(targetPage) {
       const pid = parseInt(pv.dataset.personId, 10);
       if (!isNaN(pid)) clearPersonTimers(pid);
     }
-    if (lv) { lv.style.opacity = ''; lv.style.transition = ''; }
+    if (lv) { lv.style.opacity = ''; lv.style.transition = ''; lv.style.pointerEvents = ''; }
   }
 });
 
@@ -6405,7 +7250,7 @@ function renderSalaryOverview(year, month) {
   const totalAll = data.reduce((s, d) => s + d.total, 0);
   const totalBonus = data.reduce((s, d) => s + d.bonus, 0);
   const totalDeduction = data.reduce((s, d) => s + d.deduction, 0);
-  const avgSalary = Math.round(totalAll / data.length);
+  const avgSalary = data.length ? Math.round(totalAll / data.length) : 0;
 
   const fmt = n => '¥' + n.toLocaleString('zh-CN');
   document.getElementById('salMonthLabel').textContent = year + '年 ' + month + '月';
@@ -6641,6 +7486,7 @@ function editHeadcount(eid) {
   const num = parseInt(val, 10);
   if (isNaN(num) || num < 0) { showToast('请输入有效的非负整数', false); return; }
   c.headcount = num;
+  auditLog('修改人头数', c.name, '人头数 = ' + num);
   cloudExam.upsertCandidateDirect(c).then(() => {
     openExamDetail(eid);
     renderExamCards();
@@ -6661,6 +7507,7 @@ function incrementExam(eid) {
     /* 满3次自动拒绝 */
     c.status = 'rejected';
     c.rejectTime = beijingNow();
+    auditLog('考核拒绝(满3次)', c.name, '');
     // 先写云端，再刷新本地
     cloudExam.upsertCandidateDirect(c).then(() => {
       closeExamDetail();
@@ -6686,6 +7533,7 @@ function rejectExam(eid) {
   if (!c || c.status !== 'pending') return;
   c.status = 'rejected';
   c.rejectTime = beijingNow();
+  auditLog('考核拒绝', c.name, '');
   // 先写云端，再刷新本地
   cloudExam.upsertCandidateDirect(c).then(() => {
     closeExamDetail();
@@ -6702,6 +7550,7 @@ function passExamDirectly(eid) {
 
   c.status = 'passed';
   c.passTime = beijingNow();
+  auditLog('考核通过', c.name, '');
 
   // 先写云端，再刷新本地
   cloudExam.upsertCandidateDirect(c).then(() => {
@@ -6750,6 +7599,7 @@ function submitExamCandidate() {
     headcount: 0
   };
 
+  auditLog('新增考生', name, '项目:' + project);
   // 先写云端，再同步本地
   cloudExam.upsertCandidateDirect(candidate).then(success => {
     examCandidates.push(candidate);
@@ -6907,7 +7757,7 @@ function showTrainDetail(courseId) {
       <td><div class="sal-person"><div class="sal-av" style="background:hsl(${h},55%,55%);">${escHtml(av)}</div>${escHtml(e.name)}</div></td>
       <td>${escHtml(e.dept)}</td>
       <td><div class="train-progress-bar"><div class="tpb-fill" style="width:${e.progress}%;"></div></div>${e.progress}%</td>
-      <td>${e.doneDate || '—'}</td>
+      <td>${escHtml(e.doneDate || '—')}</td>
       <td style="font-weight:700;">${e.done ? e.score + '分' : '—'}</td></tr>`;
   }).join('');
 
@@ -6944,6 +7794,7 @@ function resetTrainView() {
   // 显示当前版本
   const verEl = document.getElementById('sysVersion');
   if (verEl) verEl.textContent = 'v' + APP_VERSION;
+  console.log('[启动] ClubApp v' + APP_VERSION + ' · UA: ' + navigator.userAgent);
 
   // ================================================================
   // 热更新检测
@@ -6996,6 +7847,7 @@ function resetTrainView() {
       if (resp.ok) {
         var json = resp.json ? await resp.json() : JSON.parse(await resp.text());
         latestVersion = json.v;
+        __updateSha256 = json.sha256 || null;
         console.log('[Update] version.json → v' + latestVersion);
       }
     } catch (e) {
@@ -7128,6 +7980,19 @@ function resetTrainView() {
     });
   }
 
+  /* 计算字符串的 SHA-256 十六进制（防篡改校验；不支持 crypto.subtle 时返回 null 跳过校验） */
+  async function sha256Hex(str) {
+    try {
+      if (!window.crypto || !crypto.subtle || !crypto.subtle.digest) return null;
+      var buf = new TextEncoder().encode(str);
+      var hash = await crypto.subtle.digest('SHA-256', buf);
+      var arr = new Uint8Array(hash);
+      var hex = '';
+      for (var i = 0; i < arr.length; i++) hex += arr[i].toString(16).padStart(2, '0');
+      return hex;
+    } catch (e) { return null; }
+  }
+
   async function doUpdate() {
     // Save data before update
     saveLocalData();
@@ -7224,6 +8089,14 @@ function resetTrainView() {
       var downloadedVersion = versionMatch[1];
       if (compareVersions(downloadedVersion, APP_VERSION) <= 0) {
         throw new Error('Downloaded v' + downloadedVersion + ' not newer than current v' + APP_VERSION);
+      }
+
+      // 防篡改校验：与 version.json 里的 SHA-256 比对，不一致说明文件损坏/被篡改，放弃更新
+      if (__updateSha256) {
+        var gotHash = await sha256Hex(htmlText);
+        if (gotHash && gotHash.toLowerCase() !== __updateSha256.toLowerCase()) {
+          throw new Error('校验失败：下载文件哈希不匹配，已取消更新（请重试或检查网络）');
+        }
       }
 
       // Show install progress
@@ -7340,8 +8213,8 @@ function resetTrainView() {
           var blobUrl = URL.createObjectURL(blob);
           location.replace(blobUrl);
           return;
-        } else {
-          console.log('[Update] Cached v' + cached.version + ' <= current v' + APP_VERSION + ', clearing');
+        } else if (compareVersions(cached.version, APP_VERSION) < 0) {
+          console.log('[Update] Cached v' + cached.version + ' < current v' + APP_VERSION + ', clearing');
           await clearUpdateDB();
         }
       }
@@ -7851,7 +8724,9 @@ document.addEventListener('click', function(e) {
       if (isNaN(courseId)) return;
 
       var enrolled = trainEnrollCache.get(courseId) || [];
-      var entry = enrolled.find(function(en) { return en.name === personName; });
+      // 按行索引匹配（重名时按 name 会改错人），行顺序 = enrolled 数组顺序
+      var rowIndex = Array.prototype.indexOf.call(row.parentElement.children, row);
+      var entry = enrolled[rowIndex];
       if (!entry) return;
 
       var cellIndex = Array.prototype.indexOf.call(cells, cell);
@@ -7920,7 +8795,11 @@ document.addEventListener('click', function(e) {
 console.log('◈ 分区 11z2-11z6 — 编辑模式引擎 — 已就绪');
 
 // 所有变量已定义，启动云端 + 本地数据恢复
-setTimeout(initCloud, 10);
+// 登录门禁：先检查登录状态，未登录显示登录页；登录后加载数据
+setTimeout(function bootApp() {
+  if (isLoggedIn()) { initCloud(); }
+  else { showAuthOverlay(); }
+}, 10);
 
 // 关闭页面/标签前强制保存本地数据（防止3秒防抖窗口内数据丢失）
 window.addEventListener('beforeunload', () => {
@@ -7943,5 +8822,461 @@ window.addEventListener('beforeunload', () => {
     <button class="ep-btn ep-btn-save" id="epSave">保存</button>
   </div>
 </div>
+
+<!-- ==================== 登录系统遮罩 ==================== -->
+<div class="auth-overlay" id="authOverlay">
+  <div class="auth-card">
+    <div class="auth-title">人员管理系统</div>
+    <div class="auth-sub">登录 / 注册 / 找回密码</div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" data-auth="login" type="button">登录</button>
+      <button class="auth-tab" data-auth="register" type="button">注册</button>
+      <button class="auth-tab" data-auth="forgot" type="button">忘记密码</button>
+    </div>
+    <div class="auth-err" id="authErr"></div>
+    <div class="auth-msg" id="authMsg"></div>
+
+    <div class="auth-pane active" id="pane-login">
+      <div class="auth-field"><label>邮箱</label><input type="email" id="loginEmail" autocomplete="username" placeholder="you@example.com"></div>
+      <div class="auth-field"><label>密码</label><input type="password" id="loginPassword" autocomplete="current-password" placeholder="请输入密码"></div>
+      <button class="auth-btn" id="btnLogin" type="button">登 录</button>
+      <span class="auth-link" data-goto="register">没有账号？去注册</span>
+    </div>
+
+    <div class="auth-pane" id="pane-register">
+      <div class="auth-field"><label>邀请码</label><input type="text" id="regInvite" placeholder="请输入 8 位邀请码"></div>
+      <div class="auth-field"><label>邮箱</label><input type="email" id="regEmail" autocomplete="username" placeholder="you@example.com"></div>
+      <div class="auth-field"><label>密码</label><input type="password" id="regPassword" autocomplete="new-password" placeholder="至少 6 位"></div>
+      <div class="auth-field"><label>昵称（可选）</label><input type="text" id="regNickname" placeholder="给自己起个名字"></div>
+      <button class="auth-btn" id="btnRegister" type="button">注 册</button>
+      <span class="auth-link" data-goto="login">已有账号？去登录</span>
+    </div>
+
+    <div class="auth-pane" id="pane-forgot">
+      <div class="auth-field"><label>邮箱</label><input type="email" id="forgotEmail" autocomplete="username" placeholder="注册时填写的邮箱"></div>
+      <button class="auth-btn" id="btnForgot" type="button">发送验证码</button>
+      <div class="auth-field" style="margin-top:12px;"><label>收到的验证码</label><input type="text" id="forgotCode" placeholder="6 位验证码"></div>
+      <div class="auth-field"><label>新密码</label><input type="password" id="forgotPassword" autocomplete="new-password" placeholder="至少 6 位"></div>
+      <button class="auth-btn" id="btnForgotReset" type="button" style="background:var(--accent-teal);">重置密码</button>
+      <span class="auth-link" data-goto="login">返回登录</span>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== 邀请码管理弹窗 ==================== -->
+<div class="invite-overlay" id="inviteOverlay">
+  <div class="invite-modal">
+    <div class="invite-head">
+      <span class="invite-title">邀请码管理</span>
+      <button class="invite-close" id="inviteClose" type="button">✕</button>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:12px;">
+      <button class="btn btn-glass primary" id="btnGenInvite" style="flex:1;">生成邀请码</button>
+      <button class="btn btn-glass" id="btnAdminResetPwd" style="flex:1;">重置账号密码</button>
+    </div>
+    <div class="log-list" id="inviteList" style="margin-top:0;max-height:360px;"><div class="log-empty">点击「生成邀请码」创建</div></div>
+  </div>
+</div>
+
+<script>
+/* ================================================================
+   登录系统 UI：表单切换 / 登录 / 注册 / 忘记密码 / 邀请码 / 管理员
+   ================================================================ */
+(function () {
+  function el(id) { return document.getElementById(id); }
+  function setErr(msg) { var e = el('authErr'); if (e) e.textContent = msg || ''; }
+  function setMsg(msg) { var m = el('authMsg'); if (m) m.textContent = msg || ''; }
+  function clearMsgs() { setErr(''); setMsg(''); }
+
+  function switchPane(name) {
+    ['login', 'register', 'forgot'].forEach(function (p) {
+      var pane = el('pane-' + p);
+      var tab = document.querySelector('.auth-tab[data-auth="' + p + '"]');
+      if (pane) pane.classList.toggle('active', p === name);
+      if (tab) tab.classList.toggle('active', p === name);
+    });
+    clearMsgs();
+  }
+
+  /* ---- 登录防爆破限流（本地锁） ---- */
+  var RL_KEY = 'clubapp_rl';
+  var RL_MAX = 5;
+  var RL_WINDOW = 10 * 60 * 1000;
+  var RL_LOCK = 5 * 60 * 1000;
+
+  function _rlRead() {
+    try { return JSON.parse(localStorage.getItem(RL_KEY) || 'null') || { fail: [], lockUntil: 0 }; }
+    catch (e) { return { fail: [], lockUntil: 0 }; }
+  }
+  function _rlWrite(d) { try { localStorage.setItem(RL_KEY, JSON.stringify(d)); } catch (e) {} }
+  function _rlBlocked() {
+    var rem = _rlRead().lockUntil - Date.now();
+    if (rem > 0) {
+      setErr('尝试次数过多，请 ' + Math.ceil(rem / 60000) + ' 分钟后再试');
+      return true;
+    }
+    return false;
+  }
+  function _rlRecordFail() {
+    var d = _rlRead();
+    var now = Date.now();
+    d.fail = (d.fail || []).filter(function(t) { return now - t < RL_WINDOW; });
+    d.fail.push(now);
+    var locked = false;
+    if (d.fail.length >= RL_MAX) { d.lockUntil = now + RL_LOCK; d.fail = []; locked = true; }
+    _rlWrite(d);
+    return locked;
+  }
+  function _rlClear() { try { localStorage.removeItem(RL_KEY); } catch (e) {} }
+
+  /* ---- 登录 ---- */
+  async function doLogin() {
+    clearMsgs();
+    var email = _lowerEmail(el('loginEmail').value);
+    var pwd = el('loginPassword').value;
+    if (!email || !pwd) { setErr('请输入邮箱和密码'); return; }
+    if (_rlBlocked()) return;
+    var btn = el('btnLogin'); btn.disabled = true; btn.textContent = '登录中...';
+    try {
+      var res = await _authLogin(email, pwd);
+      if (res.error) {
+        var _em = res.error.message || '';
+        if (/Invalid login credentials/i.test(_em)) {
+          setErr('邮箱或密码错误');
+          auditLog('登录失败', email, '密码错误');
+          var _locked = _rlRecordFail();
+          recordSecurity('登录爆破', email, '登录', '密码错误', _locked ? '封禁(已锁定)' : '限流', true);
+        } else if (/Email not confirmed/i.test(_em)) setErr('邮箱未验证，请联系管理员');
+        else if (/fetch|network|load|resolve|abort|timeout|refused/i.test(_em)) {
+          setErr('无法连接云端服务器（网络不通或 App 版本过旧）。请确认手机已联网，或到「系统信息 → 检查更新」升级到最新版');
+        } else {
+          setErr('登录失败：' + _em);
+        }
+        return;
+      }
+      var d = res.data;
+      var nickname = (d.user && d.user.user_metadata && d.user.user_metadata.nickname) || '';
+      _setAuthSession(d, email, nickname);
+      _rlClear();
+      auditLog('登录', email, '');
+      hideAuthOverlay();
+      refreshAccountUI();
+      initCloud();
+      showToast('欢迎回来，' + getUserName() + ' ✓', true);
+    } catch (e) {
+      setErr('登录异常：' + e.message);
+    } finally {
+      btn.disabled = false; btn.textContent = '登 录';
+    }
+  }
+
+  /* ---- 注册 ---- */
+  async function doRegister() {
+    clearMsgs();
+    var invite = (el('regInvite').value || '').trim();
+    var email = _lowerEmail(el('regEmail').value);
+    var pwd = el('regPassword').value;
+    var nick = (el('regNickname').value || '').trim();
+    if (!invite || !email || !pwd) { setErr('请填写邀请码、邮箱和密码'); return; }
+    if (pwd.length < 6) { setErr('密码至少 6 位'); return; }
+    if (invite.length !== 8) { setErr('邀请码应为 8 位'); return; }
+    if (_rlBlocked()) return;
+    var btn = el('btnRegister'); btn.disabled = true; btn.textContent = '注册中...';
+    try {
+      // 1. 官方注册（自动确认）。若邮箱已存在则改为登录
+      var auth = await _authSignup(email, pwd, nick);
+      if (auth.error) {
+        if (/already registered|User already registered/i.test(auth.error.message || '')) {
+          auth = await _authLogin(email, pwd);
+          if (auth.error) { setErr('该邮箱已注册，请直接登录'); return; }
+        } else {
+          setErr('注册失败：' + auth.error.message);
+          return;
+        }
+      }
+      // 2. 拿到令牌了吗？（没拿到说明注册未返回令牌）
+      var token = auth.data && auth.data.access_token;
+      if (!token) { setErr('注册未返回登录令牌，请重试或联系管理员'); return; }
+      // 3. 兑换邀请码（云端校验，成功才成为成员）
+      var ok = await _redeemInvite(invite, token);
+      if (!ok) {
+        setErr('邀请码无效或已被使用，请更换邀请码后重试（同一邮箱再次提交会自动登录）');
+        auditLog('注册失败', email, '邀请码无效');
+        var _locked = _rlRecordFail();
+        recordSecurity('邀请码滥用', email, '注册', '邀请码无效', _locked ? '封禁(已锁定)' : '拒绝', true);
+        return;
+      }
+      _setAuthSession(auth.data, email, nick || email);
+      _rlClear();
+      auditLog('注册', email, '');
+      hideAuthOverlay();
+      refreshAccountUI();
+      initCloud();
+      showToast('注册成功，欢迎 ✓', true);
+    } catch (e) {
+      setErr('注册异常：' + e.message);
+    } finally {
+      btn.disabled = false; btn.textContent = '注 册';
+    }
+  }
+
+  /* ---- 忘记密码：邮件未配置，引导联系管理员 ---- */
+  async function doForgot() {
+    clearMsgs();
+    setErr('邮件服务未配置，无法自助找回。请找管理员重置密码。');
+  }
+
+  /* ---- 忘记密码：重置（邮件未配置，引导联系管理员） ---- */
+  async function doResetPwd() {
+    clearMsgs();
+    setErr('邮件服务未配置，无法自助重置。请找管理员重置密码。');
+  }
+
+  /* ---- 设置页账号显示 ---- */
+  function refreshAccountUI() {
+    var s = getSession();
+    var emailEl = el('accEmail');
+    var nickEl = el('accNickname');
+    if (emailEl) emailEl.textContent = s ? s.email : '未登录';
+    if (nickEl) nickEl.textContent = getUserName();
+  }
+
+  /* ---- 退出登录 ---- */
+  function doLogout() {
+    auditLog('退出登录', getAccountEmail(), '');
+    _authLogout();
+    clearSession();
+    var bar = document.getElementById('cloudUserBar');
+    if (bar && bar.parentNode) bar.parentNode.removeChild(bar);
+    switchPane('login');
+    showAuthOverlay();
+  }
+
+  /* ---- 邀请码生成 ---- */
+  function genInviteCode() {
+    var chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+    var s = '';
+    for (var i = 0; i < 8; i++) s += chars.charAt(Math.floor(Math.random() * chars.length));
+    return s;
+  }
+
+  async function doGenInvite() {
+    if (!await _amIAdmin()) { showToast('仅管理员可生成邀请码', false); recordSecurity('越权尝试', getAccountEmail(), '邀请码生成', '非管理员尝试生成邀请码', '拒绝', true); return; }
+    var code = genInviteCode();
+    try {
+      var res = await sb.from('invite_codes').insert({ code: code, used: false });
+      if (res.error) { showToast('生成失败：' + res.error.message, false); return; }
+      auditLog('生成邀请码', code, '');
+      alert('邀请码（一次性，发给注册人）：\n\n' + code);
+      renderInviteList();
+    } catch (e) {
+      showToast('生成异常：' + e.message, false);
+    }
+  }
+
+  async function renderInviteList() {
+    var listEl = el('inviteList');
+    if (!listEl) return;
+    try {
+      var res = await sb.from('invite_codes').select('id,code,used,created_at').order('id', 'desc');
+      if (res.error) { listEl.innerHTML = '<div class="log-empty">加载失败</div>'; return; }
+      var rows = res.data || [];
+      if (!rows.length) { listEl.innerHTML = '<div class="log-empty">暂无邀请码</div>'; return; }
+      listEl.innerHTML = rows.map(function (r) {
+        var status = r.used
+          ? '<span class="inv-status used">已用</span>'
+          : '<span class="inv-status avail">可用</span>';
+        var delBtn = r.used ? '' : '<button class="btn btn-glass" data-del-invite="' + r.id + '" style="padding:2px 8px;font-size:12px;">删除</button>';
+        var created = r.created_at ? _fmtTime(new Date(r.created_at).getTime()) : '—';
+        return '<div class="invite-item">' +
+          '<div class="invite-row" data-toggle-invite="' + r.id + '">' +
+            '<span class="inv-arrow">▸</span>' +
+            '<span class="inv-code">' + escHtml(r.code) + '</span>' +
+            '<span style="margin-left:auto;display:flex;align-items:center;gap:8px;">' + status + ' ' + delBtn + '</span>' +
+          '</div>' +
+          '<div class="invite-detail hidden">' +
+            '<div class="inv-detail-row"><span>创建时间</span><span>' + created + '</span></div>' +
+            '<div class="inv-detail-row"><span>状态</span><span>' + (r.used ? '已被使用' : '未使用') + '</span></div>' +
+            '<div class="inv-detail-row"><span>编号</span><span>' + r.id + '</span></div>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+      listEl.querySelectorAll('[data-toggle-invite]').forEach(function (row) {
+        row.onclick = function (ev) {
+          if (ev.target && ev.target.closest && ev.target.closest('[data-del-invite]')) return;
+          var item = row.parentElement;
+          var detail = item.querySelector('.invite-detail');
+          var arrow = row.querySelector('.inv-arrow');
+          if (detail) detail.classList.toggle('hidden');
+          if (arrow) arrow.textContent = (detail && detail.classList.contains('hidden')) ? '▸' : '▾';
+        };
+      });
+      listEl.querySelectorAll('[data-del-invite]').forEach(function (b) {
+        b.onclick = function (ev) {
+          ev.stopPropagation();
+          doDeleteInvite(b.getAttribute('data-del-invite'));
+        };
+      });
+    } catch (e) {
+      listEl.innerHTML = '<div class="log-empty">加载异常</div>';
+    }
+  }
+
+  async function doDeleteInvite(id) {
+    if (!await _amIAdmin()) { showToast('仅管理员可删除邀请码', false); recordSecurity('越权尝试', getAccountEmail(), '邀请码删除', '非管理员尝试删除邀请码', '拒绝', true); return; }
+    if (!confirm('删除这个邀请码？')) return;
+    try {
+      await sb.from('invite_codes').delete().eq('id', id);
+      auditLog('删除邀请码', String(id), '');
+      showToast('已删除', true);
+      renderInviteList();
+    } catch (e) { showToast('删除失败', false); }
+  }
+
+  /* ---- 管理员重置密码（改到 Supabase 后台操作） ---- */
+  function doAdminResetPwd() {
+    alert('重置他人密码请到 Supabase 后台操作：\n\n1. 打开 supabase.com/dashboard → 选择本项目\n2. 左侧 Authentication → Users\n3. 找到该用户邮箱，点右侧「…」→ Reset password\n4. 输入新密码 → 保存\n\n完成后让对方用新密码登录即可。');
+  }
+
+  /* ---- 改昵称（设置页） ---- */
+  function doEditNickname() {
+    var newName = prompt('输入新昵称：', getUserName());
+    if (newName && newName.trim()) {
+      setUserName(newName.trim());
+      refreshAccountUI();
+      showToast('昵称已更新 ✓', true);
+    }
+  }
+
+  /* ---- 改密码（登录后自己改，不需要邮件） ---- */
+  async function doChangePwd() {
+    if (!isLoggedIn()) { showToast('请先登录', false); return; }
+    var email = getAccountEmail();
+    var oldPwd = prompt('请输入当前密码：') || '';
+    if (!oldPwd) return;
+    var newPwd = prompt('请输入新密码（至少 6 位）：') || '';
+    if (newPwd.length < 6) { showToast('新密码至少 6 位', false); return; }
+    var chk = await _authLogin(email, oldPwd);
+    if (chk.error) { showToast('当前密码错误', false); return; }
+    // 用刚拿到的令牌续期会话，再改密码
+    _setAuthSession(chk.data, email, getUserName());
+    var res = await _authChangePassword(newPwd);
+    if (res.error) { showToast('修改失败：' + res.error.message, false); return; }
+    auditLog('修改密码', email, '');
+    showToast('密码已修改 ✓', true);
+  }
+
+  /* ---- 绑定事件 ---- */
+  document.querySelectorAll('.auth-tab').forEach(function (t) {
+    t.addEventListener('click', function () { switchPane(t.getAttribute('data-auth')); });
+  });
+  document.querySelectorAll('.auth-link').forEach(function (l) {
+    l.addEventListener('click', function () { switchPane(l.getAttribute('data-goto')); });
+  });
+  if (el('btnLogin')) el('btnLogin').addEventListener('click', doLogin);
+  if (el('btnRegister')) el('btnRegister').addEventListener('click', doRegister);
+  if (el('btnForgot')) el('btnForgot').addEventListener('click', doForgot);
+  if (el('btnForgotReset')) el('btnForgotReset').addEventListener('click', doResetPwd);
+  if (el('btnEditNickname')) el('btnEditNickname').addEventListener('click', doEditNickname);
+  if (el('btnChangePwd')) el('btnChangePwd').addEventListener('click', doChangePwd);
+  if (el('btnLogout')) el('btnLogout').addEventListener('click', doLogout);
+  if (el('btnGenInvite')) el('btnGenInvite').addEventListener('click', doGenInvite);
+  if (el('btnAdminResetPwd')) el('btnAdminResetPwd').addEventListener('click', doAdminResetPwd);
+
+  /* ---- 邀请码管理弹窗：打开 / 关闭 ---- */
+  if (el('btnOpenInvite')) el('btnOpenInvite').addEventListener('click', function () {
+    var ov = el('inviteOverlay'); if (ov) ov.classList.add('show');
+    renderInviteList();
+  });
+  if (el('inviteClose')) el('inviteClose').addEventListener('click', function () {
+    var ov = el('inviteOverlay'); if (ov) ov.classList.remove('show');
+  });
+  if (el('inviteOverlay')) el('inviteOverlay').addEventListener('click', function (ev) {
+    if (ev.target === el('inviteOverlay')) el('inviteOverlay').classList.remove('show');
+  });
+
+  if (el('loginPassword')) el('loginPassword').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') doLogin();
+  });
+
+  var settingsNav = document.querySelector('.nav-item[data-page="settings"]');
+  if (settingsNav) settingsNav.addEventListener('click', function () {
+    refreshAccountUI();
+  });
+
+  refreshAccountUI();
+})();
+</script>
+
 </body>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     ClubApp 功能地图（导航索引）· v2.4.9
+     单文件应用：内联 CSS + 两段 JS + Supabase 后端 + 热更新
+     本注释只作导航，不含任何功能逻辑；改代码前先在此定位，再 Ctrl+F 函数名跳转
+     ══════════════════════════════════════════════════════════════════
+
+  ① CSS 设计系统（第 1 ~ 2910 行）
+     1      全局变量 / 重置 / iOS 液态玻璃皮肤
+     733    人员列表视图         852   档案详情视图
+     1026   卡片 / 详情 / 弹窗动效    1116  添加卡片表单
+     1334   结单确认弹窗         1422  总览视图       1502  个人详情视图
+     1621   考核考生样式         1786  添加考生弹窗   1852  考生详情展开
+     1947   人员详情覆盖层       2272  详情内容
+     2560   响应式断点（平板 / 手机 / 横屏）
+     2740   横屏提示遮罩         2790  运行日志样式
+
+  ② HTML 结构（第 2912 ~ 3608 行）
+     2946   Canvas 天气背景      2950  侧边栏导航
+     3030   主内容区             3052  外观页面
+     3084   阶段 3~8 页面（人员 / 考勤 / 薪酬 / 考核 / 培训 / 系统）
+     3353   添加 / 编辑人员弹窗   3414  删除确认弹窗
+     3433   人员档案详情视图     3474  详情展开覆盖层
+
+  ③ JS 主逻辑 script①（第 3608 ~ 8864 行）
+     3613   全局工具 + 日志系统
+            auditLog(3663) · recordSecurity(3668 安全防御) ·
+            renderAppLogs(3691) · loadCloudLogs(3776)
+     3936   APP_VERSION 版本号
+     3971   Supabase 客户端 _createSupabaseClient(3980)
+     4118   登录系统（Supabase Auth 辅助）· _lowerEmail
+     4185   会话 + Auth
+            getSession(4187) · _authLogin(4219) ·
+            _redeemInvite(4241) · _amIAdmin(4259)
+     4351   云端数据同步
+            cloudLoadAll(4689) · cloudSaveAll(4698) ·
+            cloudAutoSave(4715) · notifyChange(4735)
+     4745   Realtime 同步 startRealtimeSync(4804) · 轮询(4845)
+     4869   云端用户栏 + 本地存储
+            saveLocalData(4948) · loadLocalData(4970) · initCloud(5017)
+     5068   人员管理
+            renderCards(5089) · goPage(5170) · applyGlobalSearch(5195) ·
+            openEdit(5279) · openDetail(5378) · buildDetailContent(5497)
+     5701   移动端侧边栏(5702) · 横屏锁定(5731)
+     5772   页面切换 switchPage
+     5857   Canvas 天气动画（雨 / 雾，两套全屏）
+     6214   人员档案详情
+            generateProfileData(6214) · renderOrderCards(6508) ·
+            订单暂停 / 结单 / 倒计时
+     6913   考勤 generateAttendanceData(6972)
+     7258   薪酬 generateSalaryData(7258)
+     7427   考核 renderExamCards(7427) · 通过 / 拒绝 / 改人头数
+     7707   培训 generateTrainData(7707)
+     7832   设置：热更新 doUpdate(8045) · sha256Hex(8033) · 深色模式(8198)
+     8458   模式切换 · 8548 编辑守卫 guardEdit · 8626 编辑补丁 patch 系列
+     8848   bootApp 启动入口
+
+  ④ JS 登录 / 注册 script②（第 8865 ~ 9314 行）
+     8948   面板切换 switchPane
+     8964   登录防爆破限流 _rlRead / _rlBlocked / _rlRecordFail
+     8990   doLogin 登录
+     9031   doRegister 注册
+     9081   doForgot / doResetPwd 忘记密码
+     9141   refreshAccountUI · doLogout(9150)
+     9161   邀请码 genInviteCode · doGenInvite(9168) ·
+            renderInviteList(9182) · doDeleteInvite(9230)
+     9247   doEditNickname 改昵称 · doChangePwd(9257) 改密码
+  ══════════════════════════════════════════════════════════════════
+  -->
+
 </html>

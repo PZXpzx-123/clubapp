@@ -3,6 +3,7 @@
   "short_name": "ClubApp",
   "start_url": "/clubapp/APAA.html",
   "display": "standalone",
+  "orientation": "landscape",
   "background_color": "#f0f2f8",
   "theme_color": "#5779a6",
   "icons": []
