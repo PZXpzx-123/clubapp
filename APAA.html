@@ -3959,7 +3959,7 @@ if ("serviceWorker" in navigator) {
     .catch(function(err) { console.log("[SW] 注册失败", err); });
 }
 // --- 应用版本（热更新检测用） ---
-const APP_VERSION = '2.4.24';
+const APP_VERSION = '2.4.25';
 let __updateAvailable = false;       // 是否有可用更新
 let __updateVersion = null;          // 新版本号
 let __updateSha256 = null;           // 新版本的 SHA-256（防篡改校验）
@@ -4411,6 +4411,7 @@ function setUserName(name) {
 // --- 确保共享记录存在 ---
 async function ensureCloudUser() {
   if (!cloudReady) return;
+  if (isGuest()) return; // 游客只读：绝不创建/写入共享记录，避免触发写拦截被踢
   const { data: existing } = await sb.from('users').select('id').eq('id', SHARED_USER_ID).maybeSingle();
   if (!existing) {
     await sb.from('users').insert({ id: SHARED_USER_ID, name: '共享数据' });
@@ -5306,6 +5307,7 @@ function _idbRecover() {
 
 let __localSavePending = false;
 function saveLocalData() {
+  if (isGuest()) return; // 游客只读：不写本地缓存（避免覆盖成员数据 / 泄露到游客设备）
   if (__localSavePending) return; // 已有待执行的保存
   __localSavePending = true;
   const doSave = () => {
