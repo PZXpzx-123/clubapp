@@ -2940,8 +2940,12 @@ body:not(.edit-mode) .settings-wrap .setting-select {
   background: rgba(18,22,34,0.55); backdrop-filter: blur(18px) saturate(150%); -webkit-backdrop-filter: blur(18px) saturate(150%);
   opacity: 0; pointer-events: none; transition: opacity .25s ease; }
 .auth-overlay.show { opacity: 1; pointer-events: auto; }
-.auth-card { width: 360px; max-width: 92vw; max-height: 92vh; overflow: auto; background: var(--glass-card);
+.auth-card { position: relative; width: 360px; max-width: 92vw; max-height: 92vh; overflow: auto; background: var(--glass-card);
   border: 0.5px solid var(--border-glass); border-radius: var(--r-lg); padding: 28px 26px; box-shadow: var(--glass-edge), var(--shadow-lg); }
+.auth-close { position: absolute; top: 12px; right: 14px; width: 30px; height: 30px; display: flex; align-items: center;
+  justify-content: center; font-size: 16px; line-height: 1; color: var(--text-3); background: transparent;
+  border: none; border-radius: 50%; cursor: pointer; padding: 0; }
+.auth-close:hover { color: var(--text-1); background: rgba(255,255,255,0.10); }
 .auth-title { font-size: 20px; font-weight: 800; color: var(--text-1); margin: 0 0 4px; }
 .auth-sub { font-size: 12px; color: var(--text-3); margin: 0 0 18px; }
 .auth-tabs { display: flex; gap: 6px; margin-bottom: 16px; }
@@ -3959,7 +3963,7 @@ if ("serviceWorker" in navigator) {
     .catch(function(err) { console.log("[SW] 注册失败", err); });
 }
 // --- 应用版本（热更新检测用） ---
-const APP_VERSION = '2.4.25';
+const APP_VERSION = '2.4.26';
 let __updateAvailable = false;       // 是否有可用更新
 let __updateVersion = null;          // 新版本号
 let __updateSha256 = null;           // 新版本的 SHA-256（防篡改校验）
@@ -4206,6 +4210,12 @@ function kickGuest(reason) {
   try { _authLogout(); } catch (e) {}
   clearSession();
   document.body.classList.remove('guest-mode');
+  var roleEl = document.getElementById('userRole');
+  if (roleEl) { roleEl.textContent = '未登录'; roleEl.style.color = ''; }
+  var nameEl = document.getElementById('userName');
+  if (nameEl) nameEl.textContent = '未登录';
+  var avatarEl = document.getElementById('userAvatar');
+  if (avatarEl) avatarEl.textContent = '👤';
   var errEl = document.getElementById('authErr');
   if (errEl) errEl.textContent = '你已被踢出游客模式（' + msg + '），' + _guestLockRemainMin() + ' 分钟内不可再进入。';
   showToast('已被踢出：' + msg, false);
@@ -9223,6 +9233,7 @@ window.addEventListener('beforeunload', () => {
 <!-- ==================== 登录系统遮罩 ==================== -->
 <div class="auth-overlay" id="authOverlay">
   <div class="auth-card">
+    <button class="auth-close" id="authClose" type="button" title="关闭" aria-label="关闭">✕</button>
     <div class="auth-title">人员管理系统</div>
     <div class="auth-sub">登录 / 注册 / 找回密码</div>
     <div class="auth-tabs">
@@ -10065,6 +10076,7 @@ window.addEventListener('beforeunload', () => {
   if (el('btnLogin')) el('btnLogin').addEventListener('click', doLogin);
   if (el('btnRegister')) el('btnRegister').addEventListener('click', doRegister);
   if (el('btnGuest')) el('btnGuest').addEventListener('click', doGuestLogin);
+  if (el('authClose')) el('authClose').addEventListener('click', hideAuthOverlay);
   if (el('btnForgot')) el('btnForgot').addEventListener('click', doForgot);
   if (el('btnForgotReset')) el('btnForgotReset').addEventListener('click', doResetPwd);
   if (el('btnEditNickname')) el('btnEditNickname').addEventListener('click', doEditNickname);
