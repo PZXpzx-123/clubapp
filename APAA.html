@@ -3779,9 +3779,14 @@ function auditLog(action, target, detail) {
 function recordSecurity(eventType, source, target, detail, action, success, level) {
   var p = null;
   try {
+    var finalLevel = level || (success === false ? 'critical' : 'warn');
     var msg = '有人攻击[' + (target || '未指定') + '] ' + (detail || '') + ' → 防御' + (success ? '成功' : '失败') + (action ? ' · ' + action : '');
     // 防御失败（未拦截）默认按 critical 高亮，防御成功按 warn
-    addAppLog(level || (success === false ? 'critical' : 'warn'), msg, 'security', source || '', eventType || '攻击');
+    addAppLog(finalLevel, msg, 'security', source || '', eventType || '攻击');
+    // 严重攻击（critical / 防御失败）即时弹窗提醒（warn/info 不弹，避免刷屏）
+    if (finalLevel === 'critical') {
+      try { showToast('⚠ 检测到攻击：' + (eventType || '安全事件'), false); } catch (e) {}
+    }
     // 安全事件立即上传 + 刷新通知（不等 3 秒防抖 / 20 秒轮询），否则攻击告警要等重新登录才显示
     try {
       if (typeof flushLogUpload === 'function') {
@@ -3859,14 +3864,15 @@ function renderAppLogs() {
     };
     el.innerHTML = indexed.map(function (item) {
       var e = item.e;
+      var safeLevel = ['info', 'warn', 'error', 'critical'].indexOf(e.level) >= 0 ? e.level : 'info';
       var catBadge = catBadges[e.category] || catBadges.system;
       var opTxt = (e.operator && e.category !== 'system') ? '<span class="log-op">' + _escLogHtml(e.operator) + '</span>' : '';
       var geoTag = (e.geo || e.ip) ? '<span class="log-geo">' + _escLogHtml([e.geo, e.ip].filter(Boolean).join(' · ')) + '</span>' : '';
       var detailHint = e.detail ? '<span class="log-detail-hint">详情</span>' : '';
       // 危险等级红点：安全类 warn/critical 事件在条目左侧亮红点
       var dangerDot = (e.category === 'security' && (e.level === 'warn' || e.level === 'critical')) ? '<span class="log-dot log-entry-dot"></span>' : '';
-      return '<div class="log-entry' + ((e.category === 'security' && (e.level === 'warn' || e.level === 'critical')) ? ' log-entry-danger' : '') + '" data-idx="' + item.i + '">' + dangerDot + '<span class="log-ts">' + e.ts + '</span>' +
-        '<span class="log-level ' + e.level + '">' + (label[e.level] || e.level) + '</span>' +
+      return '<div class="log-entry' + ((e.category === 'security' && (e.level === 'warn' || e.level === 'critical')) ? ' log-entry-danger' : '') + '" data-idx="' + item.i + '">' + dangerDot + '<span class="log-ts">' + _escLogHtml(e.ts) + '</span>' +
+        '<span class="log-level ' + safeLevel + '">' + _escLogHtml(label[e.level] || e.level) + '</span>' +
         catBadge + opTxt +
         '<span class="log-msg">' + _escLogHtml(e.msg) + geoTag + detailHint + '</span></div>';
     }).reverse().join('');
@@ -4009,7 +4015,7 @@ function _cloudLogToEntry(r) {
     var pad = function (n) { return String(n).padStart(2, '0'); };
     var ts = pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
     var fullTs = d.getFullYear() + '-' + ts;
-    return { ts: ts, fullTs: fullTs, level: r.level || 'info', msg: r.message || '', orient: '', online: true, category: r.category || 'system', operator: r.operator || '', action: r.action || '', ip: r.ip || null, geo: r.geo || null, device: r.device || null, detail: r.detail || null };
+    return { ts: ts, fullTs: fullTs, level: ['info', 'warn', 'error', 'critical'].indexOf(r.level) >= 0 ? r.level : 'info', msg: r.message || '', orient: '', online: true, category: ['system', 'security', 'user', 'sync', 'ai', 'ai_chat', 'version'].indexOf(r.category) >= 0 ? r.category : 'system', operator: r.operator || '', action: r.action || '', ip: r.ip || null, geo: r.geo || null, device: r.device || null, detail: r.detail || null };
   } catch (e) { return null; }
 }
 async function loadCloudLogs() {
@@ -4043,6 +4049,8 @@ async function _refreshCloudLogsSilent() {
     var listEl = document.getElementById('logList');
     if (!listEl || listEl.style.display === 'none') return;  // 日志未展开则不打扰
     if (typeof sb === 'undefined' || !sb || !cloudReady) return;
+    // 覆盖前先把本地待上传日志推上去，避免静默刷新时用云端数据整体覆盖、抹掉尚未同步的本地日志（导致“日志消失”）
+    try { await flushLogUpload(); } catch (e) {}
     var res = await sb.from('app_logs').select('category,level,operator,action,message,ip,geo,device,detail,created_at').order('id', 'desc').limit(300);
     if (res.error) return;
     var rows = (res.data || []).map(_cloudLogToEntry).filter(Boolean);
@@ -4113,6 +4121,7 @@ async function _refreshCloudLogsSilent() {
     var ov = ensureOverlay();
     var body = document.getElementById('logDetailBody');
     if (!body) return;
+    var safeLevel = ['info', 'warn', 'error', 'critical'].indexOf(log.level) >= 0 ? log.level : 'info';
     var lv = levelInfo[log.level] || levelInfo.info;
 
     var net = _getNetworkInfo();
@@ -4165,7 +4174,7 @@ async function _refreshCloudLogsSilent() {
     }
 
     body.innerHTML =
-      '<div><span class="ld-badge ' + (log.level || 'info') + '">' + lv.label + '</span><span class="ld-desc">' + lv.desc + '</span></div>' +
+      '<div><span class="ld-badge ' + safeLevel + '">' + lv.label + '</span><span class="ld-desc">' + lv.desc + '</span></div>' +
       '<div class="ld-msg">' + _escLogHtml(log.msg) + '</div>' +
       '<div class="ld-row"><span class="ld-label">时间</span><span class="ld-value">' + _escLogHtml(log.fullTs || log.ts) + '</span></div>' +
       '<div class="ld-row"><span class="ld-label">版本</span><span class="ld-value">v' + _escLogHtml(APP_VERSION) + '</span></div>' +
@@ -4229,7 +4238,7 @@ if ("serviceWorker" in navigator) {
     .catch(function(err) { console.log("[SW] 注册失败", err); });
 }
 // --- 应用版本（热更新检测用） ---
-const APP_VERSION = '2.6.17';
+const APP_VERSION = '2.6.23';
 let __updateAvailable = false;       // 是否有可用更新
 let __updateVersion = null;          // 新版本号
 let __updateSha256 = null;           // 新版本的 SHA-256（防篡改校验）
@@ -4477,12 +4486,26 @@ function _guestInfo() {
   } catch (e) { return 'UA:' + (navigator.userAgent || ''); }
 }
 
+/* 游客被踢上报：走服务端固定模板（report_guest_kick RPC）。
+   游客不能直接写 security 类日志（防伪造安全告警），被踢告警由服务端代写。 */
+async function _reportGuestKick(reason) {
+  try {
+    var tok = _getAuthToken();
+    if (!tok) return null;
+    var r = await _fetchWithTimeout(SUPABASE_URL + '/rest/v1/rpc/report_guest_kick', {
+      method: 'POST',
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + tok, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ p_reason: reason || '异常操作' })
+    });
+    return r && r.ok ? true : null;
+  } catch (e) { return null; }
+}
 async function kickGuest(reason) {
   if (!isGuest() || _guestKicking) return;
   _guestKicking = true;
   var msg = reason || '异常操作';
   try {
-    var _upP = recordSecurity('游客捣乱', '游客', '游客模式', msg, '踢出+临时锁定', true, 'critical');
+    var _upP = _reportGuestKick(msg);
     var kickInfo = { at: Date.now(), reason: msg };
     __guestKickMem = kickInfo;
     localStorage.setItem(GUEST_KICK_KEY, JSON.stringify(kickInfo));
@@ -4663,7 +4686,7 @@ async function _ensureFreshToken() {
         // 429(认证限流)/网络错误(status=0)/超时/5xx 都是临时故障——保留会话，仅本次请求降级为无令牌(fail-closed)，
         // 避免正常用户因一次网络抖动或限流就被踢出登录。
         var st = (r.error && r.error.status) || 0;
-        if (st === 400 || st === 401) { clearSession(); }
+        if (st === 400 || st === 401) { _handleSessionExpired(); }
         return null;
       }
       var s2 = getSession() || s; // 读取最新会话（可能已被其它写入覆盖）
@@ -4681,20 +4704,43 @@ async function _ensureFreshToken() {
   return __refreshPromise;
 }
 
+/* 会话过期兜底：续期失败(400/401) 或 AI 收到 401 时统一调用——
+   清会话 + 切回登录表单 + 提示「登录已过期，请重新登录」，避免静默登出后界面仍像在线。 */
+var __sessionExpiredHandled = false;
+function _handleSessionExpired() {
+  if (__sessionExpiredHandled) return;   // once 标记：防止并发请求重复弹窗
+  __sessionExpiredHandled = true;
+  clearSession();
+  // switchPane('login') 在另一作用域，这里直接切登录表单 DOM
+  var pans = ['login', 'register', 'forgot'];
+  for (var i = 0; i < pans.length; i++) {
+    var p = document.getElementById('pane-' + pans[i]);
+    if (p) p.classList.toggle('active', pans[i] === 'login');
+    var t = document.querySelector('.auth-tab[data-auth="' + pans[i] + '"]');
+    if (t) t.classList.toggle('active', pans[i] === 'login');
+  }
+  try { showToast('登录已过期，请重新登录', false); } catch (e) {}
+  showAuthOverlay();
+}
+
 /* 登录/注册成功后写入会话 */
 function _setAuthSession(authData, email, nickname) {
   var role = null;
   try { role = (authData.user && authData.user.app_metadata && authData.user.app_metadata.role) || null; } catch (e) {}
+  // 会话过期兜底：若后端未返回 expires_at，用 expires_in（秒）现算一个，避免新鲜度判断失真
+  var _exp = authData.expires_at;
+  if (!_exp && authData.expires_in) _exp = Math.floor(Date.now() / 1000) + authData.expires_in;
   setSession({
     email: email,
     nickname: nickname || email,
     loginAt: Date.now(),
     access_token: authData.access_token,
     refresh_token: authData.refresh_token,
-    expires_at: authData.expires_at || 0,
+    expires_at: _exp || 0,
     uid: authData.user ? authData.user.id : null,
     role: role
   });
+  __sessionExpiredHandled = false; // 重新登录成功后，允许下次过期再触发兜底
   _fetchIpGeo(); // 登录/注册/游客进入后，服务端取 IP + 归属地，附加到后续每条日志
 }
 
@@ -4703,6 +4749,8 @@ function showAuthOverlay() {
   if (ov) ov.classList.add('show');
 }
 function hideAuthOverlay() {
+  // 未登录时禁止关闭登录遮罩：防止「退出登录/被系统踢」后点右上角 ✕ 直接回到未登录态的应用界面（泄露缓存数据、误以为仍在线）
+  if (!isLoggedIn()) return;
   var ov = document.getElementById('authOverlay');
   if (ov) ov.classList.remove('show');
 }
@@ -5842,7 +5890,7 @@ function renderCards() {
   grid.innerHTML = pageData.map(p => {
     const stLabel = p.status === 'active' ? '在岗' : p.status === 'leave' ? '请假' : '离职';
     return `
-      <div class="person-card" data-id="${p.id}">
+      <div class="person-card" data-id="${escHtml(p.id)}">
         <div class="card-content">
           <div class="card-header">
             <div class="card-avatar" style="background:${avColor(p.name)}">${escHtml((p.name || '?')[0])}</div>
@@ -5862,8 +5910,8 @@ function renderCards() {
           <div class="card-footer">
             <span class="status-tag ${escHtml(p.status)}">${stLabel}</span>
             <div class="card-actions">
-              <button class="card-btn" onclick="event.stopPropagation();openEdit('${p.id}')">编辑</button>
-              <button class="card-btn del" onclick="event.stopPropagation();openDelete('${p.id}')">删除</button>
+              <button class="card-btn">编辑</button>
+              <button class="card-btn del">删除</button>
             </div>
           </div>
         </div>
@@ -6105,6 +6153,17 @@ let detailCloseTimer = null;
 
 /* ---- 卡片点击（事件委托） ---- */
 document.getElementById('personGrid').addEventListener('click', function(e) {
+  // 编辑/删除按钮：从卡片 data-id 取 id（已 escHtml 转义，getAttribute 返回解码后的原值），
+  // 避免把 id 拼进内联 onclick 的 JS 字符串上下文造成 XSS
+  const btn = e.target.closest('.card-btn');
+  if (btn) {
+    e.stopPropagation();
+    const card = e.target.closest('.person-card');
+    const id = card ? card.getAttribute('data-id') : null;
+    if (!id) return;
+    if (btn.classList.contains('del')) openDelete(id); else openEdit(id);
+    return;
+  }
   if (detailIsOpen) return; // 已展开时不允许新卡片点击（关闭动画期间允许中断）
   if (e.target.closest('button')) return;
   const card = e.target.closest('.person-card');
@@ -6986,7 +7045,7 @@ function renderPersonnelList() {
   const statusClass = { active: 'pi-status-active', leave: 'pi-status-leave', inactive: 'pi-status-inactive' };
 
   listEl.innerHTML = personnelFiltered.map(p => `
-    <div class="personnel-item" data-pid="${p.id}">
+    <div class="personnel-item" data-pid="${escHtml(p.id)}">
       <div class="pi-avatar" style="background:${avColor(p.name)}">${escHtml((p.name || '?')[0])}</div>
       <div class="pi-info">
         <div class="pi-name">${escHtml(p.name)}</div>
@@ -7251,17 +7310,17 @@ function renderOrderCards(personId) {
     let actionBtns = '';
     if (o.status === 'active') {
       const pauseBtn = o.deadlineHours > 0
-        ? '<button class="order-card-btn pause-toggle ' + (cdState === 'paused' ? 'paused' : 'running') + '" data-action="pause" data-oid="' + o.id + '">' + (cdState === 'paused' ? '▶ 开始' : '⏸ 暂停') + '</button>'
+        ? '<button class="order-card-btn pause-toggle ' + (cdState === 'paused' ? 'paused' : 'running') + '" data-action="pause" data-oid="' + escHtml(o.id) + '">' + (cdState === 'paused' ? '▶ 开始' : '⏸ 暂停') + '</button>'
         : '';
       actionBtns = pauseBtn +
-        '<button class="order-card-btn complete" data-action="complete" data-oid="' + o.id + '">✓ 结单</button>' +
-        '<button class="order-card-btn delete-card" data-action="delete" data-oid="' + o.id + '">✕</button>';
+        '<button class="order-card-btn complete" data-action="complete" data-oid="' + escHtml(o.id) + '">✓ 结单</button>' +
+        '<button class="order-card-btn delete-card" data-action="delete" data-oid="' + escHtml(o.id) + '">✕</button>';
     } else {
       actionBtns = '<span class="completed-tag" style="margin-right:auto;">✓ 已结单</span>' +
-        '<button class="order-card-btn delete-card" data-action="delete" data-oid="' + o.id + '">✕</button>';
+        '<button class="order-card-btn delete-card" data-action="delete" data-oid="' + escHtml(o.id) + '">✕</button>';
     }
 
-    return '<div class="order-card" data-oid="' + o.id + '">' +
+    return '<div class="order-card" data-oid="' + escHtml(o.id) + '">' +
       '<div class="order-card-header"><span class="oc-name">' + escHtml(o.orderName) + '</span><span class="oc-scope ' + scopeClass + '">' + escHtml(o.scope) + '</span></div>' +
       '<div class="order-card-pricing">' +
         '<div class="oc-price-item"><span class="oc-price-label">人民币</span><span class="oc-price-value">¥' + Number(o.priceRMB || 0).toLocaleString() + '</span></div>' +
@@ -7531,16 +7590,16 @@ function refreshSingleCard(orderId, personId) {
   let actionBtns = '';
   if (o.status === 'active') {
     const pauseBtn = o.deadlineHours > 0
-      ? '<button class="order-card-btn pause-toggle ' + (cdState === 'paused' ? 'paused' : 'running') + '" data-action="pause" data-oid="' + o.id + '">' + (cdState === 'paused' ? '▶ 开始' : '⏸ 暂停') + '</button>'
+      ? '<button class="order-card-btn pause-toggle ' + (cdState === 'paused' ? 'paused' : 'running') + '" data-action="pause" data-oid="' + escHtml(o.id) + '">' + (cdState === 'paused' ? '▶ 开始' : '⏸ 暂停') + '</button>'
       : '';
     actionBtns = pauseBtn +
-      '<button class="order-card-btn complete" data-action="complete" data-oid="' + o.id + '">✓ 结单</button>' +
-      '<button class="order-card-btn delete-card" data-action="delete" data-oid="' + o.id + '">✕</button>';
+      '<button class="order-card-btn complete" data-action="complete" data-oid="' + escHtml(o.id) + '">✓ 结单</button>' +
+      '<button class="order-card-btn delete-card" data-action="delete" data-oid="' + escHtml(o.id) + '">✕</button>';
   } else {
     actionBtns = '<span class="completed-tag" style="margin-right:auto;">✓ 已结单</span>' +
-      '<button class="order-card-btn delete-card" data-action="delete" data-oid="' + o.id + '">✕</button>';
+      '<button class="order-card-btn delete-card" data-action="delete" data-oid="' + escHtml(o.id) + '">✕</button>';
   }
-  const newHTML = '<div class="order-card no-anim" data-oid="' + o.id + '">' +
+  const newHTML = '<div class="order-card no-anim" data-oid="' + escHtml(o.id) + '">' +
     '<div class="order-card-header"><span class="oc-name">' + escHtml(o.orderName) + '</span><span class="oc-scope ' + scopeClass + '">' + escHtml(o.scope) + '</span></div>' +
     '<div class="order-card-pricing">' +
       '<div class="oc-price-item"><span class="oc-price-label">人民币</span><span class="oc-price-value">¥' + Number(o.priceRMB || 0).toLocaleString() + '</span></div>' +
@@ -7869,7 +7928,7 @@ function renderOverviewTable(year, month) {
 
   /* 表格渲染 */
   tableBody.innerHTML = rows.map(r => `
-    <tr data-pid="${r.person.id}">
+    <tr data-pid="${escHtml(r.person.id)}">
       <td>
         <div class="att-person">
           <div class="att-av" style="background:${avColor(r.person.name)}">${escHtml((r.person.name || '?')[0])}</div>
@@ -8136,7 +8195,7 @@ function renderSalaryOverview() {
     const av = (p.name || '?').charAt(0);
     const hues = [210,190,160,220,200,340,30,260,290,170,320,40,130,280,350,100,20,310,140,50];
     const h = hues[_idSeed(p.id) % hues.length];
-    return `<tr data-sid="${p.id}" class="sal-row">
+    return `<tr data-sid="${escHtml(p.id)}" class="sal-row">
       <td><div class="sal-person"><div class="sal-av" style="background:hsl(${h},55%,55%);">${escHtml(av)}</div>${escHtml(p.name)}</div></td>
       <td>${escHtml(p.dept)}</td>
       <td>${fmt(st.run)}</td><td>${fmt(st.guard)}</td><td>${fmt(st.today)}</td><td>${fmt(st.week7)}</td>
@@ -8265,7 +8324,7 @@ function renderExamCards() {
       timeHTML += '<div class="ec-time">拒绝 ' + escHtml(c.rejectTime || '--') + '</div>';
     }
 
-    return '<div class="exam-card" data-eid="' + c.id + '">' +
+    return '<div class="exam-card" data-eid="' + escHtml(c.id) + '">' +
       '<div class="ec-name">' + escHtml(c.name) + '</div>' +
       '<div class="ec-count ' + countClass + '">考核次数：' + c.count + ' / 3</div>' +
       timeHTML +
@@ -8593,7 +8652,7 @@ function renderTrainOverview() {
     const st = getTrainStatus(c.id);
     const rate = enrolled.length > 0 ? Math.round(enrolled.reduce((s,e) => s + e.progress, 0) / enrolled.length) : 0;
     const statusText = { ongoing: '进行中', done: '已完成', upcoming: '未开始' }[st] || '—';
-    return `<tr data-cid="${c.id}" class="train-row">
+    return `<tr data-cid="${escHtml(c.id)}" class="train-row">
       <td style="font-weight:600;">${escHtml(c.icon)} ${escHtml(c.name)}</td><td>${escHtml(c.instructor)}</td>
       <td>${enrolled.length} 人</td>
       <td><div class="train-progress-bar"><div class="tpb-fill" style="width:${rate}%;"></div></div>${rate}%</td>
@@ -9726,6 +9785,11 @@ async function _prismRequest(mode, system, messages, tools) {
   var j = null;
   try { j = JSON.parse(txt); } catch (e) {}
   if (!r.ok) {
+    // 401 = 令牌无效/过期或未登录：统一引导重新登录，并把报错文案翻译成友好提示
+    if (r.status === 401) {
+      _handleSessionExpired();
+      var err401 = new Error('登录已过期，请重新登录'); err401.status = 401; throw err401;
+    }
     var em = (j && j.error) || (r.status + ' ' + r.statusText);
     var err = new Error(em); err.status = r.status; throw err;
   }
@@ -10324,6 +10388,7 @@ const NOTIF_CATS = [
   { key: 'personnel', label: '人员', icon: '👤' },
   { key: 'order',     label: '订单', icon: '📦' },
   { key: 'message',   label: '消息', icon: '💬' },
+  { key: 'security',  label: '安全', icon: '🔐' },
   { key: 'ai',        label: 'AI巡逻', icon: '🛡️' },
   { key: 'error',     label: '错误', icon: '🚨' },
   { key: 'warn',      label: '警告', icon: '⚠️' },
@@ -10402,6 +10467,11 @@ function _notifTime(iso) {
    返回归一化的分类 key（null = 不显示）。「高威胁」= 安全类事件(category='security')。 */
 function _notifPass(r, table) {
   if (r.category === 'version') return 'system';
+  if (r.category === 'security') {
+    // 安全告警（攻击事件）独立分类；登录/登出等 info 级安全留痕不进通知
+    if (r.level === 'warn' || r.level === 'critical' || r.level === 'error') return 'security';
+    return null;
+  }
   if (r.category === 'user') {
     if (table === 'personnel' && r.action === 'add') return 'personnel';
     if (table === 'order' && (r.action === 'add' || r.action === 'complete')) return 'order';
@@ -10548,11 +10618,23 @@ async function _notifRefreshBadge() {
     if (list[j].category === 'security') { _secLatestId = list[j].id; break; }
   }
   _secSetDot(_secLatestId > _secSeenId());
-  // 重要日志（错误/关键/警告）：取最新一条，比已读新则亮「系统信息」红点
+  // 重要日志（错误/关键/警告）：独立查 app_logs 全部（不限分类/筛选），
+  // 只要存在未读的 critical/error/warn 就亮「系统信息」红点（不经过通知白名单过滤）
   _impLatestId = 0;
-  for (var j2 = 0; j2 < list.length; j2++) {
-    var _lv = list[j2].level;
-    if (_lv === 'error' || _lv === 'warn' || _lv === 'critical') { _impLatestId = list[j2].id; break; }
+  try {
+    var _impRes = await sb.from('app_logs')
+      .select('id')
+      .in('level', ['error', 'warn', 'critical'])
+      .order('id', 'desc').limit(1);
+    if (_impRes && !_impRes.error && _impRes.data && _impRes.data.length) {
+      _impLatestId = _impRes.data[0].id;
+    }
+  } catch (e) {}
+  // 若正停留在「系统信息」页（正在查看日志），新到的日志直接视为已读，
+  // 避免进入页面后新日志又点亮红点 / 首次加载时序导致红点无法消除
+  if (currentPageName === 'sysinfo') {
+    _impMarkSeen(_impLatestId);
+    _secMarkSeen(_secLatestId);
   }
   _refreshSysinfoDot();
   _notifSetBadge(unread + msgUnread);
@@ -10603,8 +10685,10 @@ function _ensureNotifOverlay() {
     + '<div class="modal-header"><span>🔔 通知</span>'
     + '<div style="display:flex;align-items:center;gap:8px;">'
     + '<button id="notifSendMsg" type="button" style="display:none;padding:5px 12px;font-size:12px;font-weight:700;border-radius:8px;border:0.5px solid var(--border-subtle);background:var(--glass-card);color:var(--accent-blue);cursor:pointer;">✉ 发消息</button>'
+    + '<button id="notifMarkAllRead" type="button" style="padding:5px 12px;font-size:12px;font-weight:700;border-radius:8px;border:0.5px solid var(--border-subtle);background:var(--glass-card);color:var(--accent-blue);cursor:pointer;">✓ 全部已读</button>'
     + '<button class="modal-close" id="notifClose" type="button">✕</button>'
     + '</div></div>'
+    + '<div id="notifTabs" style="display:flex;gap:6px;overflow-x:auto;padding:0 18px 10px;border-bottom:0.5px solid var(--border-glass);flex-shrink:0;"></div>'
     + '<div class="modal-body" style="flex:1;min-height:0;overflow-y:auto;padding:14px 18px;">'
     + '<div id="notifList" style="font-size:13px;"></div>'
     + '</div></div>';
@@ -10614,6 +10698,22 @@ function _ensureNotifOverlay() {
   if (close) close.onclick = function () { _notifCloseOverlay(ov); };
   var sendBtn = document.getElementById('notifSendMsg');
   if (sendBtn) sendBtn.onclick = function () { _openSendMsg(); };
+  var markAllBtn = document.getElementById('notifMarkAllRead');
+  if (markAllBtn) markAllBtn.onclick = function () {
+    var list = _notifCurrentList || [];
+    var maxLog = 0, maxMsg = 0;
+    for (var i = 0; i < list.length; i++) {
+      var r = list[i];
+      if (r.category === 'message') { if (r.rawId > maxMsg) maxMsg = r.rawId; }
+      else if (r.id > maxLog) maxLog = r.id;
+    }
+    if (maxLog) _notifMarkAllRead(maxLog);
+    if (maxMsg) _readSetMarkAll(MSG_LAST_READ_KEY, maxMsg);
+    _renderNotifTabs(_notifCurrentList);
+    _renderNotifList(_notifCurrentList);
+    _notifRefreshBadge();
+    showToast('已全部标记为已读 ✓', true);
+  };
   return ov;
 }
 async function _openNotif() {
@@ -10636,9 +10736,16 @@ async function _openNotif() {
     var ta = Date.parse(a.createdAt || ''); var tb = Date.parse(b.createdAt || '');
     return (isNaN(tb) ? 0 : tb) - (isNaN(ta) ? 0 : ta);
   });
+  _notifActiveCat = 'all';           // 每次打开默认显示「全部」分类
+  _renderNotifTabs(list);
   _renderNotifList(list); // 打开不立即全读，逐条点开才读（未读条目显示红点）
 }
 var _notifCurrentList = [];
+var _notifActiveCat = 'all';   // 通知分类标签：all=全部，其余为 NOTIF_CATS.key（像手机短信的分类页签）
+function _notifIsUnread(r) {
+  if (r.category === 'message') return !_msgIsRead(r.rawId);
+  return !_notifIsRead(r.id);
+}
 function _notifBuildItem(r) {
   var isMsg = (r.category === 'message');
   var isUnread = isMsg ? !_msgIsRead(r.rawId) : !_notifIsRead(r.id);
@@ -10682,20 +10789,67 @@ function _notifBuildItem(r) {
   };
   return item;
 }
+/* ---- 分类标签栏（像手机短信）：全部 + 各分类，带未读角标；点标签过滤列表 ---- */
+function _renderNotifTabs(list) {
+  var el = document.getElementById('notifTabs');
+  if (!el) return;
+  el.innerHTML = '';
+  var counts = {}, unread = {}, order = [];
+  for (var i = 0; i < list.length; i++) {
+    var key = _notifCat(list[i].table).key;
+    if (!counts[key]) { counts[key] = 0; unread[key] = 0; order.push(key); }
+    counts[key]++;
+    if (_notifIsUnread(list[i])) unread[key]++;
+  }
+  // 按 NOTIF_CATS 固定顺序排（人员→订单→消息→安全→AI→错误→警告→系统）
+  order.sort(function (a, b) {
+    var ia = 999, ib = 999;
+    for (var x = 0; x < NOTIF_CATS.length; x++) { if (NOTIF_CATS[x].key === a) ia = x; if (NOTIF_CATS[x].key === b) ib = x; }
+    return ia - ib;
+  });
+  var totalUnread = 0;
+  for (var t = 0; t < list.length; t++) if (_notifIsUnread(list[t])) totalUnread++;
+  el.appendChild(_notifBuildTab('all', '全部', totalUnread));
+  for (var o = 0; o < order.length; o++) {
+    var k = order[o];
+    el.appendChild(_notifBuildTab(k, _notifCat(k).label, unread[k]));
+  }
+}
+function _notifBuildTab(key, label, unreadCount) {
+  var active = (_notifActiveCat === key);
+  var tab = document.createElement('button');
+  tab.type = 'button';
+  tab.style.cssText = 'flex-shrink:0;display:inline-flex;align-items:center;padding:5px 12px;border-radius:999px;border:0.5px solid ' + (active ? 'var(--accent-blue)' : 'var(--border-subtle)') + ';background:' + (active ? 'rgba(87,121,166,0.22)' : 'var(--glass-card)') + ';color:' + (active ? 'var(--accent-blue)' : 'var(--text-2)') + ';cursor:pointer;font-size:12px;font-weight:600;white-space:nowrap;';
+  tab.textContent = label;
+  if (unreadCount > 0) {
+    var b = document.createElement('span');
+    b.textContent = unreadCount > 99 ? '99+' : String(unreadCount);
+    b.style.cssText = 'display:inline-block;margin-left:5px;padding:0 5px;border-radius:8px;background:#ff3b30;color:#fff;font-size:10px;font-weight:700;line-height:15px;';
+    tab.appendChild(b);
+  }
+  tab.onclick = function () {
+    _notifActiveCat = key;
+    _renderNotifTabs(_notifCurrentList);
+    _renderNotifList(_notifCurrentList);
+  };
+  return tab;
+}
 function _renderNotifList(list) {
   var el = document.getElementById('notifList');
   if (!el) return;
   _notifCurrentList = list;
   el.innerHTML = '';
-  if (!list.length) {
-    el.innerHTML = '<div style="color:var(--text-3);padding:24px;text-align:center;">暂无通知</div>';
+  // 按当前分类标签过滤（all = 显示全部）
+  var filtered = _notifActiveCat === 'all' ? list : list.filter(function (r) { return _notifCat(r.table).key === _notifActiveCat; });
+  if (!filtered.length) {
+    el.innerHTML = '<div style="color:var(--text-3);padding:24px;text-align:center;">' + (_notifActiveCat === 'all' ? '暂无通知' : '该分类暂无通知') + '</div>';
     return;
   }
   var groups = [], map = {};
-  for (var i = 0; i < list.length; i++) {
-    var cat = _notifCat(list[i].table);
+  for (var i = 0; i < filtered.length; i++) {
+    var cat = _notifCat(filtered[i].table);
     if (!map[cat.key]) { map[cat.key] = { cat: cat, items: [] }; groups.push(map[cat.key]); }
-    map[cat.key].items.push(list[i]);
+    map[cat.key].items.push(filtered[i]);
   }
   for (var g = 0; g < groups.length; g++) {
     var grp = groups[g];
@@ -10952,11 +11106,16 @@ async function _sendMsg() {
   if (btn) btn.onclick = _openNotif;
   _notifRefreshBadge();
   setInterval(_notifRefreshBadge, 5000);
-  // 点「安全日志」即视为已读，消除高威胁红点
+  // 查看日志即视为已读：进入「系统信息」页或点「安全日志」都消除红点（系统信息导航红点 + 安全日志红点）
+  function _markLogsSeen() {
+    _impMarkSeen(_impLatestId);
+    _secMarkSeen(_secLatestId);
+    _secSetDot(false);
+    _refreshSysinfoDot();
+  }
   var secBtn = document.querySelector('.log-filter-btn[data-filter="security"]');
-  if (secBtn) secBtn.addEventListener('click', function () { _secMarkSeen(_secLatestId); _refreshSysinfoDot(); });
-  // 进入「系统信息」即视为已查看重要日志，消除导航红点（安全事件红点仍由「安全日志」按钮独立消除）
-  onPageSwitch('sysinfo', function () { _impMarkSeen(_impLatestId); _refreshSysinfoDot(); });
+  if (secBtn) secBtn.addEventListener('click', _markLogsSeen);
+  onPageSwitch('sysinfo', _markLogsSeen);
 })();
 console.log('◈ 分区 11ak — 通知中心 — 已就绪');
 
@@ -11765,10 +11924,10 @@ window.addEventListener('beforeunload', () => {
         var status = r.used
           ? '<span class="inv-status used">已用</span>'
           : '<span class="inv-status avail">可用</span>';
-        var delBtn = r.used ? '' : '<button class="btn btn-glass" data-del-invite="' + r.id + '" style="padding:2px 8px;font-size:12px;">删除</button>';
+        var delBtn = r.used ? '' : '<button class="btn btn-glass" data-del-invite="' + escHtml(r.id) + '" style="padding:2px 8px;font-size:12px;">删除</button>';
         var created = r.created_at ? _fmtTime(new Date(r.created_at).getTime()) : '—';
         return '<div class="invite-item">' +
-          '<div class="invite-row" data-toggle-invite="' + r.id + '">' +
+          '<div class="invite-row" data-toggle-invite="' + escHtml(r.id) + '">' +
             '<span class="inv-arrow">▸</span>' +
             '<span class="inv-code">' + escHtml(r.code) + '</span>' +
             '<span style="margin-left:auto;display:flex;align-items:center;gap:8px;">' + status + ' ' + delBtn + '</span>' +
@@ -11776,7 +11935,7 @@ window.addEventListener('beforeunload', () => {
           '<div class="invite-detail hidden">' +
             '<div class="inv-detail-row"><span>创建时间</span><span>' + created + '</span></div>' +
             '<div class="inv-detail-row"><span>状态</span><span>' + (r.used ? '已被使用' : '未使用') + '</span></div>' +
-            '<div class="inv-detail-row"><span>编号</span><span>' + r.id + '</span></div>' +
+            '<div class="inv-detail-row"><span>编号</span><span>' + escHtml(r.id) + '</span></div>' +
           '</div>' +
         '</div>';
       }).join('');
@@ -11933,6 +12092,397 @@ window.addEventListener('unhandledrejection', function (e) {
   var msg = (r && r.message) ? r.message : String(r || '未处理的 Promise 拒绝');
   _logGlobalError(msg);
 });
+</script>
+
+<script>
+/* ================================================================
+ * ClubApp 防火墙安全增强层 v1.0
+ * -----------------------------------------------------------------
+ * 追加于 APAA.html 末尾（</body> 之前），不改动原有代码正文，
+ * 全部通过「新增函数 + 包装(monkey-patch)现有全局函数」实现。
+ *
+ * 模块清单（对应方案任务）：
+ *   M1  XSS 深度净化   deepSanitize + 拦 sb.from 写操作   (任务三)
+ *   M2  敏感数据脱敏   maskSensitive + 包装 addAppLog      (任务四)
+ *   M3  全局 API 限流  __rateLimitCheck                    (任务一)
+ *   M4  fetch 拦截器   (敏感端点限流 + 可选安全头)          (任务二)
+ *   M5  会话固定       _sid (包装 setSession)              (任务五)
+ *   M6  游客防捣乱增强 (独立检测定时器)                    (任务八)
+ *   M7  点击劫持防护                                        (任务九)
+ *   M8  错误捕获增强   (过滤第三方 + 脱敏)                 (任务十)
+ *
+ * 说明：
+ *   - 任务六(令牌续期失败) / 任务七(登录防爆破) 原代码已实现，此处跳过。
+ *   - 所有增强均 fail-open：任何异常都不阻断原有请求/功能。
+ *   - 两个有风险的增强做成开关，默认关闭：
+ *       window.__SEC_ENABLE_SECURITY_HEADERS  (加 X-Requested-* 头，需 Supabase CORS 放行)
+ *       window.__SEC_ENABLE_DEBUGGER_DETECT    (debugger 断点检测，会干扰调试)
+ * ================================================================ */
+(function () {
+  'use strict';
+
+  /* ============================================================
+   * 开关（默认关闭有风险的增强，避免破坏现有功能）
+   * ============================================================ */
+  // 加防 CSRF/重放/设备 头：需 Supabase 项目 CORS 的 Access-Control-Allow-Headers 放行，
+  // 否则跨域 preflight 会失败、导致所有请求挂掉 → 默认关，确认 CORS 后再开。
+  window.__SEC_ENABLE_SECURITY_HEADERS = false;
+  // debugger 断点检测：会强制 DevTools 断点、干扰正常调试（原代码已刻意移除）→ 默认关。
+  window.__SEC_ENABLE_DEBUGGER_DETECT = false;
+
+  /* ============================================================
+   * 工具函数：XSS 深度净化 (deepSanitize)  —— 暴露到 window 供跨模块使用
+   * ============================================================ */
+  // 危险 on* 事件属性黑名单（只列明确事件名，避免误伤 phone=/once= 等普通词）
+  var __ON_EVENTS = [
+    'load', 'error', 'click', 'dblclick', 'mouseover', 'mouseout', 'mouseenter',
+    'mouseleave', 'mousedown', 'mouseup', 'mousemove', 'focus', 'blur', 'change',
+    'input', 'submit', 'reset', 'keydown', 'keyup', 'keypress', 'scroll', 'wheel',
+    'drag', 'drop', 'abort', 'beforeunload', 'unload', 'resize', 'select',
+    'contextmenu', 'touchstart', 'touchend', 'touchmove', 'animationstart', 'animationend'
+  ].join('|');
+
+  function __sanitizeStr(s) {
+    if (typeof s !== 'string') return s;
+    var out = s;
+    // 不再删普通 <>&（会损坏正常数据如「A&B 车队」）；危险模式由伪协议 + on*事件拦截，
+    // 真正的 XSS 由渲染层 _escLogHtml 出口转义兜底（P0）。
+    // 危险协议（防 javascript:/vbscript:/data:text/html 伪协议）
+    out = out.replace(/javascript\s*:/gi, '');
+    out = out.replace(/vbscript\s*:/gi, '');
+    out = out.replace(/data\s*:text\/html/gi, '');
+    // 危险 on* 事件属性（onerror= / onclick= / onload= 等，仅明确事件名）
+    out = out.replace(new RegExp('on(' + __ON_EVENTS + ')\\s*=', 'gi'), ' ');
+    return out;
+  }
+
+  // 递归净化：字符串→净化；数组/对象→递归；其余(数字/布尔/null)→原样
+  function deepSanitize(obj) {
+    try {
+      if (typeof obj === 'string') return __sanitizeStr(obj);
+      if (Array.isArray(obj)) return obj.map(deepSanitize);
+      if (obj && typeof obj === 'object') {
+        var out = {};
+        for (var k in obj) {
+          if (Object.prototype.hasOwnProperty.call(obj, k)) out[k] = deepSanitize(obj[k]);
+        }
+        return out;
+      }
+      return obj;
+    } catch (e) { return obj; }
+  }
+  window.deepSanitize = deepSanitize;
+
+  /* ============================================================
+   * 工具函数：敏感数据脱敏 (maskSensitive)  —— 暴露到 window 供跨模块使用
+   * ============================================================ */
+  var __SENSITIVE_WORDS = ['password', 'passwd', 'secret', 'apikey', 'api_key',
+    'access_token', 'refresh_token', 'credential', 'authorization', 'private_key', 'client_secret'];
+
+  function __isSensitiveKey(k) {
+    var s = String(k || '').toLowerCase();
+    for (var i = 0; i < __SENSITIVE_WORDS.length; i++) {
+      if (s.indexOf(__SENSITIVE_WORDS[i]) !== -1) return true;
+    }
+    return false;
+  }
+
+  // 脱敏邮箱：保留首字符 + *** + @域名  (如 abc@x.com → a***@x.com)
+  function __maskStr(s) {
+    if (typeof s !== 'string') return s;
+    return s.replace(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g, function (m) {
+      var at = m.indexOf('@');
+      return m.charAt(0) + '***' + m.slice(at);
+    });
+  }
+
+  function __maskDeep(val, keyName) {
+    try {
+      if (keyName && __isSensitiveKey(keyName)) return '***REDACTED***';
+      if (typeof val === 'string') return __maskStr(val);
+      if (Array.isArray(val)) return val.map(function (v) { return __maskDeep(v, ''); });
+      if (val && typeof val === 'object') {
+        var out = {};
+        for (var k in val) {
+          if (Object.prototype.hasOwnProperty.call(val, k)) out[k] = __maskDeep(val[k], k);
+        }
+        return out;
+      }
+      return val;
+    } catch (e) { return val; }
+  }
+
+  function maskSensitive(obj) { return __maskDeep(obj, ''); }
+  window.maskSensitive = maskSensitive;
+
+  /* ============================================================
+   * M1：XSS 深度净化 —— 拦 sb.from().insert/update/upsert 的 body
+   * ============================================================ */
+  // 比对净化前后是否有差异（即真的拦截了危险内容），有则记安全日志。
+  // 只在最外层（单次 insert/update/upsert）比对一次，避免递归重复记录。
+  function __detectAttack(original, cleaned, table) {
+    try {
+      if (table === 'app_logs') return; // 日志表不检测：日志需记录攻击 payload，且避免「检测→记日志→再检测」死循环
+      var a = JSON.stringify(original), b = JSON.stringify(cleaned);
+      if (a !== b && typeof recordSecurity === 'function') {
+        recordSecurity('注入/XSS攻击',
+          (typeof getUserName === 'function' ? getUserName() : '') || '未知',
+          table || '数据写入', '检测到危险内容被拦截', '深度净化', true, 'critical');
+      }
+    } catch (e) { /* 比对异常不阻断写入 */ }
+  }
+  (function () {
+    if (typeof sb === 'undefined' || !sb || typeof sb.from !== 'function') return;
+    var __origFrom = sb.from;
+    sb.from = function (table) {
+      var chain = __origFrom.call(sb, table);
+      try {
+        if (chain && typeof chain.insert === 'function') {
+          var oi = chain.insert, ou = chain.upsert, ou2 = chain.update;
+          chain.insert = function (rows) {
+            var cleaned = deepSanitize(rows);
+            __detectAttack(rows, cleaned, table);
+            return oi.call(chain, cleaned);
+          };
+          chain.upsert = function (rows, opts) {
+            var cleaned = deepSanitize(rows);
+            __detectAttack(rows, cleaned, table);
+            return ou.call(chain, cleaned, opts);
+          };
+          chain.update = function (rows) {
+            var cleaned = deepSanitize(rows);
+            __detectAttack(rows, cleaned, table);
+            return ou2.call(chain, cleaned);
+          };
+        }
+      } catch (e) { /* 包装失败则用原链，fail-open */ }
+      return chain;
+    };
+  })();
+
+  /* ============================================================
+   * M2：敏感数据脱敏 —— 包装 addAppLog，写入前对 msg/detail 脱敏
+   * ============================================================ */
+  (function () {
+    if (typeof addAppLog !== 'function') return;
+    var __origAddLog = addAppLog;
+    window.addAppLog = function (level, msg, category, operator, action, detail) {
+      try {
+        if (typeof msg === 'string') msg = __maskStr(msg);
+        if (detail !== undefined && detail !== null) detail = maskSensitive(detail);
+      } catch (e) { /* 脱敏异常不影响日志写入 */ }
+      return __origAddLog(level, msg, category, operator, action, detail);
+    };
+  })();
+
+  /* ============================================================
+   * M3：全局 API 限流 —— window.__rateLimitCheck(endpoint, userId)
+   * 按 endpoint + userId 维度，内存 Map（页面刷新重置，防单会话内爆破）
+   * ============================================================ */
+  var __RATE_LIMIT = {
+    // 各端点每分钟上限（方案默认值；sync 若误伤批量同步可调高）
+    maxPerMinute: { default: 60, login: 10, register: 5, ai: 20, sync: 120 },
+    store: new Map(),
+    // 从 URL 提取端点类别
+    classify: function (url) {
+      try {
+        if (/\/auth\/v1\/token\?grant_type=password/i.test(url)) return 'login';
+        if (/\/auth\/v1\/signup/i.test(url) || /\/rest\/v1\/rpc\/redeem_invite/i.test(url)) return 'register';
+        // IP/归属地查询是登录后的辅助请求，不算 AI 对话：走 system（不限流、不占 AI 配额）
+        if (/\/functions\/v1\/prism\/ip/i.test(url)) return 'system';
+        if (/\/functions\/v1\/prism/i.test(url)) return 'ai';
+        // 系统表(日志/同步信号)不受限，避免自伤：日志上传、实时同步不能被限流阻断
+        if (/\/rest\/v1\/(app_logs|changes|app_settings|ai_usage|ai_request_log)\b/i.test(url)) return 'system';
+        if (/\/rest\/v1\//i.test(url)) return 'sync';
+        return 'default';
+      } catch (e) { return 'default'; }
+    },
+    // 清理过期条目，防止 Map 无限增长
+    cleanup: function () {
+      var now = Date.now();
+      var self = this;
+      this.store.forEach(function (v, k) { if (now - v.winStart > 60000) self.store.delete(k); });
+    },
+    // 检查并计数；返回 { blocked, limit, retryAfter }
+    check: function (endpoint, userId) {
+      try {
+        this.cleanup();
+        var ep = endpoint || 'default';
+        var uid = userId || 'anon';
+        var limit = this.maxPerMinute[ep] || this.maxPerMinute.default;
+        var key = ep + '|' + uid;
+        var now = Date.now();
+        var v = this.store.get(key);
+        if (!v || now - v.winStart > 60000) { v = { count: 0, winStart: now }; }
+        v.count++;
+        this.store.set(key, v);
+        if (v.count > limit) {
+          return { blocked: true, limit: limit, retryAfter: Math.ceil((v.winStart + 60000 - now) / 1000) };
+        }
+        return { blocked: false, limit: limit, retryAfter: 0 };
+      } catch (e) {
+        return { blocked: false, limit: 0, retryAfter: 0 }; // fail-open
+      }
+    }
+  };
+  window.__rateLimitCheck = function (endpoint, userId) { return __RATE_LIMIT.check(endpoint, userId); };
+
+  /* ============================================================
+   * M4：fetch 统一拦截器 —— 包装 window.fetch
+   * 只对 Supabase 请求：敏感端点限流 + (可选)加防 CSRF/重放/设备 头
+   * ============================================================ */
+  (function () {
+    if (typeof window.fetch !== 'function') return;
+    var __SUPABASE_HOST = 'qstrmmaihqyguttnkyvt.supabase.co';
+    var __origFetch = window.fetch;
+
+    window.fetch = function (input, init) {
+      var url = (typeof input === 'string') ? input : (input && input.url ? input.url : '');
+      // 非 Supabase 请求：原样透传
+      if (!url || url.indexOf(__SUPABASE_HOST) === -1) {
+        return __origFetch.apply(this, arguments);
+      }
+      try {
+        var opts = (init && typeof init === 'object') ? init : {};
+        var method = String(opts.method || (input && input.method) || 'GET').toUpperCase();
+
+        // 1) 限流检查：仅敏感端点(login/register/ai/sync)拦截；system 不限流
+        var ep = __RATE_LIMIT.classify(url);
+        if (ep !== 'system') {
+          var uid = '';
+          try { var s = (typeof getSession === 'function') ? getSession() : null; uid = (s && (s.uid || s.email)) || ''; } catch (e) {}
+          // 会话为空（登录/注册请求发出前无会话）→ 从 body 解析 email 做分桶键，
+          // 避免全站共用空桶导致「一人爆破锁死全站登录/注册」（自 DoS）
+          if (!uid) {
+            try {
+              if (typeof opts.body === 'string' && opts.body) {
+                var _bj = JSON.parse(opts.body);
+                if (_bj && _bj.email) uid = String(_bj.email).toLowerCase();
+              }
+            } catch (e) {}
+          }
+          // 仍未取到 → 退到设备指纹（每设备独立桶，禁止空 uid 全站共享）
+          if (!uid) {
+            try { uid = 'dev:' + (typeof _getDeviceId === 'function' ? _getDeviceId() : 'anon'); } catch (e) { uid = 'dev:anon'; }
+          }
+          var rl = __RATE_LIMIT.check(ep, uid);
+          if (rl.blocked) {
+            try {
+              if (typeof recordSecurity === 'function') {
+                recordSecurity('API限流', uid || '匿名', ep, '端点请求超限被拦(' + rl.limit + '/min)', method + ' ' + ep, true, 'warn');
+              }
+            } catch (e) {}
+            return Promise.resolve(new Response(
+              JSON.stringify({ message: '请求过于频繁，请稍后再试', error: 'rate_limited' }),
+              { status: 429, headers: { 'Content-Type': 'application/json' } }
+            ));
+          }
+        }
+
+        // 2) 可选：加防 CSRF / 重放 / 设备 头（默认关，见开关说明）
+        if (window.__SEC_ENABLE_SECURITY_HEADERS) {
+          var headers = new Headers(opts.headers || {});
+          if (!headers.has('X-Requested-With')) headers.set('X-Requested-With', 'XMLHttpRequest');
+          if (!headers.has('X-Request-Timestamp')) headers.set('X-Request-Timestamp', String(Date.now()));
+          if (!headers.has('X-Device-ID')) {
+            try { headers.set('X-Device-ID', (typeof _getDeviceId === 'function' ? _getDeviceId() : '')); } catch (e) {}
+          }
+          opts.headers = headers;
+        }
+
+        return __origFetch.call(this, input, opts);
+      } catch (e) {
+        // 拦截器自身异常：fail-open，原样透传
+        return __origFetch.apply(this, arguments);
+      }
+    };
+  })();
+
+  /* ============================================================
+   * M5：会话固定防御 —— 已移除
+   * 原因：_sid 无任何地方校验，对防会话固定零作用（纯摆设）；静态部署无服务端可配合。
+   * ============================================================ */
+
+  /* ============================================================
+   * M6：游客防捣乱增强 —— 独立检测定时器（不覆盖原有 _startGuestWatch）
+   * 注：console.log 劫持检测被跳过 —— 原代码(4054行)已劫持 console.log 用于记日志，
+   *     照做会把所有游客误踢。
+   * ============================================================ */
+  (function () {
+    if (typeof isGuest !== 'function' || typeof kickGuest !== 'function') return;
+    var __dth = { hits: 0 };
+
+    function __tick() {
+      if (!isGuest()) { __dth.hits = 0; return; }
+      var bad = 0, reason = [];
+
+      // 检测1：DevTools 侧栏尺寸检测（打开 DevTools 面板会改变 outer-inner 差值）
+      try {
+        var w = (window.outerWidth || 0) - (window.innerWidth || 0);
+        var h = (window.outerHeight || 0) - (window.innerHeight || 0);
+        if (w > 160 || h > 160) { bad++; reason.push('检测到调试面板'); }
+      } catch (e) {}
+
+      // 检测2：debugger 断点检测（默认关，开启会强制断点干扰调试）
+      if (window.__SEC_ENABLE_DEBUGGER_DETECT) {
+        try {
+          var t0 = Date.now();
+          debugger;
+          if (Date.now() - t0 > 100) { bad++; reason.push('debugger断点'); }
+        } catch (e) {}
+      }
+
+      if (bad > 0) { __dth.hits++; } else { __dth.hits = 0; }
+      if (__dth.hits >= 3) {
+        __dth.hits = 0;
+        kickGuest('检测到异常环境(' + reason.join('/') + ')');
+      }
+    }
+
+    // 额外运行，不覆盖原有 _startGuestWatch 的 3000ms 定时器
+    setInterval(__tick, 3000);
+  })();
+
+  /* ============================================================
+   * M7：点击劫持防护 —— 若页面被 iframe 嵌套则跳出
+   * ============================================================ */
+  (function () {
+    try {
+      if (window.top !== window.self) {
+        // 检测到页面被 iframe 嵌套（点击劫持）→ 记安全日志后跳出
+        try {
+          if (typeof recordSecurity === 'function') {
+            recordSecurity('点击劫持', '未知来源', '页面嵌套', '页面被 iframe 嵌入', '跳出框架', true, 'critical');
+          }
+        } catch (e2) {}
+        window.top.location = window.self.location;
+      }
+    } catch (e) { /* 跨域静默 */ }
+  })();
+
+  /* ============================================================
+   * M8：全局错误捕获增强 —— 包装 _logGlobalError
+   * 过滤第三方脚本(浏览器扩展/广告)来源 + 脱敏邮箱
+   * ============================================================ */
+  (function () {
+    if (typeof _logGlobalError !== 'function') return;
+    var __origLogGlobalError = _logGlobalError;
+    window._logGlobalError = function (msg) {
+      try {
+        if (typeof msg !== 'string') return __origLogGlobalError(msg);
+        // 过滤第三方脚本错误来源（浏览器扩展、广告/追踪脚本）
+        if (/(chrome-extension|moz-extension|safari-extension|edge-extension):\/\//i.test(msg)) return;
+        // 脱敏错误信息中的邮箱/令牌
+        msg = __maskStr(msg);
+        // 脱敏明显的令牌类字段
+        msg = msg.replace(/(access_token|refresh_token|api[_-]?key|authorization|password)["']?\s*[:=]\s*["']?[^"'\s,}&]+/gi, '$1=***REDACTED***');
+      } catch (e) {}
+      return __origLogGlobalError(msg);
+    };
+  })();
+
+})();
+
 </script>
 
 </body>
