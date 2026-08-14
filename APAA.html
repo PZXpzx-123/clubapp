@@ -9,7 +9,7 @@
 	<link rel="manifest" href="manifest.json">
 <!--
 ══════════════════════════════════════════════════════════════════
-   ClubApp 目录索引（导航地图）· v2.6.4
+   ClubApp 目录索引（导航地图）· v2.6.5
    改代码前先看这里，按行号快速定位功能 / 分区
 ══════════════════════════════════════════════════════════════════
 
@@ -4194,7 +4194,7 @@ if ("serviceWorker" in navigator) {
     .catch(function(err) { console.log("[SW] 注册失败", err); });
 }
 // --- 应用版本（热更新检测用） ---
-const APP_VERSION = '2.6.4';
+const APP_VERSION = '2.6.5';
 let __updateAvailable = false;       // 是否有可用更新
 let __updateVersion = null;          // 新版本号
 let __updateSha256 = null;           // 新版本的 SHA-256（防篡改校验）
@@ -10151,6 +10151,10 @@ function _notifLastReadId() {
 function _notifMarkAllRead(maxId) {
   try { localStorage.setItem(NOTIF_LAST_READ_KEY, String(maxId || 0)); } catch (e) {}
 }
+function _notifMarkRead(id) {
+  var cur = _notifLastReadId();
+  if (id > cur) _notifMarkAllRead(id);
+}
 function _notifSetBadge(n) {
   var b = document.getElementById('notifBadge');
   if (!b) return;
@@ -10291,32 +10295,46 @@ async function _openNotif() {
   var listEl = document.getElementById('notifList');
   if (listEl) listEl.innerHTML = '<div style="color:var(--text-3);padding:20px;text-align:center;">加载中…</div>';
   var list = await _notifFetchList(100);
-  if (list.length) _notifMarkAllRead(list[0].id); // 点开即读
-  _renderNotifList(list);
-  _notifSetBadge(0);
+  _renderNotifList(list); // 打开不立即全读，逐条点开才读（未读条目显示红点）
 }
+var _notifCurrentList = [];
 function _notifBuildItem(r) {
   var item = document.createElement('div');
   item.style.cssText = 'padding:8px 10px;border-radius:10px;cursor:pointer;margin:0 0 4px;background:rgba(255,255,255,0.06);border:0.5px solid var(--border-glass);';
   var row = document.createElement('div');
-  row.style.cssText = 'display:flex;justify-content:space-between;gap:8px;';
+  row.style.cssText = 'display:flex;align-items:flex-start;justify-content:space-between;gap:8px;';
+  var left = document.createElement('span');
+  left.style.cssText = 'flex:1;min-width:0;display:flex;align-items:flex-start;gap:6px;';
+  // 未读红点（像短信一样）
+  if (r.id > _notifLastReadId()) {
+    var dot = document.createElement('span');
+    dot.style.cssText = 'width:7px;height:7px;border-radius:50%;background:#ff3b30;margin-top:6px;flex-shrink:0;';
+    left.appendChild(dot);
+  }
   var txt = document.createElement('span');
   txt.style.cssText = 'color:var(--text-1);line-height:1.45;word-break:break-word;';
   txt.textContent = r.message || (NOTIF_VERB[r.action] || '操作了');
+  left.appendChild(txt);
   var time = document.createElement('span');
   time.style.cssText = 'color:var(--text-3);font-size:11px;white-space:nowrap;flex-shrink:0;';
   time.textContent = _notifTime(r.createdAt);
-  row.appendChild(txt); row.appendChild(time);
+  row.appendChild(left); row.appendChild(time);
   var op = document.createElement('div');
   op.style.cssText = 'color:var(--text-3);font-size:11px;margin-top:2px;';
   op.textContent = r.operator || '';
   item.appendChild(row); item.appendChild(op);
-  item.onclick = function () { _notifShowDetail(r); };
+  item.onclick = function () {
+    _notifMarkRead(r.id);                 // 点开这一条即读
+    _renderNotifList(_notifCurrentList);  // 重新渲染，同步其它条目红点
+    _notifShowDetail(r);
+    _notifRefreshBadge();                 // 刷新角标
+  };
   return item;
 }
 function _renderNotifList(list) {
   var el = document.getElementById('notifList');
   if (!el) return;
+  _notifCurrentList = list;
   el.innerHTML = '';
   if (!list.length) {
     el.innerHTML = '<div style="color:var(--text-3);padding:24px;text-align:center;">暂无通知</div>';
