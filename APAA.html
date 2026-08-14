@@ -9,7 +9,7 @@
 	<link rel="manifest" href="manifest.json">
 <!--
 ══════════════════════════════════════════════════════════════════
-   ClubApp 目录索引（导航地图）· v2.6.1
+   ClubApp 目录索引（导航地图）· v2.6.2
    改代码前先看这里，按行号快速定位功能 / 分区
 ══════════════════════════════════════════════════════════════════
 
@@ -542,6 +542,15 @@ body {
 }
 
 .icon-btn:hover { background: rgba(255,255,255,0.22); transform: scale(1.05); }
+
+/* 通知红点角标（未读数，0 时隐藏）*/
+.notif-badge {
+  position: absolute; top: -5px; right: -6px;
+  min-width: 16px; height: 16px; padding: 0 4px; box-sizing: border-box;
+  border-radius: 8px; background: #ff3b30; color: #fff;
+  font-size: 10px; font-weight: 700; line-height: 16px; letter-spacing: 0;
+  text-align: center; pointer-events: none;
+}
 
 /* ================================================================
    分区 3b: 内容区
@@ -3089,7 +3098,7 @@ body:not(.edit-mode) .settings-wrap .setting-select {
     </div>
     <div class="topbar-actions">
       <button class="icon-btn" id="btnPrism" title="棱镜 AI 问答" style="width:auto;height:34px;border-radius:17px;padding:0 13px;font-size:13px;font-weight:600;letter-spacing:0.3px;">棱镜-Prism AI</button>
-      <button class="icon-btn" title="通知">🔔</button>
+      <button class="icon-btn" id="btnNotif" title="通知" style="position:relative;width:auto;height:34px;border-radius:17px;padding:0 13px;font-size:13px;font-weight:600;letter-spacing:0.3px;">通知<span id="notifBadge" class="notif-badge" style="display:none;">0</span></button>
     </div>
   </header>
 
@@ -4166,7 +4175,7 @@ if ("serviceWorker" in navigator) {
     .catch(function(err) { console.log("[SW] 注册失败", err); });
 }
 // --- 应用版本（热更新检测用） ---
-const APP_VERSION = '2.6.1';
+const APP_VERSION = '2.6.2';
 let __updateAvailable = false;       // 是否有可用更新
 let __updateVersion = null;          // 新版本号
 let __updateSha256 = null;           // 新版本的 SHA-256（防篡改校验）
@@ -5130,6 +5139,13 @@ const cloudSalary = {
       start_time: Math.round(rec.startTime), completed_at: Math.round(rec.completedAt),
     }]);
     if (ok) console.log('[Cloud] ⬆ 薪酬台账入账 order_id=' + rec.orderId);
+    // 通知留痕：薪酬新增（只增不减，结单即入账）
+    try {
+      var _pn = '';
+      var _pp = Array.isArray(people) ? people.find(function (x) { return _idEq(x.id, personId); }) : null;
+      _pn = _pp ? _pp.name : '';
+      _logCrud('salary', 'add', (_pn ? _pn + ' · ' : '') + (order.orderName || ''), null, rec);
+    } catch (e) {}
     return ok;
   }
 };
@@ -8602,6 +8618,7 @@ function resetTrainView() {
   }
 
   function showUpdateConfirm(newVersion) {
+    _notifVersion(newVersion); // 通知中心：记一条「系统 · 检测到新版本」
     const overlay = document.getElementById('updateConfirmOverlay');
     const body = document.getElementById('updateConfirmBody');
     const footer = document.querySelector('#updateConfirmOverlay .cd-footer');
@@ -9579,16 +9596,18 @@ function _ensurePrismOverlay() {
   ov.id = 'prismOverlay';
   ov.className = 'modal-overlay hidden';
   ov.innerHTML = ''
-    + '<div class="modal" style="max-width:520px;">'
+    + '<div class="modal" style="max-width:520px;display:flex;flex-direction:column;max-height:88vh;overflow:hidden;">'
     + '<div class="modal-header"><span>✨ 棱镜 Prism</span><button class="modal-close" id="prismClose" type="button">✕</button></div>'
-    + '<div class="modal-body">'
-    + '<div class="form-group"><input type="text" id="prismInput" placeholder="问我数据问题，如：上月薪酬超8000的有谁" /></div>'
-    + '<div style="display:flex;align-items:center;justify-content:space-between;margin:4px 0 8px;">'
+    + '<div class="modal-body" style="flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden;">'
+    + '<div style="display:flex;align-items:center;justify-content:space-between;margin:0 0 8px;">'
     + '<span id="prismQuota" style="font-size:12px;color:var(--text-3);"></span>'
     + '<button class="btn btn-glass" id="prismClear" type="button" style="font-size:12px;padding:2px 10px;">清空记录</button>'
     + '</div>'
-    + '<div id="prismHistory" style="min-height:120px;max-height:300px;overflow-y:auto;padding:4px 2px;"></div>'
-    + '<div style="margin-top:10px;text-align:right;"><button class="btn btn-glass primary" id="prismAsk" type="button">提问</button></div>'
+    + '<div id="prismHistory" style="flex:1;min-height:160px;overflow-y:auto;padding:4px 2px;"></div>'
+    + '<div style="display:flex;gap:8px;align-items:center;margin-top:10px;">'
+    + '<div class="form-group" style="flex:1;margin-bottom:0;"><input type="text" id="prismInput" placeholder="问我数据问题，如：上月薪酬超8000的有谁" /></div>'
+    + '<button class="btn btn-glass primary" id="prismAsk" type="button">提问</button>'
+    + '</div>'
     + '</div></div>';
   document.body.appendChild(ov);
   ov.addEventListener('click', function (ev) { if (ev.target === ov) ov.classList.add('hidden'); });
@@ -10089,6 +10108,239 @@ function _aiConfirm(desc) {
     document.getElementById('aiConfirmOk').onclick = function () { done(true); };
   });
 }
+
+/* ================================================================
+   分区 11ak — 通知中心（顶栏「通知」红点角标 + 下拉列表 + 详情弹窗）
+   数据来源：云端 app_logs（category='user' 业务变更 + 'version' 版本检测）
+   未读红点：每台设备 localStorage 记 last_read_id，点开即读（各记各的）
+   ================================================================ */
+const NOTIF_LAST_READ_KEY = 'clubapp_notif_last_read';
+const NOTIF_NOTIFIED_VER_KEY = 'clubapp_notified_version';
+const NOTIF_CATS = [
+  { key: 'personnel', label: '人员', icon: '👤' },
+  { key: 'order',     label: '订单', icon: '📦' },
+  { key: 'exam',      label: '考生', icon: '📝' },
+  { key: 'salary',    label: '薪酬', icon: '💰' },
+  { key: 'system',    label: '系统', icon: '⚙️' }
+];
+const NOTIF_VERB = { add: '新增了', edit: '修改了', del: '删除了', pass: '通过了', reject: '拒绝了', complete: '结单了', version: '检测到新版本' };
+
+function _notifLastReadId() {
+  try { var n = parseInt(localStorage.getItem(NOTIF_LAST_READ_KEY) || '0', 10); return isNaN(n) ? 0 : n; } catch (e) { return 0; }
+}
+function _notifMarkAllRead(maxId) {
+  try { localStorage.setItem(NOTIF_LAST_READ_KEY, String(maxId || 0)); } catch (e) {}
+}
+function _notifSetBadge(n) {
+  var b = document.getElementById('notifBadge');
+  if (!b) return;
+  if (n > 0) { b.textContent = n > 99 ? '99+' : String(n); b.style.display = ''; }
+  else { b.style.display = 'none'; }
+}
+function _notifCat(catKey) {
+  for (var i = 0; i < NOTIF_CATS.length; i++) if (NOTIF_CATS[i].key === catKey) return NOTIF_CATS[i];
+  return { key: 'system', label: '其他', icon: '🔔' };
+}
+/* 北京时间显示（UTC+8）*/
+function _notifTime(iso) {
+  try {
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) return '';
+    var bj = new Date(d.getTime() + 8 * 3600 * 1000);
+    var pad = function (n) { return String(n).padStart(2, '0'); };
+    return pad(bj.getUTCMonth() + 1) + '-' + pad(bj.getUTCDate()) + ' ' + pad(bj.getUTCHours()) + ':' + pad(bj.getUTCMinutes());
+  } catch (e) { return ''; }
+}
+/* 从云端 app_logs 拉通知（业务 + 版本），按 id 倒序 */
+async function _notifFetchList(limit) {
+  if (typeof sb === 'undefined' || !sb || !cloudReady) return [];
+  try {
+    var res = await sb.from('app_logs')
+      .select('id,category,operator,action,message,detail,created_at')
+      .in('category', ['user', 'version'])
+      .order('id', 'desc').limit(limit || 100);
+    if (res.error) return [];
+    return (res.data || []).map(function (r) {
+      var detail = r.detail;
+      if (typeof detail === 'string') { try { detail = JSON.parse(detail); } catch (e) { detail = null; } }
+      var table = (detail && detail.table) || (r.category === 'version' ? 'system' : '');
+      return { id: r.id, category: r.category, table: table, operator: r.operator || '', action: r.action || '', message: r.message || '', detail: detail, createdAt: r.created_at };
+    });
+  } catch (e) { return []; }
+}
+/* 刷新红点：未读 = id > last_read_id 且非本人操作 的通知数 */
+async function _notifRefreshBadge() {
+  var btn = document.getElementById('btnNotif');
+  if (!isLoggedIn() || isGuest()) { if (btn) btn.style.display = 'none'; _notifSetBadge(0); return; }
+  if (btn) btn.style.display = '';
+  var list = await _notifFetchList(100);
+  var lastRead = _notifLastReadId();
+  var me = (typeof getUserName === 'function' ? getUserName() : '') || '';
+  var unread = 0;
+  for (var i = 0; i < list.length; i++) {
+    var r = list[i];
+    if (r.id <= lastRead) break;
+    if (r.operator && r.operator === me) continue; // 自己的操作不计未读
+    unread++;
+  }
+  _notifSetBadge(unread);
+}
+/* 写一条「系统 · 检测到新版本」通知（同版本去重）*/
+function _notifVersion(ver) {
+  if (!ver) return;
+  try {
+    if (localStorage.getItem(NOTIF_NOTIFIED_VER_KEY) === ver) return;
+    localStorage.setItem(NOTIF_NOTIFIED_VER_KEY, ver);
+    addAppLog('info', '检测到新版本 v' + ver, 'version', '系统', 'version', { table: 'system', version: ver });
+    _notifRefreshBadge();
+  } catch (e) {}
+}
+
+/* ---- 通知面板（下拉 modal）---- */
+function _ensureNotifOverlay() {
+  var ov = document.getElementById('notifOverlay');
+  if (ov) return ov;
+  ov = document.createElement('div');
+  ov.id = 'notifOverlay';
+  ov.className = 'modal-overlay hidden';
+  ov.innerHTML = ''
+    + '<div class="modal" style="max-width:460px;max-height:80vh;display:flex;flex-direction:column;overflow:hidden;">'
+    + '<div class="modal-header"><span>🔔 通知</span><button class="modal-close" id="notifClose" type="button">✕</button></div>'
+    + '<div class="modal-body" style="flex:1;min-height:0;overflow-y:auto;padding:14px 18px;">'
+    + '<div id="notifList" style="font-size:13px;"></div>'
+    + '</div></div>';
+  document.body.appendChild(ov);
+  ov.addEventListener('click', function (ev) { if (ev.target === ov) ov.classList.add('hidden'); });
+  var close = document.getElementById('notifClose');
+  if (close) close.onclick = function () { ov.classList.add('hidden'); };
+  return ov;
+}
+async function _openNotif() {
+  if (!isLoggedIn() || isGuest()) return;
+  var ov = _ensureNotifOverlay();
+  ov.classList.remove('hidden');
+  var listEl = document.getElementById('notifList');
+  if (listEl) listEl.innerHTML = '<div style="color:var(--text-3);padding:20px;text-align:center;">加载中…</div>';
+  var list = await _notifFetchList(100);
+  if (list.length) _notifMarkAllRead(list[0].id); // 点开即读
+  _renderNotifList(list);
+  _notifSetBadge(0);
+}
+function _notifBuildItem(r) {
+  var item = document.createElement('div');
+  item.style.cssText = 'padding:8px 10px;border-radius:10px;cursor:pointer;margin:0 0 4px;background:rgba(255,255,255,0.06);border:0.5px solid var(--border-glass);';
+  var row = document.createElement('div');
+  row.style.cssText = 'display:flex;justify-content:space-between;gap:8px;';
+  var txt = document.createElement('span');
+  txt.style.cssText = 'color:var(--text-1);line-height:1.45;word-break:break-word;';
+  txt.textContent = (NOTIF_VERB[r.action] || '操作了') + ' ' + (r.message || '');
+  var time = document.createElement('span');
+  time.style.cssText = 'color:var(--text-3);font-size:11px;white-space:nowrap;flex-shrink:0;';
+  time.textContent = _notifTime(r.createdAt);
+  row.appendChild(txt); row.appendChild(time);
+  var op = document.createElement('div');
+  op.style.cssText = 'color:var(--text-3);font-size:11px;margin-top:2px;';
+  op.textContent = r.operator || '';
+  item.appendChild(row); item.appendChild(op);
+  item.onclick = function () { _notifShowDetail(r); };
+  return item;
+}
+function _renderNotifList(list) {
+  var el = document.getElementById('notifList');
+  if (!el) return;
+  el.innerHTML = '';
+  if (!list.length) {
+    el.innerHTML = '<div style="color:var(--text-3);padding:24px;text-align:center;">暂无通知</div>';
+    return;
+  }
+  var groups = [], map = {};
+  for (var i = 0; i < list.length; i++) {
+    var cat = _notifCat(list[i].table);
+    if (!map[cat.key]) { map[cat.key] = { cat: cat, items: [] }; groups.push(map[cat.key]); }
+    map[cat.key].items.push(list[i]);
+  }
+  for (var g = 0; g < groups.length; g++) {
+    var grp = groups[g];
+    var groupWrap = document.createElement('div');
+    groupWrap.style.marginBottom = '12px';
+    var head = document.createElement('div');
+    head.style.cssText = 'font-size:11px;font-weight:700;color:var(--text-3);letter-spacing:0.5px;margin:0 0 4px 2px;';
+    head.textContent = grp.cat.icon + ' ' + grp.cat.label;
+    groupWrap.appendChild(head);
+    for (var j = 0; j < grp.items.length; j++) groupWrap.appendChild(_notifBuildItem(grp.items[j]));
+    el.appendChild(groupWrap);
+  }
+}
+/* 修改类：对比 before/after 列出变更字段（通用）*/
+function _notifFieldDiff(r) {
+  if (r.action !== 'edit') return '';
+  var before = (r.detail && r.detail.before) || null;
+  var after = (r.detail && r.detail.after) || null;
+  if (!before || typeof before !== 'object' || !after || typeof after !== 'object') return '';
+  var skip = { id: 1, user_id: 1, date: 1, add_time: 1, pass_time: 1, reject_time: 1, start_time: 1, completed_at: 1, created_at: 1, paused_at: 1, paused_remaining: 1 };
+  var changed = [], seen = {};
+  for (var k in before) { if (!skip[k] && !seen[k]) { seen[k] = 1; if (String(before[k]) !== String(after[k])) changed.push(k); } }
+  for (var k2 in after) { if (!skip[k2] && !seen[k2]) { seen[k2] = 1; changed.push(k2); } }
+  return changed.length ? ('变更字段：' + changed.join('、')) : '';
+}
+/* ---- 详情弹窗（动画方框显示信息）---- */
+function _notifShowDetail(r) {
+  var ov = document.getElementById('notifDetailOverlay');
+  if (!ov) {
+    ov = document.createElement('div');
+    ov.id = 'notifDetailOverlay';
+    ov.className = 'modal-overlay hidden';
+    ov.innerHTML = ''
+      + '<div class="modal modal-sm">'
+      + '<div class="modal-header"><span id="notifDetailTitle">通知详情</span><button class="modal-close" id="notifDetailClose" type="button">✕</button></div>'
+      + '<div class="modal-body" id="notifDetailBody" style="font-size:13px;line-height:1.7;color:var(--text-1);white-space:pre-wrap;word-break:break-word;"></div>'
+      + '</div>';
+    document.body.appendChild(ov);
+    ov.addEventListener('click', function (ev) { if (ev.target === ov) ov.classList.add('hidden'); });
+    var c = document.getElementById('notifDetailClose');
+    if (c) c.onclick = function () { ov.classList.add('hidden'); };
+  }
+  var cat = _notifCat(r.table);
+  var title = document.getElementById('notifDetailTitle');
+  if (title) title.textContent = cat.icon + ' ' + cat.label + ' · ' + (NOTIF_VERB[r.action] || '操作');
+  var body = document.getElementById('notifDetailBody');
+  if (body) {
+    body.innerHTML = '';
+    var l1 = document.createElement('div');
+    l1.textContent = (NOTIF_VERB[r.action] || '操作了') + ' ' + (r.message || '');
+    body.appendChild(l1);
+    if (r.operator) {
+      var l2 = document.createElement('div');
+      l2.style.cssText = 'color:var(--text-2);font-size:12px;margin-top:6px;';
+      l2.textContent = '操作者：' + r.operator;
+      body.appendChild(l2);
+    }
+    var t = _notifTime(r.createdAt);
+    if (t) {
+      var l3 = document.createElement('div');
+      l3.style.cssText = 'color:var(--text-3);font-size:11px;margin-top:4px;';
+      l3.textContent = '时间：' + t;
+      body.appendChild(l3);
+    }
+    var diff = _notifFieldDiff(r);
+    if (diff) {
+      var l4 = document.createElement('div');
+      l4.style.cssText = 'color:var(--text-2);font-size:12px;margin-top:8px;padding-top:8px;border-top:0.5px dashed rgba(128,128,128,0.3);';
+      l4.textContent = diff;
+      body.appendChild(l4);
+    }
+  }
+  ov.classList.remove('hidden');
+}
+
+/* ---- 启动：绑定按钮 + 定时刷新红点 ---- */
+(function () {
+  var btn = document.getElementById('btnNotif');
+  if (btn) btn.onclick = _openNotif;
+  _notifRefreshBadge();
+  setInterval(_notifRefreshBadge, 20000);
+})();
+console.log('◈ 分区 11ak — 通知中心 — 已就绪');
 
 // 所有变量已定义，启动云端 + 本地数据恢复
 // 登录门禁：先检查登录状态，未登录显示登录页；登录后加载数据
