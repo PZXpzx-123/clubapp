@@ -4200,7 +4200,7 @@ if ("serviceWorker" in navigator) {
     .catch(function(err) { console.log("[SW] 注册失败", err); });
 }
 // --- 应用版本（热更新检测用） ---
-const APP_VERSION = '2.6.13';
+const APP_VERSION = '2.6.14';
 let __updateAvailable = false;       // 是否有可用更新
 let __updateVersion = null;          // 新版本号
 let __updateSha256 = null;           // 新版本的 SHA-256（防篡改校验）
@@ -4349,11 +4349,19 @@ function _createSupabaseClient(url, key) {
           if (!r.ok) {
             try {
               var t = await r.text();
-              // 同步错误详情：写操作失败（排除日志表自身，避免递归）记到 sync 通道
+              // 写操作失败（排除日志表自身，避免递归）
               if (table !== 'app_logs' && _method !== 'GET') {
-                try {
-                  addAppLog('error', '接口失败：' + table + ' · ' + _method + ' · HTTP ' + (r.status || '?'), 'sync', (typeof getUserName === 'function' ? getUserName() : '') || '', _method + ' ' + table, { table: table, method: _method, status: r.status, error: t || (r.status + ' ' + r.statusText) });
-                } catch (eLog) {}
+                // 401/403 = 未登录/越权被服务端 RLS 拒绝 → 记安全事件（有人试图越权写入）
+                if (r.status === 401 || r.status === 403) {
+                  try {
+                    recordSecurity('越权写入', (typeof getUserName === 'function' ? getUserName() : '') || '未知', table, 'HTTP ' + r.status + ' 被服务端拒绝', _method + ' ' + table, true, 'warn');
+                  } catch (eSec) {}
+                } else {
+                  // 其他失败（400/500/网络）→ 记 sync 错误（原有逻辑）
+                  try {
+                    addAppLog('error', '接口失败：' + table + ' · ' + _method + ' · HTTP ' + (r.status || '?'), 'sync', (typeof getUserName === 'function' ? getUserName() : '') || '', _method + ' ' + table, { table: table, method: _method, status: r.status, error: t || (r.status + ' ' + r.statusText) });
+                  } catch (eLog) {}
+                }
               }
               return resolve({ data: null, error: { message: t || (r.status + ' ' + r.statusText) } });
             } catch (e2) {
