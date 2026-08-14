@@ -4200,7 +4200,7 @@ if ("serviceWorker" in navigator) {
     .catch(function(err) { console.log("[SW] 注册失败", err); });
 }
 // --- 应用版本（热更新检测用） ---
-const APP_VERSION = '2.6.11';
+const APP_VERSION = '2.6.12';
 let __updateAvailable = false;       // 是否有可用更新
 let __updateVersion = null;          // 新版本号
 let __updateSha256 = null;           // 新版本的 SHA-256（防篡改校验）
@@ -8715,6 +8715,7 @@ function resetTrainView() {
     } catch (e) {}
     __updateChecking = false;
   }
+  window.autoCheckUpdate = autoCheckUpdate; // 暴露到全局，供 bootApp 启动时静默自检调用
 
   if (btnCheck) btnCheck.addEventListener('click', async function() {
     if (__updateChecking) return;
