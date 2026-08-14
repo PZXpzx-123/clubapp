@@ -3779,7 +3779,16 @@ function auditLog(action, target, detail) {
 function recordSecurity(eventType, source, target, detail, action, success, level) {
   try {
     var msg = '有人攻击[' + (target || '未指定') + '] ' + (detail || '') + ' → 防御' + (success ? '成功' : '失败') + (action ? ' · ' + action : '');
-    addAppLog(level || 'warn', msg, 'security', source || '', eventType || '攻击');
+    // 防御失败（未拦截）默认按 critical 高亮，防御成功按 warn
+    addAppLog(level || (success === false ? 'critical' : 'warn'), msg, 'security', source || '', eventType || '攻击');
+    // 安全事件立即上传 + 刷新通知（不等 3 秒防抖 / 20 秒轮询），否则攻击告警要等重新登录才显示
+    try {
+      if (typeof flushLogUpload === 'function') {
+        flushLogUpload().then(function () {
+          if (typeof _notifRefreshBadge === 'function') _notifRefreshBadge();
+        }).catch(function () {});
+      }
+    } catch (e2) {}
   } catch (e) {}
 }
 // 安全审计（登录/登出/注册等成功事件 → security 通道，info 级）
@@ -4200,7 +4209,7 @@ if ("serviceWorker" in navigator) {
     .catch(function(err) { console.log("[SW] 注册失败", err); });
 }
 // --- 应用版本（热更新检测用） ---
-const APP_VERSION = '2.6.14';
+const APP_VERSION = '2.6.15';
 let __updateAvailable = false;       // 是否有可用更新
 let __updateVersion = null;          // 新版本号
 let __updateSha256 = null;           // 新版本的 SHA-256（防篡改校验）
@@ -4367,6 +4376,12 @@ function _createSupabaseClient(url, key) {
             } catch (e2) {
               return resolve({ data: null, error: { message: r.status + ' ' + r.statusText } });
             }
+          }
+          // 写操作成功但当前为游客 → 客户端守卫与 RLS 均未拦截 → 防御失败（严重，critical）
+          if (_method !== 'GET' && table !== 'app_logs' && typeof isGuest === 'function' && isGuest()) {
+            try {
+              recordSecurity('越权写入', (typeof getUserName === 'function' ? getUserName() : '') || '游客', table, '写操作被放行（游客越权成功）', _method + ' ' + table, false, 'critical');
+            } catch (eSec2) {}
           }
           // 201/200 成功，解析 JSON body（可能为空）
           try {
@@ -10490,6 +10505,8 @@ async function _notifRefreshBadge() {
   for (var i = 0; i < list.length; i++) {
     var r = list[i];
     if (_notifIsRead(r.id)) continue;
+    // 安全事件（攻击告警）永远算未读，不受「自己的操作」过滤影响
+    if (r.category === 'security') { unread++; continue; }
     // 自己的操作不计未读（优先按 uid 判定，旧日志无 uid 时回退昵称）
     if (r.operatorUid ? (myUid && r.operatorUid === myUid) : (r.operator && r.operator === me)) continue;
     unread++;
