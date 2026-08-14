@@ -3786,6 +3786,7 @@ function recordSecurity(eventType, source, target, detail, action, success, leve
       if (typeof flushLogUpload === 'function') {
         flushLogUpload().then(function () {
           if (typeof _notifRefreshBadge === 'function') _notifRefreshBadge();
+          if (typeof notifyLogChange === 'function') notifyLogChange();  // 广播给其它设备（跨设备秒级同步）
         }).catch(function () {});
       }
     } catch (e2) {}
@@ -4031,6 +4032,22 @@ async function loadCloudLogs() {
     if (btn) { btn.disabled = false; btn.textContent = '📥 查看日志（从云端拉取）'; }
   }
 }
+/* 静默刷新运行日志列表（不碰「查看日志」按钮 UI）：跨设备收到日志/通知信号（id=2）时自动拉最新日志，
+   仅在系统信息页且日志列表已展开时执行，保留当前搜索/筛选条件 */
+async function _refreshCloudLogsSilent() {
+  try {
+    if (currentPageName !== 'sysinfo') return;
+    var listEl = document.getElementById('logList');
+    if (!listEl || listEl.style.display === 'none') return;  // 日志未展开则不打扰
+    if (typeof sb === 'undefined' || !sb || !cloudReady) return;
+    var res = await sb.from('app_logs').select('category,level,operator,action,message,ip,geo,device,detail,created_at').order('id', 'desc').limit(300);
+    if (res.error) return;
+    var rows = (res.data || []).map(_cloudLogToEntry).filter(Boolean);
+    window.__appLogs = rows.reverse();
+    if (window.__appLogs.length > __appLogMax) window.__appLogs = window.__appLogs.slice(-__appLogMax);
+    renderAppLogs();
+  } catch (e) {}
+}
 (function () {
   var origLog = console.log, origWarn = console.warn, origError = console.error;
   console.log = function () { try { origLog.apply(console, arguments); } catch (e) {} addAppLog('info', _fmtLogArgs(arguments)); };
@@ -4209,7 +4226,7 @@ if ("serviceWorker" in navigator) {
     .catch(function(err) { console.log("[SW] 注册失败", err); });
 }
 // --- 应用版本（热更新检测用） ---
-const APP_VERSION = '2.6.15';
+const APP_VERSION = '2.6.16';
 let __updateAvailable = false;       // 是否有可用更新
 let __updateVersion = null;          // 新版本号
 let __updateSha256 = null;           // 新版本的 SHA-256（防篡改校验）
@@ -5329,6 +5346,18 @@ async function notifyChange() {
   } catch (e) { /* 静默 */ }
 }
 
+/* 通知/日志变更信号（与数据变更 id=1 分离，用 id=2）：
+   安全事件/版本通知写入云端后广播，其它设备 5 秒轮询到变化就刷新通知角标 + 运行日志列表，跨设备秒级同步、不用重登 */
+let __lastLogChangeTime = null;  // 上次已知的"通知/日志"云端变更时间戳
+async function notifyLogChange() {
+  if (!cloudReady) return;
+  try {
+    const now = new Date().toISOString();
+    __lastLogChangeTime = Date.parse(now);  // 先记时间戳，避免自己的广播被 5 秒轮询误判为"有新告警"
+    await sb.from('changes').upsert({ id: 2, updated_at: now }, { onConflict: 'id' });
+  } catch (e) { /* 静默 */ }
+}
+
 // --- Realtime 同步（替代轮询） ---
 let __realtimeChannel = null;
 let __fallbackTimer = null;
@@ -5463,6 +5492,18 @@ function startFallbackPolling() {
   __fallbackTimer = setInterval(async function() {
     if (!cloudReady || !__cloudLoadDone) return;
     var _now = Date.now();
+    // 通知/日志信号（id=2）不受「编辑中/未保存」拦截：攻击告警任何时候都要刷新
+    try {
+      var refetch2 = await sb.from('changes').select('updated_at').eq('id', 2).maybeSingle();
+      if (refetch2.data && refetch2.data.updated_at) {
+        var rt2 = Date.parse(refetch2.data.updated_at);
+        if (rt2 !== __lastLogChangeTime) {
+          __lastLogChangeTime = rt2;
+          _notifRefreshBadge();
+          _refreshCloudLogsSilent();
+        }
+      }
+    } catch (e) {}
     if (_isEditing() || cloudDirty) {
       if (_now - __pollDiagAt > 20000) {
         __pollDiagAt = _now;
@@ -5737,6 +5778,10 @@ async function initCloud() {
   try {
     var _chg0 = await sb.from('changes').select('updated_at').eq('id', 1).maybeSingle();
     if (_chg0.data && _chg0.data.updated_at) __lastChangeTime = Date.parse(_chg0.data.updated_at);
+  } catch (_) {}
+  try {
+    var _chg2 = await sb.from('changes').select('updated_at').eq('id', 2).maybeSingle();
+    if (_chg2.data && _chg2.data.updated_at) __lastLogChangeTime = Date.parse(_chg2.data.updated_at);
   } catch (_) {}
   let loaded = false;
   try {
@@ -10556,6 +10601,7 @@ async function _notifVersion(ver) {
     // 立即上传（不等3秒防抖），否则“立即更新”跳转会把这条版本日志吞掉，导致信息里收不到更新通知
     await flushLogUpload();
     _notifRefreshBadge();
+    if (typeof notifyLogChange === 'function') notifyLogChange();  // 广播给其它设备
   } catch (e) {}
 }
 
