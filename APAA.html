@@ -9,7 +9,7 @@
 	<link rel="manifest" href="manifest.json">
 <!--
 ══════════════════════════════════════════════════════════════════
-   ClubApp 目录索引（导航地图）· v2.6.0
+   ClubApp 目录索引（导航地图）· v2.6.1
    改代码前先看这里，按行号快速定位功能 / 分区
 ══════════════════════════════════════════════════════════════════
 
@@ -4166,7 +4166,7 @@ if ("serviceWorker" in navigator) {
     .catch(function(err) { console.log("[SW] 注册失败", err); });
 }
 // --- 应用版本（热更新检测用） ---
-const APP_VERSION = '2.6.0';
+const APP_VERSION = '2.6.1';
 let __updateAvailable = false;       // 是否有可用更新
 let __updateVersion = null;          // 新版本号
 let __updateSha256 = null;           // 新版本的 SHA-256（防篡改校验）
@@ -9583,8 +9583,11 @@ function _ensurePrismOverlay() {
     + '<div class="modal-header"><span>✨ 棱镜 Prism</span><button class="modal-close" id="prismClose" type="button">✕</button></div>'
     + '<div class="modal-body">'
     + '<div class="form-group"><input type="text" id="prismInput" placeholder="问我数据问题，如：上月薪酬超8000的有谁" /></div>'
-    + '<div id="prismQuota" style="font-size:12px;color:var(--text-3);margin:6px 0;"></div>'
-    + '<div id="prismAnswer" style="min-height:60px;max-height:260px;overflow:auto;font-size:13px;line-height:1.6;color:var(--text-1);white-space:pre-wrap;"></div>'
+    + '<div style="display:flex;align-items:center;justify-content:space-between;margin:4px 0 8px;">'
+    + '<span id="prismQuota" style="font-size:12px;color:var(--text-3);"></span>'
+    + '<button class="btn btn-glass" id="prismClear" type="button" style="font-size:12px;padding:2px 10px;">清空记录</button>'
+    + '</div>'
+    + '<div id="prismHistory" style="min-height:120px;max-height:300px;overflow-y:auto;padding:4px 2px;"></div>'
     + '<div style="margin-top:10px;text-align:right;"><button class="btn btn-glass primary" id="prismAsk" type="button">提问</button></div>'
     + '</div></div>';
   document.body.appendChild(ov);
@@ -9595,6 +9598,8 @@ function _ensurePrismOverlay() {
   if (ask) ask.onclick = function () { doPrismSearch(document.getElementById('prismInput').value); };
   var input = document.getElementById('prismInput');
   if (input) input.addEventListener('keydown', function (ev) { if (ev.key === 'Enter') doPrismSearch(ev.target.value); });
+  var clear = document.getElementById('prismClear');
+  if (clear) clear.onclick = _prismClearHistory;
   return ov;
 }
 function _openPrism() {
@@ -9604,12 +9609,54 @@ function _openPrism() {
   if (quota) quota.textContent = isGuest() ? ('游客模式：剩余 ' + _guestAiRemaining() + ' / ' + AI_GUEST_QUOTA + ' 次 AI 提问') : '';
   var input = document.getElementById('prismInput');
   if (input) { input.value = ''; input.focus(); }
-  var ans = document.getElementById('prismAnswer');
-  if (ans) ans.textContent = '';
+  _prismScrollBottom();
 }
-function _prismShowAnswer(text, isErr) {
-  var ans = document.getElementById('prismAnswer');
-  if (ans) { ans.textContent = text || ''; if (isErr) ans.style.color = '#d64550'; else ans.style.color = 'var(--text-1)'; }
+/* ---- 微信式气泡消息区：用户右侧蓝泡、AI 左侧灰泡（临时会话，仅存内存）---- */
+function _prismScrollBottom() {
+  var hist = document.getElementById('prismHistory');
+  if (hist) hist.scrollTop = hist.scrollHeight;
+}
+function _prismAppendMessage(role, text, isErr) {
+  var hist = document.getElementById('prismHistory');
+  if (!hist) return;
+  var wrap = document.createElement('div');
+  wrap.style.cssText = 'display:flex;margin:6px 0;justify-content:' + (role === 'user' ? 'flex-end' : 'flex-start') + ';';
+  var bubble = document.createElement('div');
+  if (role === 'user') {
+    bubble.style.cssText = 'max-width:80%;padding:8px 12px;border-radius:14px 14px 4px 14px;background:var(--accent-blue);color:#fff;font-size:13px;line-height:1.6;white-space:pre-wrap;word-break:break-word;';
+  } else {
+    bubble.style.cssText = 'max-width:80%;padding:8px 12px;border-radius:14px 14px 14px 4px;background:' + (isErr ? 'rgba(214,69,80,0.16)' : 'rgba(128,128,128,0.13)') + ';color:' + (isErr ? '#d64550' : 'var(--text-1)') + ';font-size:13px;line-height:1.6;white-space:pre-wrap;word-break:break-word;';
+  }
+  bubble.textContent = text || '';
+  wrap.appendChild(bubble);
+  hist.appendChild(wrap);
+  _prismScrollBottom();
+}
+/* 左侧「思考中…」气泡（请求期间显示，完成后移除）*/
+let __prismTypingEl = null;
+function _prismTyping(on) {
+  var hist = document.getElementById('prismHistory');
+  if (!hist) return;
+  if (on) {
+    if (__prismTypingEl) return;
+    var wrap = document.createElement('div');
+    wrap.style.cssText = 'display:flex;margin:6px 0;justify-content:flex-start;';
+    var bubble = document.createElement('div');
+    bubble.style.cssText = 'max-width:80%;padding:8px 12px;border-radius:14px 14px 14px 4px;background:rgba(128,128,128,0.13);color:var(--text-2);font-size:13px;';
+    bubble.textContent = '思考中…';
+    wrap.appendChild(bubble);
+    hist.appendChild(wrap);
+    __prismTypingEl = wrap;
+  } else {
+    if (__prismTypingEl && __prismTypingEl.parentNode) __prismTypingEl.parentNode.removeChild(__prismTypingEl);
+    __prismTypingEl = null;
+  }
+  _prismScrollBottom();
+}
+function _prismClearHistory() {
+  var hist = document.getElementById('prismHistory');
+  if (hist) hist.innerHTML = '';
+  __prismTypingEl = null;
 }
 function _prismSetLoading(on) {
   var ask = document.getElementById('prismAsk');
@@ -9618,8 +9665,14 @@ function _prismSetLoading(on) {
 async function doPrismSearch(q) {
   q = String(q || '').trim();
   if (!q) return;
-  if (isGuest() && _guestAiRemaining() <= 0) { _prismShowAnswer('⚠️ 游客 AI 提问已达上限（2 次）。', true); return; }
+  // 微信式：发送后立即清空输入框
+  var inp = document.getElementById('prismInput');
+  if (inp) inp.value = '';
+  // 用户提问气泡（右侧）
+  _prismAppendMessage('user', q);
+  if (isGuest() && _guestAiRemaining() <= 0) { _prismAppendMessage('ai', '⚠️ 游客 AI 提问已达上限（2 次）。', true); return; }
   _prismSetLoading(true);
+  _prismTyping(true);
   try {
     var snap = buildPrismSnapshot();
     var isG = isGuest();
@@ -9644,15 +9697,16 @@ async function doPrismSearch(q) {
     }
 
     if (isG) _guestAiUse();
-    _prismShowAnswer(res.answer || '(无回答)');
+    _prismAppendMessage('ai', res.answer || '(无回答)');
     aiChatLog('AI对话', q.slice(0, 80));
     renderAiInfo(); // 提问产生用量后立即同步系统信息页
   } catch (e) {
-    if (e && e.status === 429) _prismShowAnswer('⚠️ 游客 AI 提问已达上限（2 次）。', true);
-    else _prismShowAnswer('⚠️ ' + ((e && e.message) || '调用失败'), true);
+    if (e && e.status === 429) _prismAppendMessage('ai', '⚠️ 游客 AI 提问已达上限（2 次）。', true);
+    else _prismAppendMessage('ai', '⚠️ ' + ((e && e.message) || '调用失败'), true);
   } finally {
     _prismSetLoading(false);
-    // 刷新配额显示（游客）——不清空答案，只更新剩余次数
+    _prismTyping(false);
+    // 刷新配额显示（游客）——不清空对话，只更新剩余次数
     var quotaEl2 = document.getElementById('prismQuota');
     if (quotaEl2) quotaEl2.textContent = isGuest() ? ('游客模式：剩余 ' + _guestAiRemaining() + ' / ' + AI_GUEST_QUOTA + ' 次 AI 提问') : '';
   }
