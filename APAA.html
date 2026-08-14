@@ -9,7 +9,7 @@
 	<link rel="manifest" href="manifest.json">
 <!--
 ══════════════════════════════════════════════════════════════════
-   ClubApp 目录索引（导航地图）· v2.6.2
+   ClubApp 目录索引（导航地图）· v2.6.3
    改代码前先看这里，按行号快速定位功能 / 分区
 ══════════════════════════════════════════════════════════════════
 
@@ -4175,7 +4175,7 @@ if ("serviceWorker" in navigator) {
     .catch(function(err) { console.log("[SW] 注册失败", err); });
 }
 // --- 应用版本（热更新检测用） ---
-const APP_VERSION = '2.6.2';
+const APP_VERSION = '2.6.3';
 let __updateAvailable = false;       // 是否有可用更新
 let __updateVersion = null;          // 新版本号
 let __updateSha256 = null;           // 新版本的 SHA-256（防篡改校验）
@@ -10959,6 +10959,7 @@ window.addEventListener('beforeunload', () => {
       refreshAccountUI();
       _exitGuestMode(); // 还原游客模式残留外观（此前若以游客身份退出，侧边栏仍是游客态）
       initCloud();
+      if (currentPageName !== 'appearance') switchPage('appearance'); // 登录后回到主页：退出前停留在设置页会隐藏顶栏搜索框
       showToast('欢迎回来，' + getUserName() + ' ✓', true);
     } catch (e) {
       setErr('登录异常：' + e.message);
@@ -10990,6 +10991,7 @@ window.addEventListener('beforeunload', () => {
       refreshAccountUI();
       _enterGuestMode();
       initCloud();
+      if (currentPageName !== 'appearance') switchPage('appearance'); // 游客登录同样回到主页，避免搜索框隐藏
       showToast('已进入游客模式（只读预览）', true);
     } catch (e) {
       setErr('游客模式异常：' + e.message);
