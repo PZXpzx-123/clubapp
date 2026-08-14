@@ -3777,6 +3777,7 @@ function auditLog(action, target, detail) {
   } catch (e) {}
 }
 function recordSecurity(eventType, source, target, detail, action, success, level) {
+  var p = null;
   try {
     var msg = '有人攻击[' + (target || '未指定') + '] ' + (detail || '') + ' → 防御' + (success ? '成功' : '失败') + (action ? ' · ' + action : '');
     // 防御失败（未拦截）默认按 critical 高亮，防御成功按 warn
@@ -3784,13 +3785,13 @@ function recordSecurity(eventType, source, target, detail, action, success, leve
     // 安全事件立即上传 + 刷新通知（不等 3 秒防抖 / 20 秒轮询），否则攻击告警要等重新登录才显示
     try {
       if (typeof flushLogUpload === 'function') {
-        flushLogUpload().then(function () {
+        p = flushLogUpload().then(function () {
           if (typeof _notifRefreshBadge === 'function') _notifRefreshBadge();
-          if (typeof notifyLogChange === 'function') notifyLogChange();  // 广播给其它设备（跨设备秒级同步）
         }).catch(function () {});
       }
     } catch (e2) {}
   } catch (e) {}
+  return p;  // 返回上传 Promise，供 kickGuest 在踢出前等待上传完成（成员侧才能收到告警）
 }
 // 安全审计（登录/登出/注册等成功事件 → security 通道，info 级）
 function _secLog(action, target, detail) {
@@ -3982,6 +3983,8 @@ async function flushLogUpload() {
   if (__logFlushTimer) { clearTimeout(__logFlushTimer); __logFlushTimer = null; }
   if (!window.__logUploadQueue.length) return;
   if (typeof sb === 'undefined' || !sb || !cloudReady) return; // L10: 未就绪保留队列，不丢弃
+  // 未登录（无有效令牌）不上传：避免打开页面未登录/游客被踢出后，日志上传 401 在控制台循环刷屏
+  if (!_getAuthToken()) return;
   var batch = window.__logUploadQueue.splice(0, window.__logUploadQueue.length);
   try {
     var rows = batch.map(function (e) {
@@ -4226,7 +4229,7 @@ if ("serviceWorker" in navigator) {
     .catch(function(err) { console.log("[SW] 注册失败", err); });
 }
 // --- 应用版本（热更新检测用） ---
-const APP_VERSION = '2.6.16';
+const APP_VERSION = '2.6.17';
 let __updateAvailable = false;       // 是否有可用更新
 let __updateVersion = null;          // 新版本号
 let __updateSha256 = null;           // 新版本的 SHA-256（防篡改校验）
@@ -4474,15 +4477,17 @@ function _guestInfo() {
   } catch (e) { return 'UA:' + (navigator.userAgent || ''); }
 }
 
-function kickGuest(reason) {
+async function kickGuest(reason) {
   if (!isGuest() || _guestKicking) return;
   _guestKicking = true;
   var msg = reason || '异常操作';
   try {
-    recordSecurity('游客捣乱', '游客', '游客模式', msg, '踢出+临时锁定', true, 'critical');
+    var _upP = recordSecurity('游客捣乱', '游客', '游客模式', msg, '踢出+临时锁定', true, 'critical');
     var kickInfo = { at: Date.now(), reason: msg };
     __guestKickMem = kickInfo;
     localStorage.setItem(GUEST_KICK_KEY, JSON.stringify(kickInfo));
+    // 先把「游客捣乱」安全日志上传到云端（此时 token 仍有效），成员侧才能收到告警；上传完成再踢出
+    if (_upP) { try { await _upP; } catch (e) {} }
   } catch (e) {}
   try { stopRealtimeSync(); } catch (e) {}
   try { _authLogout(); } catch (e) {}
@@ -5346,18 +5351,6 @@ async function notifyChange() {
   } catch (e) { /* 静默 */ }
 }
 
-/* 通知/日志变更信号（与数据变更 id=1 分离，用 id=2）：
-   安全事件/版本通知写入云端后广播，其它设备 5 秒轮询到变化就刷新通知角标 + 运行日志列表，跨设备秒级同步、不用重登 */
-let __lastLogChangeTime = null;  // 上次已知的"通知/日志"云端变更时间戳
-async function notifyLogChange() {
-  if (!cloudReady) return;
-  try {
-    const now = new Date().toISOString();
-    __lastLogChangeTime = Date.parse(now);  // 先记时间戳，避免自己的广播被 5 秒轮询误判为"有新告警"
-    await sb.from('changes').upsert({ id: 2, updated_at: now }, { onConflict: 'id' });
-  } catch (e) { /* 静默 */ }
-}
-
 // --- Realtime 同步（替代轮询） ---
 let __realtimeChannel = null;
 let __fallbackTimer = null;
@@ -5492,18 +5485,6 @@ function startFallbackPolling() {
   __fallbackTimer = setInterval(async function() {
     if (!cloudReady || !__cloudLoadDone) return;
     var _now = Date.now();
-    // 通知/日志信号（id=2）不受「编辑中/未保存」拦截：攻击告警任何时候都要刷新
-    try {
-      var refetch2 = await sb.from('changes').select('updated_at').eq('id', 2).maybeSingle();
-      if (refetch2.data && refetch2.data.updated_at) {
-        var rt2 = Date.parse(refetch2.data.updated_at);
-        if (rt2 !== __lastLogChangeTime) {
-          __lastLogChangeTime = rt2;
-          _notifRefreshBadge();
-          _refreshCloudLogsSilent();
-        }
-      }
-    } catch (e) {}
     if (_isEditing() || cloudDirty) {
       if (_now - __pollDiagAt > 20000) {
         __pollDiagAt = _now;
@@ -5778,10 +5759,6 @@ async function initCloud() {
   try {
     var _chg0 = await sb.from('changes').select('updated_at').eq('id', 1).maybeSingle();
     if (_chg0.data && _chg0.data.updated_at) __lastChangeTime = Date.parse(_chg0.data.updated_at);
-  } catch (_) {}
-  try {
-    var _chg2 = await sb.from('changes').select('updated_at').eq('id', 2).maybeSingle();
-    if (_chg2.data && _chg2.data.updated_at) __lastLogChangeTime = Date.parse(_chg2.data.updated_at);
   } catch (_) {}
   let loaded = false;
   try {
@@ -10579,6 +10556,7 @@ async function _notifRefreshBadge() {
   }
   _refreshSysinfoDot();
   _notifSetBadge(unread + msgUnread);
+  _refreshCloudLogsSilent();
 }
 /* 写一条「系统 · 检测到新版本」通知（本地去重 + 云端去重：广播/各设备自动检测只记一次）*/
 async function _notifVersion(ver) {
@@ -10601,7 +10579,6 @@ async function _notifVersion(ver) {
     // 立即上传（不等3秒防抖），否则“立即更新”跳转会把这条版本日志吞掉，导致信息里收不到更新通知
     await flushLogUpload();
     _notifRefreshBadge();
-    if (typeof notifyLogChange === 'function') notifyLogChange();  // 广播给其它设备
   } catch (e) {}
 }
 
@@ -10974,7 +10951,7 @@ async function _sendMsg() {
   var btn = document.getElementById('btnNotif');
   if (btn) btn.onclick = _openNotif;
   _notifRefreshBadge();
-  setInterval(_notifRefreshBadge, 20000);
+  setInterval(_notifRefreshBadge, 5000);
   // 点「安全日志」即视为已读，消除高威胁红点
   var secBtn = document.querySelector('.log-filter-btn[data-filter="security"]');
   if (secBtn) secBtn.addEventListener('click', function () { _secMarkSeen(_secLatestId); _refreshSysinfoDot(); });
