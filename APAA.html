@@ -4200,7 +4200,7 @@ if ("serviceWorker" in navigator) {
     .catch(function(err) { console.log("[SW] 注册失败", err); });
 }
 // --- 应用版本（热更新检测用） ---
-const APP_VERSION = '2.6.12';
+const APP_VERSION = '2.6.13';
 let __updateAvailable = false;       // 是否有可用更新
 let __updateVersion = null;          // 新版本号
 let __updateSha256 = null;           // 新版本的 SHA-256（防篡改校验）
@@ -10451,13 +10451,28 @@ function _secMarkSeen(id) {
 function _secSetDot(show) {
   var dot = document.getElementById('secDot');
   if (dot) dot.style.display = show ? '' : 'none';
+}
+/* 重要日志（错误/关键/警告）红点：在「系统信息」导航入口提示，进入系统信息即视为已查看 */
+const IMP_SEEN_KEY = 'clubapp_imp_seen';
+var _impLatestId = 0;
+function _impSeenId() {
+  try { var n = parseInt(localStorage.getItem(IMP_SEEN_KEY) || '0', 10); return isNaN(n) ? 0 : n; } catch (e) { return 0; }
+}
+function _impMarkSeen(id) {
+  try { localStorage.setItem(IMP_SEEN_KEY, String(id || 0)); } catch (e) {}
+}
+function _sysinfoSetDot(show) {
   var navDot = document.getElementById('sysinfoNavDot');
   if (navDot) navDot.style.display = show ? '' : 'none';
+}
+/* 导航「系统信息」红点 = 安全事件未读 ∨ 重要日志未读 */
+function _refreshSysinfoDot() {
+  _sysinfoSetDot((_secLatestId > _secSeenId()) || (_impLatestId > _impSeenId()));
 }
 /* 刷新红点：未读 = id > last_read_id 且非本人操作 的通知数；同时刷新安全事件红点 */
 async function _notifRefreshBadge() {
   var btn = document.getElementById('btnNotif');
-  if (!isLoggedIn() || isGuest()) { if (btn) btn.style.display = 'none'; _notifSetBadge(0); _secSetDot(false); return; }
+  if (!isLoggedIn() || isGuest()) { if (btn) btn.style.display = 'none'; _notifSetBadge(0); _secSetDot(false); _sysinfoSetDot(false); return; }
   if (btn) btn.style.display = '';
   var list = await _notifFetchList(100);
   var _sess = getSession();
@@ -10486,6 +10501,13 @@ async function _notifRefreshBadge() {
     if (list[j].category === 'security') { _secLatestId = list[j].id; break; }
   }
   _secSetDot(_secLatestId > _secSeenId());
+  // 重要日志（错误/关键/警告）：取最新一条，比已读新则亮「系统信息」红点
+  _impLatestId = 0;
+  for (var j2 = 0; j2 < list.length; j2++) {
+    var _lv = list[j2].level;
+    if (_lv === 'error' || _lv === 'warn' || _lv === 'critical') { _impLatestId = list[j2].id; break; }
+  }
+  _refreshSysinfoDot();
   _notifSetBadge(unread + msgUnread);
 }
 /* 写一条「系统 · 检测到新版本」通知（本地去重 + 云端去重：广播/各设备自动检测只记一次）*/
@@ -10884,7 +10906,9 @@ async function _sendMsg() {
   setInterval(_notifRefreshBadge, 20000);
   // 点「安全日志」即视为已读，消除高威胁红点
   var secBtn = document.querySelector('.log-filter-btn[data-filter="security"]');
-  if (secBtn) secBtn.addEventListener('click', function () { _secMarkSeen(_secLatestId); _secSetDot(false); });
+  if (secBtn) secBtn.addEventListener('click', function () { _secMarkSeen(_secLatestId); _refreshSysinfoDot(); });
+  // 进入「系统信息」即视为已查看重要日志，消除导航红点（安全事件红点仍由「安全日志」按钮独立消除）
+  onPageSwitch('sysinfo', function () { _impMarkSeen(_impLatestId); _refreshSysinfoDot(); });
 })();
 console.log('◈ 分区 11ak — 通知中心 — 已就绪');
 
