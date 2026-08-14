@@ -8,7 +8,8 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const DEEPSEEK_URL = "https://api.deepseek.com/chat/completions";
-const GUEST_QUOTA = 2; // 游客每台设备最多 2 次 AI 提问
+const GUEST_QUOTA = 2; // 游客最多 2 次 AI 提问（按游客账号计，user.id 不可伪造）
+const MONTH_CAP = parseInt(Deno.env.get("AI_MONTH_CAP") || "5000", 10); // 全站月度请求上限，防成本失控
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
@@ -106,26 +107,38 @@ Deno.serve(async (req) => {
       return json({ error: "令牌无效或已过期" }, 401);
     }
     const user = userData.user;
-    const role = (user.app_metadata && user.app_metadata.role) || null;
+    // 角色判定 fail-closed：只有 app_members 里存在该用户才视为正式成员；
+    // 否则一律按游客限制（避免 app_metadata.role 漏配时 fail-open 导致越权/无限 AI）。
+    const { data: _memberRow } = await supabase
+      .from("app_members").select("is_admin").eq("user_id", user.id).maybeSingle();
+    const isMember = !!_memberRow;
+    const isGuest = !isMember;
 
     let body: any;
     try { body = await req.json(); } catch { return json({ error: "请求体需为 JSON" }, 400); }
     const mode = body.mode || "chat"; // patrol | search | chat
-    const deviceId = String(body.deviceId || "unknown");
     const system = typeof body.system === "string" ? body.system : "";
     const messages = Array.isArray(body.messages) ? body.messages : [];
     const tools = Array.isArray(body.tools) ? body.tools : [];
 
     // 巡逻仅正式成员（游客不可触发巡逻）
-    if (mode === "patrol" && role === "guest") {
+    if (mode === "patrol" && isGuest) {
       return json({ error: "游客不可使用巡逻" }, 403);
     }
 
-    // 游客提问配额（按设备号，服务端兜底，防止清缓存绕过）
-    if (role === "guest" && mode !== "patrol") {
-      const { data: q } = await supabase
-        .from("ai_guest_quota").select("count").eq("device_id", deviceId).maybeSingle();
-      if (q && (q.count || 0) >= GUEST_QUOTA) {
+    // 全站月度请求上限（防止成本失控）
+    const { data: _usageRow } = await supabase
+      .from("ai_usage").select("requests").eq("id", getMonth()).maybeSingle();
+    if (_usageRow && (_usageRow.requests || 0) >= MONTH_CAP) {
+      return json({ error: "本月 AI 用量已达上限，请下月再试" }, 429);
+    }
+
+    // 游客提问配额：按 user.id（不可伪造）原子「判断+累加」，服务端兜底
+    if (isGuest && mode !== "patrol") {
+      const { data: _allowed, error: _qErr } = await supabase.rpc(
+        "try_increment_ai_guest_quota", { p_device: user.id, p_limit: GUEST_QUOTA }
+      );
+      if (_qErr || !_allowed) {
         return json({ error: "游客 AI 提问已达上限（2 次）" }, 429);
       }
     }
@@ -174,7 +187,6 @@ Deno.serve(async (req) => {
     const usage = dsJson.usage || {};
     const promptT = usage.prompt_tokens || 0;
     const completionT = usage.completion_tokens || 0;
-    const isGuest = role === "guest";
     const operator =
       (user.user_metadata && (user.user_metadata.nickname || user.user_metadata.full_name)) ||
       user.email ||
@@ -182,20 +194,16 @@ Deno.serve(async (req) => {
     // 实时费用：DeepSeek deepseek-chat 定价 ≈ ¥1/M 输入 + ¥2/M 输出
     const cost = promptT / 1e6 * 1 + completionT / 1e6 * 2;
 
-    // 游客配额 +1（正式成员不计入配额）；用 RPC 原子累加，避免并发丢失
-    if (role === "guest" && mode !== "patrol") {
-      await supabase.rpc("increment_ai_guest_quota", { p_device: deviceId });
-    }
-
-    // 记录用量（按月累计）
-    await supabase.rpc("increment_ai_usage", {
+    // 记录用量（按月累计）；失败仅告警，不阻断回复
+    const _u = await supabase.rpc("increment_ai_usage", {
       p_month: getMonth(),
       p_prompt: promptT,
       p_completion: completionT,
     });
+    if (_u.error) console.error("[prism] increment_ai_usage failed:", _u.error.message);
 
     // 记录调用明细（实时费用，永久保存云端）
-    await supabase.rpc("log_ai_request", {
+    const _l = await supabase.rpc("log_ai_request", {
       p_month: getMonth(),
       p_mode: mode,
       p_operator: operator,
@@ -204,6 +212,7 @@ Deno.serve(async (req) => {
       p_completion: completionT,
       p_cost: cost,
     });
+    if (_l.error) console.error("[prism] log_ai_request failed:", _l.error.message);
 
     return json({
       answer,

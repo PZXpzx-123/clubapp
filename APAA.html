@@ -9,7 +9,7 @@
 	<link rel="manifest" href="manifest.json">
 <!--
 ══════════════════════════════════════════════════════════════════
-   ClubApp 目录索引（导航地图）· v2.6.5
+   ClubApp 目录索引（导航地图）· v2.6.8
    改代码前先看这里，按行号快速定位功能 / 分区
 ══════════════════════════════════════════════════════════════════
 
@@ -559,6 +559,9 @@ body {
   box-shadow: 0 0 0 2px rgba(255,59,48,0.22);
   pointer-events: none;
 }
+/* 日志条目内的危险等级红点（靠左，无左边距） */
+.log-entry-dot { margin-left: 0; margin-right: 6px; vertical-align: -1px; }
+.log-entry-danger { border-left: 2px solid rgba(255,59,48,0.55); padding-left: 6px; }
 
 /* ================================================================
    分区 3b: 内容区
@@ -3072,7 +3075,7 @@ body:not(.edit-mode) .settings-wrap .setting-select {
       <span class="nav-dot"></span>系统设置    </div>
 
     <div class="nav-item" data-page="sysinfo">
-      <span class="nav-dot"></span>系统信息    </div>
+      <span class="nav-dot"></span>系统信息<span class="log-dot" id="sysinfoNavDot" style="display:none;"></span>    </div>
   </nav>
 
   <div class="sidebar-footer" style="position:relative;">
@@ -3791,7 +3794,8 @@ function _logCrud(table, action, entityName, before, after) {
     var verb = { add: '新增了', edit: '修改了', del: '删除了', pass: '通过了', reject: '拒绝了', complete: '结单了' }[action] || '操作了';
     addAppLog('info', verb + entityName, 'user', getUserName(), action, {
       table: table, action: action, entity: entityName,
-      before: before || null, after: after || null
+      before: before || null, after: after || null,
+      operatorUid: (getSession() && getSession().uid) || null
     });
   } catch (e) {}
 }
@@ -3848,7 +3852,9 @@ function renderAppLogs() {
       var opTxt = (e.operator && e.category !== 'system') ? '<span class="log-op">' + _escLogHtml(e.operator) + '</span>' : '';
       var geoTag = (e.geo || e.ip) ? '<span class="log-geo">' + _escLogHtml([e.geo, e.ip].filter(Boolean).join(' · ')) + '</span>' : '';
       var detailHint = e.detail ? '<span class="log-detail-hint">详情</span>' : '';
-      return '<div class="log-entry" data-idx="' + item.i + '"><span class="log-ts">' + e.ts + '</span>' +
+      // 危险等级红点：安全类 warn/critical 事件在条目左侧亮红点
+      var dangerDot = (e.category === 'security' && (e.level === 'warn' || e.level === 'critical')) ? '<span class="log-dot log-entry-dot"></span>' : '';
+      return '<div class="log-entry' + ((e.category === 'security' && (e.level === 'warn' || e.level === 'critical')) ? ' log-entry-danger' : '') + '" data-idx="' + item.i + '">' + dangerDot + '<span class="log-ts">' + e.ts + '</span>' +
         '<span class="log-level ' + e.level + '">' + (label[e.level] || e.level) + '</span>' +
         catBadge + opTxt +
         '<span class="log-msg">' + _escLogHtml(e.msg) + geoTag + detailHint + '</span></div>';
@@ -4194,11 +4200,12 @@ if ("serviceWorker" in navigator) {
     .catch(function(err) { console.log("[SW] 注册失败", err); });
 }
 // --- 应用版本（热更新检测用） ---
-const APP_VERSION = '2.6.5';
+const APP_VERSION = '2.6.10';
 let __updateAvailable = false;       // 是否有可用更新
 let __updateVersion = null;          // 新版本号
 let __updateSha256 = null;           // 新版本的 SHA-256（防篡改校验）
 let __updateChecking = false;        // 是否正在检查中
+let __updateLastError = '';          // 最近一次检查失败原因（供界面显示）
 
 // 远程部署地址 — Supabase Storage（公有桶 app）
 // 使用 Supabase Storage 公开桶 app 存放更新文件
@@ -4401,10 +4408,17 @@ const GUEST_PASSWORD = 'clubguest2026';
 const GUEST_KICK_KEY = 'clubapp_guest_kick';
 const GUEST_KICK_MS = 10 * 60 * 1000; // 踢出后锁定 10 分钟
 let _guestKicking = false;
+let __guestKickMem = null; // 内存态镜像：清 localStorage 无法绕过本会话内的锁定
 
 function isGuest() { var s = getSession(); return !!(s && s.role === 'guest'); }
 
-function _guestLockInfo() { try { var raw = localStorage.getItem(GUEST_KICK_KEY); return raw ? JSON.parse(raw) : null; } catch (e) { return null; } }
+function _guestLockInfo() {
+  if (__guestKickMem) return __guestKickMem;
+  var raw = null;
+  try { raw = localStorage.getItem(GUEST_KICK_KEY); } catch (e) {}
+  try { __guestKickMem = raw ? JSON.parse(raw) : null; } catch (e) { __guestKickMem = null; }
+  return __guestKickMem;
+}
 function _guestLocked() { var l = _guestLockInfo(); return !!(l && l.at && (Date.now() - l.at) < GUEST_KICK_MS); }
 function _guestLockRemainMin() { var l = _guestLockInfo(); if (!l || !l.at) return 0; return Math.max(1, Math.ceil((l.at + GUEST_KICK_MS - Date.now()) / 60000)); }
 
@@ -4426,7 +4440,9 @@ function kickGuest(reason) {
   var msg = reason || '异常操作';
   try {
     recordSecurity('游客捣乱', '游客', '游客模式', msg, '踢出+临时锁定', true, 'critical');
-    localStorage.setItem(GUEST_KICK_KEY, JSON.stringify({ at: Date.now(), reason: msg }));
+    var kickInfo = { at: Date.now(), reason: msg };
+    __guestKickMem = kickInfo;
+    localStorage.setItem(GUEST_KICK_KEY, JSON.stringify(kickInfo));
   } catch (e) {}
   try { stopRealtimeSync(); } catch (e) {}
   try { _authLogout(); } catch (e) {}
@@ -4488,7 +4504,8 @@ function _startGuestWatch() {
   __guestWatchTimer = setInterval(function () {
     if (!isGuest()) return;
     var t0 = performance.now();
-    debugger;
+    // 注：已移除裸 debugger; 语句（会强制 DevTools 断点、干扰正常调试）。
+    // 保留计时探测仅作威慑；真正的只读边界在服务端 RLS。
     var dt = performance.now() - t0;
     if (dt > 150) { __dtHits++; } else { __dtHits = 0; }
     if (__dtHits >= 2) { __dtHits = 0; kickGuest('检测到开发者工具'); }
@@ -4760,7 +4777,9 @@ const cloudPersonnel = {
     const uid = getUserId();
 
     // 保存人员（upsert 避免"先删后插失败"导致数据丢失）
-    const personnelRows = people.map(p => ({
+    const personnelRows = people
+      .filter(p => !cloudTombstone.has('personnel', p.id)) // 跳过已删除墓碑，防陈旧设备复活
+      .map(p => ({
       id: p.id,
       user_id: uid,
       name: p.name,
@@ -4789,7 +4808,9 @@ const cloudPersonnel = {
     const allOrderIds = Object.keys(personOrders);
     const orderRows = [];
     for (const pid of allOrderIds) {
+      if (cloudTombstone.has('personnel', pid)) continue; // 人员已删除，跳过其订单
       for (const o of personOrders[pid]) {
+        if (cloudTombstone.has('orders', o.id)) continue; // 订单已删除
         orderRows.push({
           id: o.id,
           user_id: uid,
@@ -4843,6 +4864,7 @@ const cloudPersonnel = {
     // 替换本地 people 数组
     people.length = 0;
     for (const p of persData) {
+      if (cloudTombstone.has('personnel', p.id)) continue; // 墓碑记录：跳过
       people.push({
         id: p.id, name: p.name, code: p.code, dept: p.dept, title: p.title,
         phone: p.phone || '', date: p.date || '', status: p.status || 'active',
@@ -4866,6 +4888,8 @@ const cloudPersonnel = {
     for (const k of Object.keys(personOrders)) { delete personOrders[k]; }
     if (ordData) {
       for (const o of ordData) {
+        if (cloudTombstone.has('orders', o.id)) continue;           // 订单已删除
+        if (cloudTombstone.has('personnel', o.person_id)) continue; // 人员已删除，跳过其订单
         if (!personOrders[o.person_id]) personOrders[o.person_id] = [];
         // 本地优先合并：本地已结单而云端仍 active → 以本地为准，防止离线结单状态回退
         const lc = localCompleted[o.id];
@@ -4902,6 +4926,7 @@ const cloudPersonnel = {
       const r2 = await sb.from('personnel').delete().eq('id', id).eq('user_id', uid);
       if (r1.error || r2.error) { console.warn('[Cloud] 直接删除失败:', (r1.error || r2.error).message); return false; }
       notifyChange();
+      await cloudTombstone.mark('personnel', id); // 写删除墓碑，防陈旧设备全量保存复活
       console.log('[Cloud] 🗑 直接删除人员 id=' + id + ' 及其订单');
       return true;
     } catch (e) { console.warn('[Cloud] 直接删除失败:', e); return false; }
@@ -4917,11 +4942,11 @@ const cloudPersonnel = {
         dept: p.dept, title: p.title, phone: p.phone || '',
         date: p.date || '', status: p.status || 'active'
       }, { onConflict: 'user_id,id' });
-      if (error) { console.warn('[Cloud] 直接保存人员失败:', error.message); return false; }
+      if (error) { console.warn('[Cloud] 直接保存人员失败:', error.message); saveLocalData(); cloudAutoSave(); return false; }
       notifyChange();
       console.log('[Cloud] ⬆ 直接保存人员 id=' + p.id);
       return true;
-    } catch (e) { console.warn('[Cloud] 直接保存失败:', e); return false; }
+    } catch (e) { console.warn('[Cloud] 直接保存失败:', e); saveLocalData(); cloudAutoSave(); return false; }
   },
 
   /** 直接 upsert 单个订单——立即操作云端，返回是否成功 */
@@ -4939,11 +4964,11 @@ const cloudPersonnel = {
         paused_remaining: o.pausedRemaining != null ? Math.round(o.pausedRemaining) : null,
         completed_at: o.completedAt != null ? Math.round(o.completedAt) : null,
       }, { onConflict: 'user_id,id' });
-      if (error) { console.warn('[Cloud] 直接保存订单失败:', error.message); return false; }
+      if (error) { console.warn('[Cloud] 直接保存订单失败:', error.message); saveLocalData(); cloudAutoSave(); return false; }
       notifyChange();
       console.log('[Cloud] ⬆ 直接保存订单 id=' + o.id);
       return true;
-    } catch (e) { console.warn('[Cloud] 直接保存订单失败:', e); return false; }
+    } catch (e) { console.warn('[Cloud] 直接保存订单失败:', e); saveLocalData(); cloudAutoSave(); return false; }
   }
 };
 
@@ -5022,11 +5047,11 @@ const cloudExam = {
         add_time: c.addTime || '', pass_time: c.passTime || '', reject_time: c.rejectTime || '',
         head_count: c.headcount || 0,
       }, { onConflict: 'user_id,id' });
-      if (error) { console.warn('[Cloud] 直接保存考生失败:', error.message); return false; }
+      if (error) { console.warn('[Cloud] 直接保存考生失败:', error.message); saveLocalData(); cloudAutoSave(); return false; }
       notifyChange();
       console.log('[Cloud] ⬆ 直接保存考生 id=' + c.id);
       return true;
-    } catch (e) { console.warn('[Cloud] 直接保存考生失败:', e); return false; }
+    } catch (e) { console.warn('[Cloud] 直接保存考生失败:', e); saveLocalData(); cloudAutoSave(); return false; }
   },
 
   /** 直接删除单个考生——立即操作云端 */
@@ -5170,6 +5195,36 @@ const cloudSalary = {
 };
 
 // ================================================================
+// 数据同步：删除墓碑（防「陈旧设备全量保存」复活已删记录）
+// ================================================================
+const cloudTombstone = {
+  _set: new Set(),   // key = kind + ':' + id
+  _key(kind, id) { return kind + ':' + id; },
+  has(kind, id) { return this._set.has(this._key(kind, id)); },
+
+  /** 加载全部墓碑到内存 Set（量小，每次保存/加载前刷新） */
+  async load() {
+    if (!cloudReady) return;
+    try {
+      const { data, error } = await sb.from('deleted_records').select('record_id,kind');
+      if (error) { console.warn('[Cloud] 墓碑加载失败(暂视为空):', error.message); return; }
+      this._set.clear();
+      if (data) for (const r of data) this._set.add(this._key(r.kind, r.record_id));
+      console.log('[Cloud] ✓ 删除墓碑已加载 (' + this._set.size + '条)');
+    } catch (e) { console.warn('[Cloud] 墓碑加载异常:', e.message); }
+  },
+
+  /** 标记一条删除（本地 + 云端共享），防止其它陈旧设备全量保存时把它复活 */
+  async mark(kind, id) {
+    this._set.add(this._key(kind, id));
+    if (!cloudReady) return;
+    try {
+      await sb.from('deleted_records').upsert({ record_id: id, kind: kind, deleted_at: new Date().toISOString() }, { onConflict: 'record_id,kind' });
+    } catch (e) { console.warn('[Cloud] 墓碑写入失败:', e.message); }
+  }
+};
+
+// ================================================================
 // 一键全量加载 / 保存
 // ================================================================
 async function cloudLoadAll() {
@@ -5177,6 +5232,7 @@ async function cloudLoadAll() {
   console.log('[Cloud] ⬇ 开始从云端加载全部数据...');
   let ok = true;
   ok = (await cloudAppearance.load()) && ok;
+  await cloudTombstone.load(); // 先刷新墓碑，再加载人员/订单，防加载到被删记录
   ok = (await cloudPersonnel.load()) && ok;
   ok = (await cloudExam.load()) && ok;
   await cloudSalary.load(); // 薪酬台账：尽力加载，失败不阻断主流程
@@ -5188,6 +5244,7 @@ async function cloudSaveAll() {
   if (!cloudReady) { console.log('[Cloud] 云端未就绪，跳过保存'); return; }
   if (isGuest()) { console.log('[Cloud] 游客只读，跳过云端保存'); return; } // G4: 游客不写云端，避免「确认更新」等触发的保存把游客踢出
   console.log('[Cloud] ⬆ 开始保存全部数据到云端...');
+  await cloudTombstone.load(); // 保存前刷新墓碑，确保本次保存不复活已删记录
   await cloudAppearance.save();
   await cloudPersonnel.save();
   await cloudExam.save();
@@ -5203,18 +5260,24 @@ async function cloudSaveAll() {
 let cloudSaveTimer = null;
 let cloudDirty = false;
 let cloudFirstDirty = 0;
+let __saveGen = 0;              // 保存代数：每次变更+1，用于判断保存期间是否有新变更（防竞态清 dirty）
 let __lastCloudSyncTime = null; // 上次成功同步(上传)时间戳
+let __flushTimer = null;        // 空闲心跳：定期 flush 被挂起的远端变更（正常连接时也能补拉）
 function cloudAutoSave() {
   if (!cloudReady) return;
   if (!cloudDirty) { cloudDirty = true; cloudFirstDirty = Date.now(); }
+  __saveGen++;
   if (cloudSaveTimer) clearTimeout(cloudSaveTimer);
   // 最多等待 2s，最少等 500ms
   const maxWait = Math.max(0, 2000 - (Date.now() - cloudFirstDirty));
   const delay = Math.min(500, maxWait);
+  const myGen = __saveGen;
   cloudSaveTimer = setTimeout(() => {
     cloudSaveTimer = null;
-    // A2: 保存完成后才清 dirty，避免保存进行中时远端变更被误拉取覆盖
-    cloudSaveAll().then(function(){ cloudDirty = false; }).catch(function(e){
+    // A2: 保存完成后才清 dirty；且仅当保存期间无新变更（代数一致）才清，防竞态误清 dirty 导致远端覆盖本地编辑
+    cloudSaveAll().then(function(){
+      if (myGen === __saveGen) { cloudDirty = false; __flushPendingReload(); }
+    }).catch(function(e){
       console.warn('[Cloud] 自动保存失败:', e);
       // 失败不清 dirty：保留"有未保存更改"标记，5s 后重试，确保数据最终上传，避免误拉远端覆盖本地
       cloudDirty = true;
@@ -5330,6 +5393,9 @@ async function __flushPendingReload() {
 function startRealtimeSync() {
   if (__realtimeChannel) return;
 
+  // 空闲心跳：正常连接时也定期 flush 被挂起的远端变更（编辑/未保存挡下的那次），防永久漏更
+  if (!__flushTimer) __flushTimer = setInterval(function(){ __flushPendingReload(); }, 5000);
+
   /* 自定义 REST 客户端不支持 channel()，直接走兜底轮询 */
   if (typeof sb.channel !== 'function') {
     console.log('[Realtime] ℹ 当前为 REST 模式，启用兜底轮询 (5s)');
@@ -5413,6 +5479,10 @@ function stopRealtimeSync() {
   if (__fallbackTimer) {
     clearInterval(__fallbackTimer);
     __fallbackTimer = null;
+  }
+  if (__flushTimer) {
+    clearInterval(__flushTimer);
+    __flushTimer = null;
   }
 }
 
@@ -5877,7 +5947,7 @@ document.getElementById('modalSave').onclick = function() {
   const editId = document.getElementById('formEditId').value;
   const name   = document.getElementById('formName').value.trim().replace(/[<>&]/g, '');
   const code   = document.getElementById('formCode').value.trim().replace(/[<>&]/g, '');
-  const dept   = document.getElementById('formDept').value;
+  const dept   = document.getElementById('formDept').value.trim();
   const title  = readTitleChecks();
   const date   = document.getElementById('formDate').value || localDateTimeInput();
   const status = document.getElementById('formStatus').value;
@@ -5905,6 +5975,7 @@ document.getElementById('modalSave').onclick = function() {
   } else {
     const newPerson = { id: newEntityId(), ...payload };
     people.unshift(newPerson);
+    attDataCache.clear(); // P3-10: 人员增删后失效考勤缓存，避免旧人员数据残留
     cloudPersonnel.upsertPersonDirect(newPerson);  // 直接写云端
     _logCrud('personnel', 'add', newPerson.name, null, { ...newPerson });
     showToast('人员添加成功', true);
@@ -5968,6 +6039,7 @@ document.getElementById('deleteModalConfirm').onclick = async function() {
     delete personOrders[delId];
     people = people.filter(p => !_idEq(p.id, delId));
     filteredPeople = filteredPeople.filter(p => !_idEq(p.id, delId));
+    attDataCache.clear(); // P3-10: 人员增删后失效考勤缓存
     saveLocalData(); // B8: 立即同步本地，防止被删人员在离线重启后回流
     _logCrud('personnel', 'del', delPerson ? delPerson.name : String(delId), delPerson ? { ...delPerson } : null, null);
     showToast('已删除', true);
@@ -7025,7 +7097,12 @@ function formatCountdown(ms) {
 function getRemainingMs(order) {
   if (order.status === 'completed') return 0;
   if (order.deadlineHours <= 0) return Infinity;
-  if (order.pausedAt != null) return order.pausedRemaining || 0;
+  if (order.pausedAt != null) {
+    // 兑底：老数据可能缺 pausedRemaining，用 startTime→pausedAt 反推（避免误显 00:00:00 / 已超时）
+    if (order.pausedRemaining != null) return order.pausedRemaining;
+    const used = (order.pausedAt || Date.now()) - (order.startTime || 0);
+    return Math.round(Math.max(0, order.deadlineHours * 3600000 - used));
+  }
   const elapsed = Date.now() - order.startTime;
   return Math.round(Math.max(0, order.deadlineHours * 3600000 - elapsed));
 }
@@ -7042,6 +7119,11 @@ function getCompletedRemainingMs(order) {
   if (order.deadlineHours <= 0) return Infinity;
   // 暂停中直接结单时，剩余时间以暂停时记录为准（暂停期间不扣时）
   if (order.pausedRemaining != null) return Math.round(order.pausedRemaining);
+  // 兑底：老数据缺 pausedRemaining 但曾暂停，用 startTime→pausedAt 反推
+  if (order.pausedAt != null) {
+    const used = order.pausedAt - (order.startTime || 0);
+    return Math.round(Math.max(0, order.deadlineHours * 3600000 - used));
+  }
   const elapsed = (order.completedAt || Date.now()) - (order.startTime || 0);
   return Math.round(Math.max(0, order.deadlineHours * 3600000 - elapsed));
 }
@@ -7230,8 +7312,9 @@ function togglePauseOrder(orderId, personId) {
     order.pausedRemaining = remaining;
     showToast('「' + order.orderName + '」倒计时已暂停', true);
   }
-  // 先写云端，再刷新本地
+  // 先写云端，再刷新本地（失败时 upsertOrderDirect 内部会落本地 + 挂起重试）
   cloudPersonnel.upsertOrderDirect(order, personId).then(() => {
+    saveLocalData();
     renderOrderCards(personId);
   });
 }
@@ -7307,6 +7390,7 @@ async function deleteOrderCard(orderId, personId) {
     const { error } = await sb.from('orders').delete().eq('id', orderId).eq('user_id', getUserId());
     if (error) throw new Error(error.message);
     notifyChange();
+    await cloudTombstone.mark('orders', orderId); // 写删除墓碑，防陈旧设备全量保存复活
     _logCrud('order', 'del', order.orderName, { ...order }, null);
     personOrders[personId] = getOrders(personId).filter(o => !_idEq(o.id, orderId));
     delete orderTimers[String(orderId)]; // 移出全局定时器注册表
@@ -7655,6 +7739,23 @@ function generateAttendanceData(year, month) {
 
   attDataCache.set(key, allData);
   return allData;
+}
+
+/* 编辑态：切换某天状态并重建打卡时间/工时（absent/leave 清空，normal/late/early 重算） */
+function __attApplyStatus(day, status) {
+  day.status = status;
+  if (status === 'normal' || status === 'late' || status === 'early') {
+    var rng = Math.random;
+    var inH = status === 'late' ? 9 + Math.floor(rng() * 2) : 8;
+    var inM = status === 'late' ? Math.floor(rng() * 30) : 30 + Math.floor(rng() * 30);
+    var outH = status === 'early' ? 16 + Math.floor(rng() * 1) : 17 + Math.floor(rng() * 2);
+    var outM = Math.floor(rng() * 60);
+    day.checkIn  = String(inH).padStart(2, '0') + ':' + String(inM).padStart(2, '0');
+    day.checkOut = String(outH).padStart(2, '0') + ':' + String(outM).padStart(2, '0');
+    day.hours = (outH + outM / 60 - inH - inM / 60).toFixed(1);
+  } else {
+    day.checkIn = ''; day.checkOut = ''; day.hours = '';
+  }
 }
 
 /* ================================================================
@@ -8385,7 +8486,13 @@ function generateTrainData() {
     const s = seededRNG(course.id * 10000);
     // 随机选 15-40 人参加
     const count = 15 + Math.floor(s() * 26);
-    const pool = [...people].sort(() => s() - 0.5).slice(0, count);
+    // Fisher-Yates 洗牌（seeded）：替代非法比较器 sort(() => s()-0.5)，避免乱序偏置
+    const arr = [...people];
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(s() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    const pool = arr.slice(0, count);
 
     const enrolled = pool.map(p => {
       const s2 = seededRNG(_idSeed(p.id) * 1000 + course.id * 7);
@@ -8489,6 +8596,7 @@ function showTrainDetail(courseId) {
 }
 
 function resetTrainView() {
+  renderTrainOverview(); // P2-13: 返回总览时刷新统计/列表，反映编辑后的进度/成绩
   const trainTableView = document.getElementById('trainTableView');
   if (trainTableView) trainTableView.style.display = '';
   const trainSummary = document.querySelector('#page-training .train-summary');
@@ -8523,48 +8631,42 @@ function resetTrainView() {
   const updateStatusEl = document.getElementById('updateStatus');
   const btnCheck = document.getElementById('btnCheckUpdate');
 
-  if (btnCheck) btnCheck.addEventListener('click', async function() {
-    if (__updateChecking) return;
-    __updateChecking = true;
-    btnCheck.disabled = true;
-    btnCheck.textContent = '⏳ 正在检查...';
-    if (updateStatusEl) { updateStatusEl.style.display = 'block'; updateStatusEl.textContent = '正在连接更新服务器...'; }
-
-    var latestVersion = null;
-    var lastError = '';
-    var CHECK_TIMEOUT = 15000; // 15 秒超时
-
-    // 通用请求函数 — 优先 fetch，降级 XHR
-    async function tryFetch(url, timeoutMs) {
-      // 方法1: fetch + AbortController
-      try {
-        var ctrl = new AbortController();
-        var timer = setTimeout(function() { ctrl.abort(); }, timeoutMs);
-        var resp = await fetch(url, { signal: ctrl.signal, mode: 'cors', cache: 'no-cache' });
-        clearTimeout(timer);
-        return resp;
-      } catch(e) {
-        // 方法2: XMLHttpRequest（部分 WebView 对 fetch 支持不好）
-        return new Promise(function(resolve, reject) {
-          var xhr = new XMLHttpRequest();
-          var timer = setTimeout(function() { xhr.abort(); reject(new Error('XHR 超时')); }, timeoutMs);
-          xhr.open('GET', url, true);
-          xhr.timeout = timeoutMs;
-          xhr.onload = function() {
-            clearTimeout(timer);
-            resolve({ ok: xhr.status >= 200 && xhr.status < 300, status: xhr.status, text: function() { return Promise.resolve(xhr.responseText); }, json: function() { return Promise.resolve(JSON.parse(xhr.responseText)); } });
-          };
-          xhr.onerror = function() { clearTimeout(timer); reject(new Error('网络错误')); };
-          xhr.ontimeout = function() { clearTimeout(timer); reject(new Error('XHR 超时')); };
-          xhr.send();
-        });
-      }
+  // 通用请求函数 — 优先 fetch，降级 XHR（手动检查与启动自动检查共用）
+  async function __tryFetch(url, timeoutMs) {
+    // 方法1: fetch + AbortController
+    try {
+      var ctrl = new AbortController();
+      var timer = setTimeout(function() { ctrl.abort(); }, timeoutMs);
+      var resp = await fetch(url, { signal: ctrl.signal, mode: 'cors', cache: 'no-cache' });
+      clearTimeout(timer);
+      return resp;
+    } catch(e) {
+      // 方法2: XMLHttpRequest（部分 WebView 对 fetch 支持不好）
+      return new Promise(function(resolve, reject) {
+        var xhr = new XMLHttpRequest();
+        var timer = setTimeout(function() { xhr.abort(); reject(new Error('XHR 超时')); }, timeoutMs);
+        xhr.open('GET', url, true);
+        xhr.timeout = timeoutMs;
+        xhr.onload = function() {
+          clearTimeout(timer);
+          resolve({ ok: xhr.status >= 200 && xhr.status < 300, status: xhr.status, text: function() { return Promise.resolve(xhr.responseText); }, json: function() { return Promise.resolve(JSON.parse(xhr.responseText)); } });
+        };
+        xhr.onerror = function() { clearTimeout(timer); reject(new Error('网络错误')); };
+        xhr.ontimeout = function() { clearTimeout(timer); reject(new Error('XHR 超时')); };
+        xhr.send();
+      });
     }
+  }
+
+  // 拉最新版本号：策略1 version.json → 策略2 完整 HTML。返回版本号字符串或 null
+  async function fetchLatestVersion() {
+    var latestVersion = null;
+    __updateLastError = '';
+    var CHECK_TIMEOUT = 15000; // 15 秒超时
 
     // 策略1: 拉 version.json
     try {
-      if (updateStatusEl) updateStatusEl.textContent = '正在获取版本信息...';
-      var resp = await tryFetch(VERSION_JSON_URL + '?t=' + Date.now(), CHECK_TIMEOUT);
+      var resp = await __tryFetch(VERSION_JSON_URL + '?t=' + Date.now(), CHECK_TIMEOUT);
       if (resp.ok) {
         var json = resp.json ? await resp.json() : JSON.parse(await resp.text());
         latestVersion = json.v;
@@ -8572,15 +8674,14 @@ function resetTrainView() {
         console.log('[Update] version.json → v' + latestVersion);
       }
     } catch (e) {
-      lastError = e.message || '连接超时（version.json）';
-      console.warn('[Update] version.json 失败:', lastError);
+      __updateLastError = e.message || '连接超时（version.json）';
+      console.warn('[Update] version.json 失败:', __updateLastError);
     }
 
     // 策略2: 拉完整 HTML
     if (!latestVersion) {
       try {
-        if (updateStatusEl) updateStatusEl.textContent = '正在获取版本文件...';
-        var resp2 = await tryFetch(UPDATE_URL + '?t=' + Date.now(), CHECK_TIMEOUT);
+        var resp2 = await __tryFetch(UPDATE_URL + '?t=' + Date.now(), CHECK_TIMEOUT);
         if (!resp2.ok) throw new Error('HTTP ' + resp2.status);
         var html = resp2.text ? await resp2.text() : '';
         if (!html) throw new Error('空响应');
@@ -8593,14 +8694,45 @@ function resetTrainView() {
         }
       } catch (e) {
         var msg = e.message || '连接超时（HTML）';
-        lastError = lastError ? lastError + ' / ' + msg : msg;
+        __updateLastError = __updateLastError ? __updateLastError + ' / ' + msg : msg;
         console.warn('[Update] HTML 拉取失败:', msg);
       }
+    }
+    return latestVersion;
+  }
+
+  // 启动时静默自动检查：发现新版本则自动弹更新弹窗（无需手动点「检查更新」）
+  async function autoCheckUpdate() {
+    if (__updateChecking) return;
+    __updateChecking = true;
+    try {
+      var latestVersion = await fetchLatestVersion();
+      if (latestVersion && compareVersions(latestVersion, APP_VERSION) > 0) {
+        __updateAvailable = true;
+        __updateVersion = latestVersion;
+        showUpdateConfirm(latestVersion); // 自动弹窗 + 写「检测到新版本」通知
+      }
+    } catch (e) {}
+    __updateChecking = false;
+  }
+
+  if (btnCheck) btnCheck.addEventListener('click', async function() {
+    if (__updateChecking) return;
+    __updateChecking = true;
+    btnCheck.disabled = true;
+    btnCheck.textContent = '⏳ 正在检查...';
+    if (updateStatusEl) { updateStatusEl.style.display = 'block'; updateStatusEl.textContent = '正在连接更新服务器...'; }
+
+    var latestVersion = null;
+    try {
+      latestVersion = await fetchLatestVersion();
+    } catch (e) {
+      __updateLastError = e.message || '检查异常';
     }
 
     if (!latestVersion) {
       if (updateStatusEl) {
-        updateStatusEl.innerHTML = '<span style="color:#a82020;">✕ 检查失败：' + escHtml(lastError || '无法连接更新服务器') + '</span>'
+        updateStatusEl.innerHTML = '<span style="color:#a82020;">✕ 检查失败：' + escHtml(__updateLastError || '无法连接更新服务器') + '</span>'
           + '<br><span style="font-size:10px;color:var(--text-3);">请确认：① 手机已联网 ② 打包时启用了"网络访问"权限</span>';
         setTimeout(function() { if (updateStatusEl) updateStatusEl.style.display = 'none'; }, 8000);
       }
@@ -8805,6 +8937,10 @@ function resetTrainView() {
         if (!htmlText) throw new Error('XHR 返回空内容');
       }
 
+      // 统一去 UTF-8 BOM：fetch 路径的 TextDecoder 已自动去；XHR responseText 可能保留 BOM，
+      // 不去会导致与部署端（去 BOM 后算 sha256）不一致而校验失败。
+      if (htmlText && htmlText.charCodeAt(0) === 0xFEFF) htmlText = htmlText.slice(1);
+
       // Verify downloaded content has correct version
       var versionMatch = htmlText.match(/const\s+APP_VERSION\s*=\s*['"]([\d.]+)['"]/);
       if (!versionMatch) throw new Error('Invalid download: cannot parse version');
@@ -8874,17 +9010,8 @@ function resetTrainView() {
     var r = document.documentElement;
     if (enable) {
       r.style.setProperty('--bg', 'rgba(18, 20, 26, 0.92)');
-      r.style.setProperty('--glass-heavy', 'rgba(255,255,255,0.06)');
-      r.style.setProperty('--glass-medium', 'rgba(255,255,255,0.04)');
-      r.style.setProperty('--glass-light', 'rgba(255,255,255,0.025)');
-      r.style.setProperty('--glass-subtle', 'rgba(255,255,255,0.015)');
-      r.style.setProperty('--glass-card', 'rgba(255,255,255,0.07)');
-      r.style.setProperty('--blur-xl', 'blur(14px) saturate(130%)');
-      r.style.setProperty('--blur-lg', 'blur(10px) saturate(125%)');
-      r.style.setProperty('--blur-md', 'blur(7px) saturate(120%)');
-      r.style.setProperty('--blur-sm', 'blur(5px) saturate(115%)');
-      r.style.setProperty('--sidebar-bg', 'rgba(255,255,255,0.07)');
-      r.style.setProperty('--sidebar-blur', 'blur(16px) saturate(130%)');
+      // 不再覆盖 --glass-*/--blur-*/--sidebar-bg/--sidebar-blur：
+      // 这些由「玻璃强度」设置控制，暗色下应保持用户选择（CSS body.dark-mode 提供暗色默认值）
       r.style.setProperty('--sidebar-text', '#e4e6ec');
       r.style.setProperty('--sidebar-text-2', '#9a9da8');
       r.style.setProperty('--sidebar-text-3', 'rgba(255,255,255,0.16)');
@@ -8900,22 +9027,19 @@ function resetTrainView() {
       r.style.setProperty('--border-subtle', 'rgba(255,255,255,0.06)');
       r.style.setProperty('--border-dark', 'rgba(255,255,255,0.04)');
       r.style.setProperty('--glass-edge', 'inset 0 1px 0 rgba(255,255,255,0.18),inset 0 -1px 0 rgba(0,0,0,0.30),inset 1px 0 0 rgba(255,255,255,0.08),inset -1px 0 0 rgba(255,255,255,0.06)');
-      r.style.setProperty('--accent-blue', '#8aaddb');
-      r.style.setProperty('--accent-purple', '#a89ad4');
-      r.style.setProperty('--accent-teal', '#8ec8c8');
-      r.style.setProperty('--accent-coral', '#d4a89c');
+      // 不再覆盖 --accent-*：色调(蓝紫/暖/冷)选择应在暗色下保留（CSS body.dark-mode 提供暗色默认值）
       r.style.setProperty('--shadow-sm', '0 2px 12px rgba(0,0,0,0.18)');
       r.style.setProperty('--shadow-md', '0 8px 32px rgba(0,0,0,0.24)');
       r.style.setProperty('--shadow-lg', '0 20px 60px rgba(0,0,0,0.36)');
     } else {
-      var vars = ['--bg','--glass-heavy','--glass-medium','--glass-light','--glass-subtle','--glass-card',
-        '--blur-xl','--blur-lg','--blur-md','--blur-sm',
-        '--sidebar-bg','--sidebar-blur','--sidebar-text','--sidebar-text-2','--sidebar-text-3',
+      // 关闭暗色：只移除暗色专属变量。--glass-*/--blur-*/--sidebar-bg/--sidebar-blur/--accent-*
+      // 属于「玻璃强度/色调」的用户选择，不能被顺带清掉（否则切回浅色会丢失这两项设置）。
+      var vars = ['--bg',
+        '--sidebar-text','--sidebar-text-2','--sidebar-text-3',
         '--sidebar-hover','--sidebar-active','--sidebar-slider','--sidebar-border','--sidebar-divider',
         '--text-1','--text-2','--text-3',
         '--border-glass','--border-subtle','--border-dark',
         '--glass-edge',
-        '--accent-blue','--accent-purple','--accent-teal','--accent-coral',
         '--shadow-sm','--shadow-md','--shadow-lg'];
       vars.forEach(function(v){ r.style.removeProperty(v); });
     }
@@ -9031,11 +9155,9 @@ function resetTrainView() {
       this.querySelectorAll('.zp-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       const v = parseInt(btn.dataset.v, 10);
-      const scale = v / 100;
-      document.body.style.transform = `scale(${scale})`;
-      document.body.style.transformOrigin = 'top left';
-      document.body.style.width = `${100 / scale}%`;
-      document.body.style.height = `${100 / scale}%`;
+      // 用 CSS zoom 替代 transform:scale()：transform 会让 fixed 元素
+      // （顶栏、弹窗、遮罩）相对缩放后的 body 定位而错位；zoom 不会。
+      document.body.style.zoom = v + '%';
       cloudAutoSave();
     });
 
@@ -9320,8 +9442,6 @@ document.addEventListener('click', function(e) {
       var idx = statusCycle.indexOf(curStatus);
       idx = (idx + 1) % statusCycle.length;
       var newStatus = statusCycle[idx];
-      day.className = day.className.replace(new RegExp(clsPrefix + '\\S+','g'), '');
-      day.classList.add(clsPrefix + newStatus);
 
       var dayNum = parseInt(day.querySelector('.cal-num')?.textContent, 10);
       if (dayNum && attDetailPersonId) {
@@ -9331,14 +9451,15 @@ document.addEventListener('click', function(e) {
             var days = allData[i].days;
             for (var j = 0; j < days.length; j++) {
               if (days[j].day === dayNum) {
-                days[j].status = newStatus;
-                if (newStatus === 'absent') { days[j].checkIn = ''; days[j].checkOut = ''; days[j].hours = 0; }
+                __attApplyStatus(days[j], newStatus); // 状态切换 + 打卡时间/工时重建（P2-10）
                 break;
               }
             }
             break;
           }
         }
+        // 重渲染月历 + 打卡记录表，让状态/工时即时反映（P2-11）
+        renderAttDetail(attCurrentYear, attCurrentMonth);
       }
     });
   }
@@ -9401,11 +9522,21 @@ document.addEventListener('click', function(e) {
         if (field === 'progress') {
           entry.progress = v;
           entry.done = v >= 100;
-          cell.innerHTML = '<div class="train-progress-bar"><div class="tpb-fill" style="width:' + v + '%;"></div></div>' + v + '%';
+          if (v >= 100) {
+            // 到 100% 写入完成日期（P2-12），并给默认及格分，避免完成日期/成绩列为空
+            if (!entry.doneDate) {
+              var _dd = new Date();
+              entry.doneDate = _dd.getFullYear() + '-' + String(_dd.getMonth() + 1).padStart(2, '0') + '-' + String(_dd.getDate()).padStart(2, '0');
+            }
+            if (!entry.score) entry.score = 60;
+          } else {
+            entry.doneDate = '';
+            entry.score = 0;
+          }
         } else {
           entry.score = v;
-          cell.textContent = v + '分';
         }
+        showTrainDetail(courseId); // 重新渲染详情，让完成日期/成绩/进度列即时刷新
         showToast('已保存', true);
       });
     });
@@ -9505,7 +9636,8 @@ function buildPrismSnapshot() {
     recentLogs = (window.__appLogs || []).filter(function (e) {
       return e && (e.category === 'security' || e.category === 'user' || e.category === 'ai');
     }).slice(-50).map(function (e) {
-      return { t: e.ts, cat: e.category, level: e.level, op: _maskName(e.operator), action: e.action, msg: (e.msg || '').slice(0, 120) };
+      // 不再把 msg 明文送出（内含真实姓名/邮箱），只保留类别/级别/动作等脱敏元信息
+      return { t: e.ts, cat: e.category, level: e.level, op: _maskName(e.operator), action: e.action };
     });
   } catch (e) {}
 
@@ -9845,7 +9977,9 @@ const AI_TOOLS = [
       dept: { type: 'string', enum: ['管理', '员工'], description: '部门' },
       title: { type: 'string', description: '职位：跑刀、护航，或两者（用「、」连接）' }
     }, required: ['name', 'code', 'dept', 'title'] },
-    confirm: false, run: _aiAddPerson
+    confirm: true,
+    confirmText: function (a) { return 'AI 将添加人员：' + (a && a.name ? ('「' + a.name + '」') : '') + '。确认？'; },
+    run: _aiAddPerson
   },
   {
     name: 'edit_person', label: '修改人员',
@@ -9890,7 +10024,9 @@ const AI_TOOLS = [
       name: { type: 'string', description: '考生名字' },
       project: { type: 'string', description: '项目（默认「护航」）' }
     }, required: ['name'] },
-    confirm: false, run: _aiAddExam
+    confirm: true,
+    confirmText: function (a) { return 'AI 将添加考生：' + (a && a.name ? ('「' + a.name + '」') : '') + '。确认？'; },
+    run: _aiAddExam
   },
   {
     name: 'pass_exam', label: '通过考生',
@@ -9911,6 +10047,7 @@ const AI_TOOLS = [
 ];
 
 function _buildToolDefinitions() {
+  if (appMode !== 'edit') return []; // 查看模式下不下发任何写工具（纵深防御，服务端 RLS 仍兜底）
   return AI_TOOLS.map(function (t) {
     return { type: 'function', function: { name: t.name, description: t.desc, parameters: t.params } };
   });
@@ -9961,6 +10098,7 @@ async function _aiDeletePerson(args) {
   delete personOrders[p.id];
   people = people.filter(function (x) { return !_idEq(x.id, p.id); });
   filteredPeople = filteredPeople.filter(function (x) { return !_idEq(x.id, p.id); });
+  attDataCache.clear(); // P3-10: 人员增删后失效考勤缓存
   saveLocalData();
   _logCrud('personnel', 'del', p.name, before, null);
   renderCards(); renderPersonnelList();
@@ -9975,6 +10113,7 @@ async function _aiAddPerson(args) {
   for (var i = 0; i < people.length; i++) { if (people[i].name === name) return { ok: false, msg: '已存在代号为「' + name + '」的人员。' }; }
   var np = { id: newEntityId(), name: name, code: code, dept: dept, title: title, phone: '', date: localDateTimeInput(), status: 'active' };
   people.unshift(np);
+  attDataCache.clear(); // P3-10: 人员增删后失效考勤缓存
   var ok = await cloudPersonnel.upsertPersonDirect(np);
   _logCrud('personnel', 'add', name, null, { ...np });
   renderCards(); renderPersonnelList();
@@ -10138,23 +10277,61 @@ const NOTIF_NOTIFIED_VER_KEY = 'clubapp_notified_version';
 const NOTIF_CATS = [
   { key: 'personnel', label: '人员', icon: '👤' },
   { key: 'order',     label: '订单', icon: '📦' },
+  { key: 'message',   label: '消息', icon: '💬' },
   { key: 'ai',        label: 'AI巡逻', icon: '🛡️' },
   { key: 'error',     label: '错误', icon: '🚨' },
   { key: 'warn',      label: '警告', icon: '⚠️' },
   { key: 'system',    label: '系统', icon: '⚙️' }
 ];
-const NOTIF_VERB = { add: '新增了', edit: '修改了', del: '删除了', pass: '通过了', reject: '拒绝了', complete: '结单了', version: '检测到新版本' };
+const NOTIF_VERB = { add: '新增了', edit: '修改了', del: '删除了', pass: '通过了', reject: '拒绝了', complete: '结单了', version: '检测到新版本', message: '发来消息' };
+const MSG_LEVEL = { normal: { label: '普通', color: '#8e8e93' }, medium: { label: '中等', color: '#ff9500' }, high: { label: '最高', color: '#ff3b30' } };
 
-function _notifLastReadId() {
-  try { var n = parseInt(localStorage.getItem(NOTIF_LAST_READ_KEY) || '0', 10); return isNaN(n) ? 0 : n; } catch (e) { return 0; }
+/* 已读集合（逐条点开才读）：{ w: 水位线(<=w 视为已读), s: {显式已读 id} }。
+   旧版是单调计数器(点最新=全读)，此处迁移为集合，兼容旧数据（纯数字视为水位线）。 */
+function _readSetGet(key) {
+  try {
+    var raw = localStorage.getItem(key);
+    if (raw == null || raw === '') return { w: 0, s: {} };
+    var p = JSON.parse(raw);
+    if (typeof p === 'number') return { w: p, s: {} };        // 旧版纯数字水位线
+    return { w: (p && p.w) || 0, s: (p && p.s) || {} };
+  } catch (e) {
+    try { var n = parseInt(raw, 10); return isNaN(n) ? { w: 0, s: {} } : { w: n, s: {} }; } catch (e2) { return { w: 0, s: {} }; }
+  }
 }
-function _notifMarkAllRead(maxId) {
-  try { localStorage.setItem(NOTIF_LAST_READ_KEY, String(maxId || 0)); } catch (e) {}
+function _readSetSave(key, st) {
+  // 有界：显式集合过大时只保留较大的 id（越新越可能仍在列表里）
+  try {
+    var ids = Object.keys(st.s || {});
+    if (ids.length > 500) {
+      ids.sort(function (a, b) { return Number(a) - Number(b); });
+      var keep = ids.slice(ids.length - 200), ns = {};
+      for (var i = 0; i < keep.length; i++) ns[keep[i]] = 1;
+      st.s = ns;
+    }
+    localStorage.setItem(key, JSON.stringify({ w: st.w, s: st.s }));
+  } catch (e) {}
 }
-function _notifMarkRead(id) {
-  var cur = _notifLastReadId();
-  if (id > cur) _notifMarkAllRead(id);
+function _readSetIsRead(key, id) {
+  var st = _readSetGet(key);
+  return id <= st.w || !!st.s[id];
 }
+function _readSetMarkRead(key, id) {
+  if (id == null) return;
+  var st = _readSetGet(key);
+  if (id <= st.w) return;         // 已被水位线覆盖，无需记录
+  st.s[id] = 1;
+  _readSetSave(key, st);
+}
+function _readSetMarkAll(key, maxId) {
+  var st = _readSetGet(key);
+  if (maxId <= st.w) return;
+  st.w = maxId; st.s = {};
+  _readSetSave(key, st);
+}
+function _notifIsRead(id) { return _readSetIsRead(NOTIF_LAST_READ_KEY, id); }
+function _notifMarkRead(id) { _readSetMarkRead(NOTIF_LAST_READ_KEY, id); }
+function _notifMarkAllRead(maxId) { _readSetMarkAll(NOTIF_LAST_READ_KEY, maxId); }
 function _notifSetBadge(n) {
   var b = document.getElementById('notifBadge');
   if (!b) return;
@@ -10196,6 +10373,7 @@ async function _notifFetchList(limit) {
   try {
     var res = await sb.from('app_logs')
       .select('id,category,level,operator,action,message,detail,created_at')
+      .neq('category', 'system')
       .order('id', 'desc').limit(300);
     if (res.error) return [];
     var out = [];
@@ -10206,11 +10384,59 @@ async function _notifFetchList(limit) {
       if (typeof detail === 'string') { try { detail = JSON.parse(detail); } catch (e) { detail = null; } }
       var table = _notifPass(r, (detail && detail.table) || '');
       if (!table) continue;
-      out.push({ id: r.id, category: r.category, level: r.level, table: table, operator: r.operator || '', action: r.action || '', message: r.message || '', detail: detail, createdAt: r.created_at });
+      out.push({ id: r.id, category: r.category, level: r.level, table: table, operator: r.operator || '', operatorUid: (detail && detail.operatorUid) || '', action: r.action || '', message: r.message || '', detail: detail, createdAt: r.created_at });
       if (out.length >= (limit || 100)) break;
     }
     return out;
   } catch (e) { return []; }
+}
+/* ---- 站内消息（发消息功能）---- */
+const MSG_LAST_READ_KEY = 'clubapp_msg_last_read';
+function _msgIsRead(id) { return _readSetIsRead(MSG_LAST_READ_KEY, id); }
+function _msgMarkRead(id) { _readSetMarkRead(MSG_LAST_READ_KEY, id); }
+/* 从云端 app_messages 拉我该收的消息（RLS 已过滤），映射成通知条目 */
+async function _notifFetchMsgs(limit) {
+  if (typeof sb === 'undefined' || !sb || !cloudReady) return [];
+  try {
+    var res = await sb.from('app_messages')
+      .select('id,sender_id,sender,content,level,recipients,created_at')
+      .order('id', 'desc').limit(limit || 100);
+    if (res.error) return [];
+    var rows = res.data || [];
+    var out = [];
+    for (var i = 0; i < rows.length; i++) {
+      var m = rows[i];
+      out.push({
+        id: 1000000000 + m.id,        // 消息 id 用大偏移，避免与日志 id 冲突
+        rawId: m.id,
+        senderId: m.sender_id || '',
+        category: 'message',
+        level: m.level || 'normal',
+        table: 'message',
+        operator: m.sender || '',
+        action: 'message',
+        message: m.content || '',
+        detail: null,
+        createdAt: m.created_at
+      });
+    }
+    return out;
+  } catch (e) { return []; }
+}
+/* 列成员（仅管理员）——调用 security definer 的 list_members RPC */
+async function _rpcListMembers() {
+  var tok = await _ensureFreshToken();
+  if (!tok) return { error: '登录已失效，请重新登录' };
+  try {
+    var r = await _fetchWithTimeout(SUPABASE_URL + '/rest/v1/rpc/list_members', {
+      method: 'POST',
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + tok, 'Content-Type': 'application/json' },
+      body: JSON.stringify({})
+    });
+    if (!r.ok) { var t = ''; try { t = await r.text(); } catch (e) {} return { error: t || ('HTTP ' + r.status) }; }
+    var data = await r.json();
+    return { data: data || [] };
+  } catch (e) { return { error: (e && e.message) || '网络错误' }; }
 }
 /* 高威胁（安全）事件红点：在「安全日志」入口提示，点开即消除 */
 const SEC_SEEN_KEY = 'clubapp_sec_seen';
@@ -10224,6 +10450,8 @@ function _secMarkSeen(id) {
 function _secSetDot(show) {
   var dot = document.getElementById('secDot');
   if (dot) dot.style.display = show ? '' : 'none';
+  var navDot = document.getElementById('sysinfoNavDot');
+  if (navDot) navDot.style.display = show ? '' : 'none';
 }
 /* 刷新红点：未读 = id > last_read_id 且非本人操作 的通知数；同时刷新安全事件红点 */
 async function _notifRefreshBadge() {
@@ -10231,14 +10459,25 @@ async function _notifRefreshBadge() {
   if (!isLoggedIn() || isGuest()) { if (btn) btn.style.display = 'none'; _notifSetBadge(0); _secSetDot(false); return; }
   if (btn) btn.style.display = '';
   var list = await _notifFetchList(100);
-  var lastRead = _notifLastReadId();
+  var _sess = getSession();
+  var myUid = (_sess && _sess.uid) || '';
   var me = (typeof getUserName === 'function' ? getUserName() : '') || '';
   var unread = 0;
   for (var i = 0; i < list.length; i++) {
     var r = list[i];
-    if (r.id <= lastRead) break;
-    if (r.operator && r.operator === me) continue; // 自己的操作不计未读
+    if (_notifIsRead(r.id)) continue;
+    // 自己的操作不计未读（优先按 uid 判定，旧日志无 uid 时回退昵称）
+    if (r.operatorUid ? (myUid && r.operatorUid === myUid) : (r.operator && r.operator === me)) continue;
     unread++;
+  }
+  // 站内消息未读（自己发的消息不计未读）
+  var msgs = await _notifFetchMsgs(100);
+  var msgUnread = 0;
+  for (var k = 0; k < msgs.length; k++) {
+    var mg = msgs[k];
+    if (_msgIsRead(mg.rawId)) continue;
+    if (mg.senderId && mg.senderId === myUid) continue;
+    msgUnread++;
   }
   // 安全事件（高威胁）：取最新一条，比已读新则亮红点
   _secLatestId = 0;
@@ -10246,15 +10485,28 @@ async function _notifRefreshBadge() {
     if (list[j].category === 'security') { _secLatestId = list[j].id; break; }
   }
   _secSetDot(_secLatestId > _secSeenId());
-  _notifSetBadge(unread);
+  _notifSetBadge(unread + msgUnread);
 }
-/* 写一条「系统 · 检测到新版本」通知（同版本去重）*/
-function _notifVersion(ver) {
+/* 写一条「系统 · 检测到新版本」通知（本地去重 + 云端去重：广播/各设备自动检测只记一次）*/
+async function _notifVersion(ver) {
   if (!ver) return;
   try {
     if (localStorage.getItem(NOTIF_NOTIFIED_VER_KEY) === ver) return;
+    // 云端去重：若已存在同版本通知（可能是部署时广播写入的），则不重复写
+    var alreadyLogged = false;
+    try {
+      var q = await sb.from('app_logs')
+        .select('id')
+        .eq('category', 'version')
+        .eq('message', '检测到新版本 v' + ver)
+        .maybeSingle();
+      alreadyLogged = !!(q && !q.error && q.data);
+    } catch (e) {}
     localStorage.setItem(NOTIF_NOTIFIED_VER_KEY, ver);
+    if (alreadyLogged) { _notifRefreshBadge(); return; }
     addAppLog('info', '检测到新版本 v' + ver, 'version', '系统', 'version', { table: 'system', version: ver });
+    // 立即上传（不等3秒防抖），否则“立即更新”跳转会把这条版本日志吞掉，导致信息里收不到更新通知
+    await flushLogUpload();
     _notifRefreshBadge();
   } catch (e) {}
 }
@@ -10277,7 +10529,11 @@ function _ensureNotifOverlay() {
   ov.className = 'modal-overlay hidden';
   ov.innerHTML = ''
     + '<div class="modal" style="max-width:460px;max-height:80vh;display:flex;flex-direction:column;overflow:hidden;">'
-    + '<div class="modal-header"><span>🔔 通知</span><button class="modal-close" id="notifClose" type="button">✕</button></div>'
+    + '<div class="modal-header"><span>🔔 通知</span>'
+    + '<div style="display:flex;align-items:center;gap:8px;">'
+    + '<button id="notifSendMsg" type="button" style="display:none;padding:5px 12px;font-size:12px;font-weight:700;border-radius:8px;border:0.5px solid var(--border-subtle);background:var(--glass-card);color:var(--accent-blue);cursor:pointer;">✉ 发消息</button>'
+    + '<button class="modal-close" id="notifClose" type="button">✕</button>'
+    + '</div></div>'
     + '<div class="modal-body" style="flex:1;min-height:0;overflow-y:auto;padding:14px 18px;">'
     + '<div id="notifList" style="font-size:13px;"></div>'
     + '</div></div>';
@@ -10285,6 +10541,8 @@ function _ensureNotifOverlay() {
   ov.addEventListener('click', function (ev) { if (ev.target === ov) _notifCloseOverlay(ov); });
   var close = document.getElementById('notifClose');
   if (close) close.onclick = function () { _notifCloseOverlay(ov); };
+  var sendBtn = document.getElementById('notifSendMsg');
+  if (sendBtn) sendBtn.onclick = function () { _openSendMsg(); };
   return ov;
 }
 async function _openNotif() {
@@ -10292,13 +10550,27 @@ async function _openNotif() {
   var ov = _ensureNotifOverlay();
   ov.classList.remove('hidden');
   ov.classList.remove('closing');
+  // 管理员才显示「发消息」按钮
+  var sendBtn = document.getElementById('notifSendMsg');
+  if (sendBtn) {
+    var isAdmin = await _amIAdmin();
+    sendBtn.style.display = isAdmin ? '' : 'none';
+  }
   var listEl = document.getElementById('notifList');
   if (listEl) listEl.innerHTML = '<div style="color:var(--text-3);padding:20px;text-align:center;">加载中…</div>';
-  var list = await _notifFetchList(100);
+  var logs = await _notifFetchList(100);
+  var msgs = await _notifFetchMsgs(100);
+  var list = logs.concat(msgs);
+  list.sort(function (a, b) {
+    var ta = Date.parse(a.createdAt || ''); var tb = Date.parse(b.createdAt || '');
+    return (isNaN(tb) ? 0 : tb) - (isNaN(ta) ? 0 : ta);
+  });
   _renderNotifList(list); // 打开不立即全读，逐条点开才读（未读条目显示红点）
 }
 var _notifCurrentList = [];
 function _notifBuildItem(r) {
+  var isMsg = (r.category === 'message');
+  var isUnread = isMsg ? !_msgIsRead(r.rawId) : !_notifIsRead(r.id);
   var item = document.createElement('div');
   item.style.cssText = 'padding:8px 10px;border-radius:10px;cursor:pointer;margin:0 0 4px;background:rgba(255,255,255,0.06);border:0.5px solid var(--border-glass);';
   var row = document.createElement('div');
@@ -10306,14 +10578,21 @@ function _notifBuildItem(r) {
   var left = document.createElement('span');
   left.style.cssText = 'flex:1;min-width:0;display:flex;align-items:flex-start;gap:6px;';
   // 未读红点（像短信一样）
-  if (r.id > _notifLastReadId()) {
+  if (isUnread) {
     var dot = document.createElement('span');
     dot.style.cssText = 'width:7px;height:7px;border-radius:50%;background:#ff3b30;margin-top:6px;flex-shrink:0;';
     left.appendChild(dot);
   }
   var txt = document.createElement('span');
   txt.style.cssText = 'color:var(--text-1);line-height:1.45;word-break:break-word;';
-  txt.textContent = r.message || (NOTIF_VERB[r.action] || '操作了');
+  if (isMsg) {
+    var lv = MSG_LEVEL[r.level] || MSG_LEVEL.normal;
+    var chip = document.createElement('span');
+    chip.textContent = lv.label;
+    chip.style.cssText = 'display:inline-block;font-size:10px;font-weight:700;padding:1px 5px;border-radius:4px;margin-right:4px;color:#fff;background:' + lv.color + ';vertical-align:1px;';
+    txt.appendChild(chip);
+  }
+  txt.appendChild(document.createTextNode(r.message || (NOTIF_VERB[r.action] || '操作了')));
   left.appendChild(txt);
   var time = document.createElement('span');
   time.style.cssText = 'color:var(--text-3);font-size:11px;white-space:nowrap;flex-shrink:0;';
@@ -10321,10 +10600,11 @@ function _notifBuildItem(r) {
   row.appendChild(left); row.appendChild(time);
   var op = document.createElement('div');
   op.style.cssText = 'color:var(--text-3);font-size:11px;margin-top:2px;';
-  op.textContent = r.operator || '';
+  op.textContent = isMsg ? (r.operator ? '来自 ' + r.operator : '') : (r.operator || '');
   item.appendChild(row); item.appendChild(op);
   item.onclick = function () {
-    _notifMarkRead(r.id);                 // 点开这一条即读
+    if (isMsg) _msgMarkRead(r.rawId);
+    else _notifMarkRead(r.id);             // 点开这一条即读（仅记这一条，不再全读）
     _renderNotifList(_notifCurrentList);  // 重新渲染，同步其它条目红点
     _notifShowDetail(r);
     _notifRefreshBadge();                 // 刷新角标
@@ -10400,8 +10680,20 @@ function _notifShowDetail(r) {
     if (r.operator) {
       var l2 = document.createElement('div');
       l2.style.cssText = 'color:var(--text-2);font-size:12px;margin-top:6px;';
-      l2.textContent = '操作者：' + r.operator;
+      l2.textContent = (r.category === 'message' ? '发送者：' : '操作者：') + r.operator;
       body.appendChild(l2);
+    }
+    if (r.category === 'message') {
+      var lv2 = MSG_LEVEL[r.level] || MSG_LEVEL.normal;
+      var ll = document.createElement('div');
+      ll.style.cssText = 'color:var(--text-2);font-size:12px;margin-top:6px;';
+      var lbl = document.createElement('span');
+      lbl.textContent = '等级：';
+      var chip2 = document.createElement('span');
+      chip2.textContent = lv2.label;
+      chip2.style.cssText = 'display:inline-block;padding:1px 6px;border-radius:4px;color:#fff;background:' + lv2.color + ';font-weight:700;font-size:11px;';
+      ll.appendChild(lbl); ll.appendChild(chip2);
+      body.appendChild(ll);
     }
     var t = _notifTime(r.createdAt);
     if (t) {
@@ -10421,6 +10713,168 @@ function _notifShowDetail(r) {
   ov.classList.remove('hidden');
 }
 
+/* ---- 发消息（仅管理员）---- */
+function _msgLevelBtn(level) {
+  var lv = MSG_LEVEL[level] || MSG_LEVEL.normal;
+  return '<button type="button" class="msg-level-btn" data-level="' + level + '" style="padding:6px 14px;border-radius:8px;border:0.5px solid var(--border-subtle);background:var(--glass-card);color:var(--text-2);cursor:pointer;font-size:12px;font-weight:600;">' + lv.label + '</button>';
+}
+async function _openSendMsg() {
+  if (!isLoggedIn() || isGuest()) return;
+  var isAdmin = await _amIAdmin();
+  if (!isAdmin) { showToast('仅管理员可发消息', false); return; }
+  var ov = document.getElementById('msgSendOverlay');
+  if (!ov) {
+    ov = document.createElement('div');
+    ov.id = 'msgSendOverlay';
+    ov.className = 'modal-overlay hidden';
+    ov.innerHTML = ''
+      + '<div class="modal" style="max-width:480px;max-height:86vh;display:flex;flex-direction:column;overflow:hidden;">'
+      + '<div class="modal-header"><span>✉ 发消息</span><button class="modal-close" id="msgSendClose" type="button">✕</button></div>'
+      + '<div class="modal-body" style="flex:1;min-height:0;overflow-y:auto;">'
+      +   '<div style="font-size:13px;color:var(--text-3);margin-bottom:6px;">消息内容</div>'
+      +   '<textarea id="msgSendContent" rows="4" style="width:100%;box-sizing:border-box;border-radius:10px;border:0.5px solid var(--border-subtle);background:var(--glass-card);color:var(--text-1);padding:10px 12px;font-size:14px;resize:vertical;line-height:1.5;"></textarea>'
+      +   '<div style="font-size:13px;color:var(--text-3);margin:14px 0 6px;">发送给</div>'
+      +   '<div style="display:flex;gap:8px;margin-bottom:8px;">'
+      +     '<button type="button" id="msgToAll" data-to="all" style="flex:1;padding:8px;border-radius:10px;border:0.5px solid var(--border-subtle);cursor:pointer;font-size:13px;font-weight:600;">全部用户</button>'
+      +     '<button type="button" id="msgToSome" data-to="some" style="flex:1;padding:8px;border-radius:10px;border:0.5px solid var(--border-subtle);cursor:pointer;font-size:13px;font-weight:600;">指定成员</button>'
+      +   '</div>'
+      +   '<div id="msgMemberPicker" style="display:none;max-height:200px;overflow-y:auto;border-radius:10px;border:0.5px solid var(--border-subtle);background:var(--glass-card);padding:8px;"></div>'
+      +   '<div style="font-size:13px;color:var(--text-3);margin:14px 0 6px;">发布等级</div>'
+      +   '<div id="msgLevelPicker" style="display:flex;gap:8px;">' + _msgLevelBtn('normal') + _msgLevelBtn('medium') + _msgLevelBtn('high') + '</div>'
+      + '</div>'
+      + '<div class="modal-footer">'
+      +   '<button class="btn btn-glass" id="msgSendCancel" type="button">取消</button>'
+      +   '<button class="btn btn-glass primary" id="msgSendOk" type="button">发送</button>'
+      + '</div></div>';
+    document.body.appendChild(ov);
+    ov.addEventListener('click', function (ev) { if (ev.target === ov) _notifCloseOverlay(ov); });
+    document.getElementById('msgSendClose').onclick = function () { _notifCloseOverlay(ov); };
+    document.getElementById('msgSendCancel').onclick = function () { _notifCloseOverlay(ov); };
+    document.getElementById('msgSendOk').onclick = function () { _sendMsg(); };
+    var toAll = document.getElementById('msgToAll');
+    var toSome = document.getElementById('msgToSome');
+    function _setTo(to) {
+      window.__msgTo = to;
+      toAll.style.background = (to === 'all') ? 'var(--accent-blue)' : 'var(--glass-card)';
+      toAll.style.color = (to === 'all') ? '#fff' : 'var(--text-1)';
+      toSome.style.background = (to === 'some') ? 'var(--accent-blue)' : 'var(--glass-card)';
+      toSome.style.color = (to === 'some') ? '#fff' : 'var(--text-1)';
+      document.getElementById('msgMemberPicker').style.display = (to === 'some') ? '' : 'none';
+    }
+    toAll.onclick = function () { _setTo('all'); };
+    toSome.onclick = function () { _setTo('some'); };
+    var levelBtns = ov.querySelectorAll('.msg-level-btn');
+    function _setLevel(level) {
+      window.__msgLevel = level;
+      for (var i = 0; i < levelBtns.length; i++) {
+        var b = levelBtns[i];
+        var lv = MSG_LEVEL[b.getAttribute('data-level')];
+        var on = (b.getAttribute('data-level') === level);
+        b.style.background = on ? lv.color : 'var(--glass-card)';
+        b.style.color = on ? '#fff' : 'var(--text-2)';
+        b.style.borderColor = on ? lv.color : 'var(--border-subtle)';
+      }
+    }
+    for (var j = 0; j < levelBtns.length; j++) {
+      (function (b) { b.onclick = function () { _setLevel(b.getAttribute('data-level')); }; })(levelBtns[j]);
+    }
+  }
+  window.__msgTo = 'all';
+  window.__msgLevel = 'normal';
+  window.__msgMembers = [];
+  ov.classList.remove('hidden');
+  ov.classList.remove('closing');
+  var content = document.getElementById('msgSendContent');
+  if (content) content.value = '';
+  var tAll = document.getElementById('msgToAll');
+  var tSome = document.getElementById('msgToSome');
+  if (tAll && tSome) {
+    tAll.style.background = 'var(--accent-blue)'; tAll.style.color = '#fff';
+    tSome.style.background = 'var(--glass-card)'; tSome.style.color = 'var(--text-1)';
+    document.getElementById('msgMemberPicker').style.display = 'none';
+  }
+  var lvBtns = ov.querySelectorAll('.msg-level-btn');
+  for (var k = 0; k < lvBtns.length; k++) {
+    var b = lvBtns[k]; var lv = MSG_LEVEL[b.getAttribute('data-level')];
+    var on = (b.getAttribute('data-level') === 'normal');
+    b.style.background = on ? lv.color : 'var(--glass-card)';
+    b.style.color = on ? '#fff' : 'var(--text-2)';
+    b.style.borderColor = on ? lv.color : 'var(--border-subtle)';
+  }
+  var picker = document.getElementById('msgMemberPicker');
+  if (picker) picker.innerHTML = '<div style="color:var(--text-3);padding:10px;text-align:center;">加载成员…</div>';
+  var res = await _rpcListMembers();
+  var members = (res && res.data) || [];
+  window.__msgMembers = members;
+  if (res && res.error) {
+    if (picker) picker.innerHTML = '<div style="color:#ff3b30;padding:10px;font-size:12px;">无法获取成员列表：' + _escLogHtml(res.error) + '<br>请确认已在 Supabase 运行 _SQL_消息.sql</div>';
+  } else if (picker) {
+    if (!members.length) {
+      picker.innerHTML = '<div style="color:var(--text-3);padding:10px;text-align:center;">暂无成员</div>';
+    } else {
+      picker.innerHTML = '';
+      for (var m = 0; m < members.length; m++) {
+        (function (mem) {
+          var lab = document.createElement('label');
+          lab.style.cssText = 'display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:8px;cursor:pointer;font-size:13px;color:var(--text-1);';
+          var cb = document.createElement('input');
+          cb.type = 'checkbox';
+          cb.value = mem.user_id;
+          cb.style.cssText = 'accent-color:var(--accent-blue);';
+          lab.appendChild(cb);
+          var nameSpan = document.createElement('span');
+          nameSpan.textContent = mem.nickname + (mem.is_admin ? '（管理员）' : '');
+          lab.appendChild(nameSpan);
+          picker.appendChild(lab);
+        })(members[m]);
+      }
+    }
+  }
+}
+async function _sendMsg() {
+  var content = document.getElementById('msgSendContent');
+  var text = (content ? content.value : '').trim();
+  if (!text) { showToast('请输入消息内容', false); return; }
+  var to = window.__msgTo || 'all';
+  var level = window.__msgLevel || 'normal';
+  var recipients = null;
+  if (to === 'some') {
+    var picker = document.getElementById('msgMemberPicker');
+    var checked = picker ? Array.prototype.slice.call(picker.querySelectorAll('input[type=checkbox]:checked')).map(function (c) { return c.value; }) : [];
+    if (!checked.length) { showToast('请选择至少一名接收成员', false); return; }
+    recipients = checked;
+  }
+  var s = getSession();
+  var senderId = (s && s.uid) || null;
+  var sender = (typeof getUserName === 'function' ? getUserName() : '') || '管理员';
+  var okBtn = document.getElementById('msgSendOk');
+  if (okBtn) { okBtn.disabled = true; okBtn.textContent = '发送中…'; }
+  try {
+    if (typeof sb === 'undefined' || !sb || !cloudReady) throw new Error('未连接云端');
+    var res = await sb.from('app_messages').insert({
+      sender_id: senderId, sender: sender, content: text, level: level, recipients: recipients
+    });
+    if (res && res.error) throw new Error(res.error.message || '写入失败');
+    showToast('消息已发送 ✓', true);
+    _notifCloseOverlay(document.getElementById('msgSendOverlay'));
+    var listEl = document.getElementById('notifList');
+    if (listEl) {
+      var logs = await _notifFetchList(100);
+      var msgs = await _notifFetchMsgs(100);
+      var list = logs.concat(msgs);
+      list.sort(function (a, b) {
+        var ta = Date.parse(a.createdAt || ''); var tb = Date.parse(b.createdAt || '');
+        return (isNaN(tb) ? 0 : tb) - (isNaN(ta) ? 0 : ta);
+      });
+      _renderNotifList(list);
+    }
+    _notifRefreshBadge();
+  } catch (e) {
+    showToast('发送失败：' + ((e && e.message) || '未知错误'), false);
+    if (okBtn) { okBtn.disabled = false; okBtn.textContent = '发送'; }
+  }
+}
+
 /* ---- 启动：绑定按钮 + 定时刷新红点 ---- */
 (function () {
   var btn = document.getElementById('btnNotif');
@@ -10436,7 +10890,7 @@ console.log('◈ 分区 11ak — 通知中心 — 已就绪');
 // 所有变量已定义，启动云端 + 本地数据恢复
 // 登录门禁：先检查登录状态，未登录显示登录页；登录后加载数据
 setTimeout(function bootApp() {
-  if (isLoggedIn()) { if (isGuest()) _enterGuestMode(); initCloud(); _fetchIpGeo(); }
+  if (isLoggedIn()) { if (isGuest()) _enterGuestMode(); initCloud(); _fetchIpGeo(); setTimeout(autoCheckUpdate, 2500); }
   else { showAuthOverlay(); }
 }, 10);
 
@@ -10547,16 +11001,24 @@ window.addEventListener('beforeunload', () => {
   function setMsg(msg) { var m = el('authMsg'); if (m) m.textContent = msg || ''; }
   function clearMsgs() { setErr(''); setMsg(''); }
 
-  /* ---- 记住密码（仅存本机 localStorage，明文） ---- */
+  /* ---- 记住密码（仅存本机 localStorage；密码经 base64 混淆，非加密，退出登录时清除） ---- */
   var REMEMBER_KEY = 'clubapp_remember';
+  function _obfPwd(s) { try { return btoa(unescape(encodeURIComponent(s))); } catch (e) { return s; } }
+  function _deobfPwd(s) { try { return decodeURIComponent(escape(atob(s))); } catch (e) { return s; } }
   function _saveRemember(email, pwd) {
-    try { localStorage.setItem(REMEMBER_KEY, JSON.stringify({ email: email, pwd: pwd })); } catch (e) {}
+    try { localStorage.setItem(REMEMBER_KEY, JSON.stringify({ email: email, pwd: _obfPwd(pwd) })); } catch (e) {}
   }
   function _clearRemember() {
     try { localStorage.removeItem(REMEMBER_KEY); } catch (e) {}
   }
   function _loadRemember() {
-    try { var raw = localStorage.getItem(REMEMBER_KEY); return raw ? JSON.parse(raw) : null; } catch (e) { return null; }
+    try {
+      var raw = localStorage.getItem(REMEMBER_KEY);
+      if (!raw) return null;
+      var o = JSON.parse(raw);
+      if (o && o.pwd) o.pwd = _deobfPwd(o.pwd);
+      return o;
+    } catch (e) { return null; }
   }
 
   /* ---- 协议勾选（用户协议 / 隐私政策 / 安全承诺） ---- */
@@ -10982,17 +11444,26 @@ window.addEventListener('beforeunload', () => {
     clearMsgs();
   }
 
-  /* ---- 登录防爆破限流（本地锁） ---- */
+  /* ---- 登录防爆破限流（本地锁：localStorage + 内存态镜像） ----
+     内存态镜像用于防止「清 localStorage」绕过本会话内的锁定；页面重载后仍需服务端
+     兜底（Supabase 自带 429）。真正的服务端防爆破需另配 IP/账号级限流，此处做体验层。 */
   var RL_KEY = 'clubapp_rl';
   var RL_MAX = 5;
   var RL_WINDOW = 10 * 60 * 1000;
   var RL_LOCK = 5 * 60 * 1000;
+  var __rlMem = null; // 内存态镜像：本页面会话内权威，清 localStorage 无法绕过
 
   function _rlRead() {
-    try { return JSON.parse(localStorage.getItem(RL_KEY) || 'null') || { fail: [], lockUntil: 0 }; }
-    catch (e) { return { fail: [], lockUntil: 0 }; }
+    if (__rlMem) return __rlMem;
+    var d = null;
+    try { d = JSON.parse(localStorage.getItem(RL_KEY) || 'null'); } catch (e) {}
+    __rlMem = d || { fail: [], lockUntil: 0 };
+    return __rlMem;
   }
-  function _rlWrite(d) { try { localStorage.setItem(RL_KEY, JSON.stringify(d)); } catch (e) {} }
+  function _rlWrite(d) {
+    __rlMem = d;
+    try { localStorage.setItem(RL_KEY, JSON.stringify(d)); } catch (e) {}
+  }
   function _rlBlocked() {
     var rem = _rlRead().lockUntil - Date.now();
     if (rem > 0) {
@@ -11011,7 +11482,7 @@ window.addEventListener('beforeunload', () => {
     _rlWrite(d);
     return locked;
   }
-  function _rlClear() { try { localStorage.removeItem(RL_KEY); } catch (e) {} }
+  function _rlClear() { __rlMem = { fail: [], lockUntil: 0 }; try { localStorage.removeItem(RL_KEY); } catch (e) {} }
 
   /* ---- 登录 ---- */
   async function doLogin() {
@@ -11100,7 +11571,7 @@ window.addEventListener('beforeunload', () => {
     var pwd2 = el('regPassword2') ? el('regPassword2').value : '';
     var nick = (el('regNickname').value || '').trim();
     if (!invite || !email || !pwd) { setErr('请填写邀请码、邮箱和密码'); return; }
-    if (pwd.length < 6) { setErr('密码至少 6 位'); return; }
+    if (pwd.length < 8) { setErr('密码至少 8 位'); return; }
     if (pwd !== pwd2) { setErr('两次输入的密码不一致'); return; }
     if (!_allAgreeChecked('regAgree')) { setErr('请先阅读并勾选全部协议'); return; }
     if (invite.length !== 8) { setErr('邀请码应为 8 位'); return; }
@@ -11169,6 +11640,7 @@ window.addEventListener('beforeunload', () => {
   function doLogout() {
     _secLog('退出登录', getAccountEmail(), '');
     stopRealtimeSync(); // Perf L2: 登出即断开实时同步/轮询，避免后台空转
+    _clearRemember();   // 退出即清除记住的明文密码，避免残留 localStorage
     _authLogout();
     clearSession();
     _exitGuestMode(); // 还原游客模式残留外观（此时已登出，走中性态）
@@ -11182,7 +11654,15 @@ window.addEventListener('beforeunload', () => {
   function genInviteCode() {
     var chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
     var s = '';
-    for (var i = 0; i < 8; i++) s += chars.charAt(Math.floor(Math.random() * chars.length));
+    if (window.crypto && crypto.getRandomValues) {
+      // 用 CSPRNG 生成，杜绝 Math.random 可被预测/枚举
+      var arr = new Uint32Array(8);
+      crypto.getRandomValues(arr);
+      for (var i = 0; i < 8; i++) s += chars.charAt(arr[i] % chars.length);
+    } else {
+      // 极老环境降级：退回 Math.random（仍有 8 位空间兜底）
+      for (var j = 0; j < 8; j++) s += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
     return s;
   }
 
@@ -11280,8 +11760,8 @@ window.addEventListener('beforeunload', () => {
     var email = getAccountEmail();
     var oldPwd = prompt('请输入当前密码：') || '';
     if (!oldPwd) return;
-    var newPwd = prompt('请输入新密码（至少 6 位）：') || '';
-    if (newPwd.length < 6) { showToast('新密码至少 6 位', false); return; }
+    var newPwd = prompt('请输入新密码（至少 8 位）：') || '';
+    if (newPwd.length < 8) { showToast('新密码至少 8 位', false); return; }
     var chk = await _authLogin(email, oldPwd);
     if (chk.error) { showToast('当前密码错误', false); return; }
     // 用刚拿到的令牌续期会话，再改密码
@@ -11357,6 +11837,29 @@ window.addEventListener('beforeunload', () => {
 
   refreshAccountUI();
 })();
+
+/* ---- 全局错误捕获：未捕获异常 / Promise 拒绝 → 记入系统日志（category='error'），
+   避免白屏静默失败。限频（2 秒一条）防止错误风暴刷屏；资源加载错误(无 message)不记。 ---- */
+var __gerrLast = 0;
+function _logGlobalError(msg) {
+  var now = Date.now();
+  if (now - __gerrLast < 2000) return;
+  __gerrLast = now;
+  try {
+    if (typeof addAppLog === 'function') addAppLog('error', '未捕获异常：' + msg, 'error', '系统', '全局错误', null);
+  } catch (e) {}
+}
+window.addEventListener('error', function (e) {
+  if (e && !e.message && !e.error) return; // 资源加载错误（img/script 404）跳过
+  var msg = (e && (e.message || (e.error && e.error.message))) || '未知错误';
+  if (e && e.filename) msg += ' @ ' + e.filename + ':' + (e.lineno || 0);
+  _logGlobalError(msg);
+});
+window.addEventListener('unhandledrejection', function (e) {
+  var r = e && e.reason;
+  var msg = (r && r.message) ? r.message : String(r || '未处理的 Promise 拒绝');
+  _logGlobalError(msg);
+});
 </script>
 
 </body>
